@@ -4,23 +4,29 @@ Phases are slices, not milestones. Each one is playable and answers a question. 
 slice's question comes back *no*, the answer is to stop, not to push into the next phase
 hoping it fixes things. See `spec.md` §7 for the reasoning behind the order.
 
-## Phase 0: prove the foundation holds (not started)
+## Phase 0: prove the foundation holds (shipped, v0.1.0)
 
 *Question: is the allocate-and-survive loop tolerable to sit inside for thirty minutes?*
 
-- [ ] `engine/rng.py`: one seeded, injectable source, with a determinism test
-- [ ] `engine/state.py`: world, population pool, stores, season, turn counter
-- [ ] `engine/turn.py`: resolve a turn (produce, consume, spoil, explore, fire event)
-- [ ] `engine/world.py`: small fixed grid, fog, home tile, adjacent reveal
-- [ ] `engine/events/`: TOML loader plus the condition evaluator (`key op value`, AND-ed)
-- [ ] A ~20-entry event table in `data/events/`
-- [ ] Survival win/lose conditions
-- [ ] Textual skin: state readout, allocation controls, event modal
-- [ ] Engine test suite: turn resolution, food math, condition evaluation, determinism
-- [ ] Architecture guard test: nothing under `engine/` imports Textual or the frontend
+- [x] `engine/rng.py`: one seeded, injectable source, with a determinism test
+- [x] `engine/state.py`: world, population pool, stores, season, turn counter
+- [x] `engine/turn.py`: resolve a turn (produce, consume, spoil, explore, fire event)
+- [x] `engine/world.py`: small fixed grid, fog, home tile, adjacent reveal
+- [x] `engine/events/`: TOML loader plus the condition evaluator (`key op value`, AND-ed)
+- [x] A ~20-entry event table in `data/events/` (shipped with thirty)
+- [x] Survival win/lose conditions
+- [x] Textual skin: state readout, allocation controls, event modal
+- [x] Engine test suite: turn resolution, food math, condition evaluation, determinism
+- [x] Architecture guard test: nothing under `engine/` imports Textual or the frontend
+- [x] Headless full-run playthrough test, and guards on the shape of a run
 
 **Phase 0 does not test the spine.** It has no scouts, no intel, and no enemy, so it cannot.
 A yes means the floor is solid. It does not mean the game works.
+
+**The verdict is the author's to render, by playing it.** What the tests can say is that the
+allocation is a decision rather than a slider: a policy that reads the seasons endures 190
+runs in 200, one that ignores them endures 126, and the difference is entirely in what it
+does with winter.
 
 ## Phase 1: make it a game (planned)
 
@@ -31,6 +37,9 @@ A yes means the floor is solid. It does not mean the game works.
 - [ ] Seasons that bite: winter draw-down balanced survivable but never safe
 - [ ] Spoilage tuned so stockpiling is a decision rather than a ratchet
 - [ ] Morale as a real pressure, not a display number
+- [ ] Close the gap left open in Phase 0: once a player finds the winter insight the run is
+      nearly safe (190 in 200). The seasonal read should be the first lesson, not the last
+      one; Phase 1's pressures need to give a canny player something new to lose.
 
 ## Phase 2: make the map matter (planned, holds the kill switch)
 

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
 from hearthfall.engine.rng import Rng
-from hearthfall.engine.state import Orders, Outcome
+from hearthfall.engine.state import Orders, Outcome, Season
 
 CORPUS = load_corpus(turn.new_game(0).snapshot())
 
@@ -70,6 +70,46 @@ def play(seed: int, choice: int = 0) -> Transcript:
         tiles_known=state.world.known_count,
         events=events,
         lines=lines,
+    )
+
+
+def winter_scout_orders(state) -> Orders:
+    """A policy that has noticed winter foraging yields nothing, and scouts instead.
+
+    Kept beside the naive one so the tests can compare them. If the two policies fare the
+    same, the allocation is not a decision and Phase 0 has failed its own question.
+    """
+    adults = state.population.adults
+    winter = state.season is Season.WINTER
+    explore = (
+        balance.EXPLORERS_PER_REVEAL
+        if winter and adults >= 3 and state.world.frontier()
+        else 0
+    )
+    tend = 1 if adults - explore >= 2 else 0
+    return Orders(forage=adults - explore - tend, explore=explore, tend=tend)
+
+
+def play_with(seed: int, policy, choice: int = 0) -> Transcript:
+    state = turn.new_game(seed)
+    rng = Rng(seed)
+    events: list[str] = []
+
+    while not state.is_over:
+        report = turn.resolve(state, policy(state), rng, CORPUS)
+        if report.event_id:
+            events.append(report.event_id)
+        if state.pending is not None:
+            turn.apply_choice(state, min(choice, len(state.pending.options) - 1))
+
+    return Transcript(
+        outcome=state.outcome,
+        turns=state.turn,
+        survivors=state.population.total,
+        food=state.stores.food,
+        tiles_known=state.world.known_count,
+        events=events,
+        lines=[],
     )
 
 
@@ -141,6 +181,44 @@ class TestTheShapeOfARun(unittest.TestCase):
             self.FLOOR,
             "almost nothing can be won; the loop is broken",
         )
+
+
+class TestTheCorpusIsAlive(unittest.TestCase):
+    """Dead content is the other half of the loader's job.
+
+    The loader stops an event that is malformed. Nothing stops an event that is perfectly
+    formed and simply unreachable, because its conditions describe a world state the game
+    never produces. That looks exactly like content needing a rewrite, so it gets caught
+    here instead: every shipped event must fire at least once across a spread of runs.
+    """
+
+    def fired(self) -> set[str]:
+        seen: set[str] = set()
+        for seed in range(60):
+            seen.update(play(seed).events)
+            seen.update(play_with(seed, winter_scout_orders).events)
+            seen.update(play_with(seed, winter_scout_orders, choice=1).events)
+        return seen
+
+    def test_every_shipped_event_can_actually_happen(self):
+        unreachable = {event.id for event in CORPUS} - self.fired()
+        self.assertEqual(
+            unreachable, set(), "authored, shipped, and never seen by a player"
+        )
+
+
+class TestAllocationIsADecision(unittest.TestCase):
+    def test_reading_the_seasons_beats_not_reading_them(self):
+        # Phase 0's whole question. If a policy that understands winter does no better than
+        # one that ignores it, the loop is a slider and not a game.
+        seeds = range(60)
+        naive = sum(1 for s in seeds if play(s).outcome is Outcome.ENDURED)
+        canny = sum(
+            1
+            for s in seeds
+            if play_with(s, winter_scout_orders).outcome is Outcome.ENDURED
+        )
+        self.assertGreater(canny, naive)
 
 
 if __name__ == "__main__":

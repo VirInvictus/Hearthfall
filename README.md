@@ -10,9 +10,10 @@ story, and violence. Grow a hearth into a war-band into a people, or bury them.
 
 Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in glyphs.
 
-> **Status: pre-alpha, unbuilt.** This repository currently holds the design contract and a
-> scaffold. Phase 0 has not been built. See [`roadmap.md`](roadmap.md) for what "done"
-> means at each slice.
+> **Status: v0.1.0, Phase 0 of six.** Playable start to finish, and deliberately small:
+> one map, three jobs, thirty events, twenty seasons. There is no combat yet, and no
+> enemy, which means the spine below is designed but not yet built. See
+> [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts.
 
 ## The spine
 
@@ -45,6 +46,29 @@ tests/                   the engine is tested; the skin is not
 You can drive a full game from a Python REPL with zero terminal. Every random draw goes
 through one seeded, injectable RNG, so a seed reproduces a run exactly. Both properties are
 enforced by tests, not by good intentions.
+
+## What a turn looks like
+
+Time is seasonal, four turns to a year. Each season you split a finite clan three ways:
+
+- **Forage** brings in food, scaled by the season. In winter it brings in nothing at all,
+  because there is nothing out there to find.
+- **Explore** reveals a tile of the dark, and costs you the hands that went.
+- **Tend** slows the rot in the store, and can never quite stop it.
+
+Then the season resolves, the world asks you something with no clean answer, and you live
+with it. Children eat and cannot work. Everyone eats regardless.
+
+## Playing
+
+```sh
+uv venv && uv pip install -e .
+.venv/bin/hearthfall
+.venv/bin/hearthfall --seed 42   # replay a run exactly
+```
+
+`f` `e` `t` assign a job, shift takes one back, `w` cycles where the scouts go, space
+resolves the season.
 
 ## Requirements
 

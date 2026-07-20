@@ -3,7 +3,7 @@
 [[event]]
 id = "winter.granary_rats"
 weight = 3
-when = ["season == winter", "food > 20"]
+when = ["season == winter", "food > 10"]
 title = "Something in the Grain"
 body = """
 The stores are lighter than the tally says. Small teeth in the dark, working every night

@@ -94,7 +94,7 @@ morale = -1
 id = "wander.the_far_edge"
 weight = 3
 once = true
-when = ["tiles_known > 8"]
+when = ["tiles_known > 5"]
 title = "The Far Edge"
 body = """
 The map in the dirt by the fire has become a thing people stand and look at. It has a shape
@@ -104,14 +104,14 @@ now. It has a middle, and the middle is here.
 morale = 2
 
 [[event]]
-id = "wander.nothing_left_to_find"
+id = "wander.the_dark_has_a_size"
 weight = 3
 once = true
-when = ["tiles_unknown < 4"]
-title = "Nothing Left to Find"
+when = ["tiles_known > 8"]
+title = "The Dark Has a Size"
 body = """
-The scouts come back early because there is nowhere further to go that is not already
-drawn. The dark turned out to have a size. Everyone is quieter than they expected to be.
+Half the map in the dirt is drawn now, and the drawn half has an edge that keeps going. It
+was easier when it was simply the dark. Everyone is quieter than they expected to be.
 """
 [event.effect]
 morale = -1
