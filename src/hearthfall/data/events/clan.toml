@@ -1,0 +1,131 @@
+# The people themselves, in any season.
+
+[[event]]
+id = "clan.a_quarrel"
+weight = 3
+when = ["adults > 3", "morale < 6"]
+title = "A Quarrel"
+body = """
+It is about a knife. It is not about a knife. Two of them have to be pulled apart and both
+of them are owed something nobody can give.
+"""
+
+  [[event.choice]]
+  text = "Judge it. Someone is right and everyone hears you say so."
+  [event.choice.effect]
+  morale = 1
+
+  [[event.choice]]
+  text = "Let them settle it themselves."
+  [event.choice.effect]
+  morale = -2
+
+[[event]]
+id = "clan.the_empty_bowl"
+weight = 4
+when = ["food < 6"]
+title = "The Empty Bowl"
+body = """
+There is one portion short and everyone can see whose bowl it is going to be. They are all
+looking at the fire very hard.
+"""
+
+  [[event.choice]]
+  text = "Take it from your own share. They will remember."
+  [event.choice.effect]
+  morale = 2
+
+  [[event.choice]]
+  text = "Give it to whoever works hardest tomorrow."
+  [event.choice.effect]
+  food = 3
+  morale = -2
+
+[[event]]
+id = "clan.a_child_asks"
+weight = 2
+when = ["children > 0"]
+title = "A Child Asks"
+body = """
+She wants to know what is past the trees. Not in the way children ask things, but in the way
+that means she has already decided to find out.
+"""
+
+  [[event.choice]]
+  text = "Tell her the truth about what is out there."
+  [event.choice.effect]
+  morale = -1
+
+  [[event.choice]]
+  text = "Tell her it is beautiful."
+  [event.choice.effect]
+  morale = 1
+
+[[event]]
+id = "clan.grief"
+weight = 3
+when = ["morale < 3"]
+title = "Grief"
+body = """
+It stops being about the ones who died and starts being about the ones who did not. Someone
+says out loud that the clan should split. Nobody argues, which is the frightening part.
+"""
+
+  [[event.choice]]
+  text = "Hold them together. Whatever it takes, whatever it costs."
+  [event.choice.effect]
+  food = -8
+  morale = 3
+
+  [[event.choice]]
+  text = "Let the ones who want to go, go."
+  [event.choice.effect]
+  adults = -1
+  morale = 2
+
+[[event]]
+id = "clan.the_elder"
+weight = 2
+when = ["morale > 7", "adults > 4"]
+title = "The Elder Speaks"
+body = """
+He has not said anything worth hearing in two years and then he says this: that a clan is
+not the people in it, it is the ones it expects to have. Everyone thinks about that for a
+while.
+"""
+[event.effect]
+morale = 1
+
+[[event]]
+id = "clan.hard_hands"
+weight = 3
+when = ["adults > 5", "food > 20"]
+title = "Hard Hands"
+body = """
+The work is getting done and it is costing something. Two of them cannot close their fists
+in the morning any more, and they are the two who never mention it.
+"""
+
+  [[event.choice]]
+  text = "Order a day of rest. The store can take it."
+  [event.choice.effect]
+  food = -5
+  morale = 2
+
+  [[event.choice]]
+  text = "There is no day for that. Not this year."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "clan.the_second_year"
+weight = 2
+once = true
+when = ["year > 1"]
+title = "The Second Year"
+body = """
+Someone points out that the clan has been here longer than it was anywhere before. It is
+said like a small thing. It is not a small thing.
+"""
+[event.effect]
+morale = 2

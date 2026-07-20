@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from hearthfall.engine.world import Coord, World
+from hearthfall.engine.world import Coord, Terrain, World
 
 
 class Season(StrEnum):
@@ -124,6 +124,11 @@ class GameState:
     turn: int = 0
     outcome: Outcome | None = None
     pending: PendingChoice | None = None
+    # The terrain most recently walked into. Kept on the state rather than passed around
+    # per turn so that `snapshot()` stays the only seam content reads through.
+    last_revealed: Terrain | None = None
+    # Ids of events that have fired, so `once = true` entries do not come round again.
+    fired_events: list[str] = field(default_factory=list)
 
     @property
     def season(self) -> Season:
@@ -155,4 +160,7 @@ class GameState:
             "tiles_known": self.world.known_count,
             "tiles_unknown": self.world.unknown_count,
             "terrain_home": str(self.world.tile(self.world.home).terrain),
+            "terrain_revealed": str(self.last_revealed)
+            if self.last_revealed
+            else "none",
         }

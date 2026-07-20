@@ -1,0 +1,120 @@
+# Winter. The season that does not negotiate.
+
+[[event]]
+id = "winter.granary_rats"
+weight = 3
+when = ["season == winter", "food > 20"]
+title = "Something in the Grain"
+body = """
+The stores are lighter than the tally says. Small teeth in the dark, working every night
+you were asleep and counting on the arithmetic.
+"""
+
+  [[event.choice]]
+  text = "Set the children to hunting them. Cruel, but hands are hands."
+  [event.choice.effect]
+  food = -5
+  morale = -1
+
+  [[event.choice]]
+  text = "Do nothing. Pray the cold kills them first."
+  [event.choice.effect]
+  food = -12
+
+[[event]]
+id = "winter.the_long_dark"
+weight = 3
+when = ["season == winter", "morale < 4"]
+title = "The Long Dark"
+body = """
+Nobody speaks at the fire any more. There is nothing to say that has not been said, and
+saying it again only makes the walls closer.
+"""
+
+  [[event.choice]]
+  text = "Break out the last of the stores. Let them eat like people once."
+  [event.choice.effect]
+  food = -10
+  morale = 3
+
+  [[event.choice]]
+  text = "Let them be grim. Grim keeps."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "winter.frozen_ground"
+weight = 4
+when = ["season == winter"]
+title = "Frozen Ground"
+body = """
+The old woman went in the night. The ground will not take her until spring, so she waits
+under stones at the edge of the clearing, and everyone walks the long way round.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "winter.wolves_at_the_edge"
+weight = 2
+when = ["season == winter", "people > 4"]
+title = "Wolves at the Edge"
+body = """
+They do not come closer and they do not leave. They have simply decided to be there, and
+to wait, and they are better at waiting than anyone here.
+"""
+
+  [[event.choice]]
+  text = "Drive them off. Torches, noise, a night nobody sleeps."
+  [event.choice.effect]
+  morale = -2
+
+  [[event.choice]]
+  text = "Give them the worst of the meat and hope that buys the winter."
+  [event.choice.effect]
+  food = -8
+  morale = 1
+
+[[event]]
+id = "winter.a_stranger_at_the_fire"
+weight = 2
+once = true
+when = ["season == winter", "food > 15"]
+title = "A Stranger at the Fire"
+body = """
+He walked out of the white with nothing on him worth taking, which is either honesty or the
+best lie there is. He asks for a place by the fire and does not say for how long.
+"""
+
+  [[event.choice]]
+  text = "Let him in. Another back is another back."
+  [event.choice.effect]
+  adults = 1
+  food = -6
+
+  [[event.choice]]
+  text = "Turn him out. The clan is already too many mouths."
+  [event.choice.effect]
+  morale = -2
+
+[[event]]
+id = "winter.thin_ice"
+weight = 2
+when = ["season == winter", "food < 12"]
+title = "Thin Ice"
+body = """
+There is fish under the lake ice, and there is a reason nobody has gone for it. Someone
+volunteers anyway, in the flat voice of a person who has already done the arithmetic.
+"""
+
+  [[event.choice]]
+  text = "Let them go out."
+  [event.choice.effect]
+  food = 14
+  adults = -1
+  morale = -2
+
+  [[event.choice]]
+  text = "Forbid it. Nobody dies for a maybe."
+  [event.choice.effect]
+  morale = 1

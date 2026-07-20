@@ -1,0 +1,139 @@
+# Spring, summer, autumn. The three seasons that let you believe it will be fine.
+
+[[event]]
+id = "spring.thaw"
+weight = 4
+when = ["season == spring"]
+title = "Thaw"
+body = """
+Water everywhere, and mud, and the particular smell of a world that did not end. Someone
+laughs at nothing and nobody tells them to stop.
+"""
+[event.effect]
+morale = 1
+
+[[event]]
+id = "spring.the_seed_question"
+weight = 3
+when = ["season == spring", "food < 18"]
+title = "The Seed Question"
+body = """
+What is left in the store is the same grain you would put in the ground. It cannot be both
+a meal and a harvest, and the argument about which has been going on for three days.
+"""
+
+  [[event.choice]]
+  text = "Eat it. A harvest is no use to the dead."
+  [event.choice.effect]
+  food = 8
+  morale = -2
+
+  [[event.choice]]
+  text = "Sow it. Tighten the belts one more notch."
+  [event.choice.effect]
+  food = -4
+  morale = 1
+
+[[event]]
+id = "spring.meltwater"
+weight = 2
+when = ["season == spring", "food > 25"]
+title = "Meltwater"
+body = """
+The stream came up in the night and went through the low store. What it did not carry off
+it soaked, and what it soaked will not keep.
+"""
+[event.effect]
+food = -9
+
+[[event]]
+id = "summer.long_days"
+weight = 4
+when = ["season == summer"]
+title = "Long Days"
+body = """
+Light until it feels like cheating. The work gets done and there is still evening left over,
+which nobody quite knows what to do with.
+"""
+[event.effect]
+morale = 1
+
+[[event]]
+id = "summer.the_fever"
+weight = 3
+when = ["season == summer", "people > 5"]
+title = "The Fever"
+body = """
+It goes through the young ones first and then thinks about the rest. There is a plant that
+helps, or is said to help, and it grows two days out.
+"""
+
+  [[event.choice]]
+  text = "Send someone for it. Two days there, two days back, work undone."
+  [event.choice.effect]
+  food = -6
+  morale = 1
+
+  [[event.choice]]
+  text = "Keep everyone here and let it burn through."
+  [event.choice.effect]
+  children = -1
+  morale = -2
+
+[[event]]
+id = "summer.dry_spell"
+weight = 2
+when = ["season == summer", "food > 30"]
+title = "Dry Spell"
+body = """
+Six weeks without rain. The store keeps beautifully and there will be nothing to put in it,
+which is the joke the weather has decided to tell this year.
+"""
+[event.effect]
+food = -8
+
+[[event]]
+id = "autumn.the_gathering"
+weight = 4
+when = ["season == autumn"]
+title = "The Gathering"
+body = """
+Everything ripens at once and everyone works until their hands stop closing. This is the
+good week. Everyone knows to say so out loud while it is happening.
+"""
+[event.effect]
+food = 6
+morale = 1
+
+[[event]]
+id = "autumn.a_full_store"
+weight = 2
+when = ["season == autumn", "food > 55"]
+title = "A Full Store"
+body = """
+There is enough. Not enough for comfort, but enough that the arithmetic stops being a
+question about who. Somebody sings while they work and is not shouted down.
+"""
+[event.effect]
+morale = 2
+
+[[event]]
+id = "autumn.the_tally"
+weight = 3
+when = ["season == autumn", "food < 30"]
+title = "The Tally"
+body = """
+The count is done twice because the first answer was not liked. It comes out the same. What
+is in the store will not reach spring at the rate the clan is eating.
+"""
+
+  [[event.choice]]
+  text = "Ration now, while there is still a choice about it."
+  [event.choice.effect]
+  food = 5
+  morale = -2
+
+  [[event.choice]]
+  text = "Say nothing. Let them have the autumn."
+  [event.choice.effect]
+  morale = 1

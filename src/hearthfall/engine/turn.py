@@ -9,9 +9,12 @@ the order is fixed here and documented step by step rather than left to be infer
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from hearthfall.engine import balance
+from hearthfall.engine.events import table
+from hearthfall.engine.events.loader import Event
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     Effect,
@@ -44,6 +47,7 @@ class TurnReport:
     born: int = 0
     revealed: Coord | None = None
     revealed_terrain: Terrain | None = None
+    event_id: str | None = None
     log: list[str] = field(default_factory=list)
     pending: PendingChoice | None = None
     outcome: Outcome | None = None
@@ -73,8 +77,17 @@ def new_game(seed: int) -> GameState:
     )
 
 
-def resolve(state: GameState, orders: Orders, rng: Rng) -> TurnReport:
-    """Advance the world by one season."""
+def resolve(
+    state: GameState,
+    orders: Orders,
+    rng: Rng,
+    events: Sequence[Event] = (),
+) -> TurnReport:
+    """Advance the world by one season.
+
+    The corpus is passed in rather than loaded here. Loading touches storage; resolving
+    must not, so that a turn is a pure function of state, orders, seed, and content.
+    """
     if state.is_over:
         raise RuntimeError("the run is over; no further turns resolve")
     if state.pending is not None:
@@ -91,7 +104,7 @@ def resolve(state: GameState, orders: Orders, rng: Rng) -> TurnReport:
     _starve(state, report)
     _spoil(state, orders, season, report)
     _explore(state, orders, rng, report)
-    _draw_event(state, rng, report)
+    _draw_event(state, rng, report, events)
     _grow(state, rng, report)
     _advance(state, report)
 
@@ -149,10 +162,10 @@ def _produce(
 
 def _consume(state: GameState, report: TurnReport) -> None:
     population = state.population
-    demand = (
-        population.adults * balance.FOOD_PER_ADULT
-        + population.child_count * balance.FOOD_PER_CHILD
-    )
+    winter_extra = balance.WINTER_EXTRA_FOOD if state.season is Season.WINTER else 0
+    demand = population.adults * (
+        balance.FOOD_PER_ADULT + winter_extra
+    ) + population.child_count * (balance.FOOD_PER_CHILD + winter_extra)
     eaten = min(demand, state.stores.food)
     state.stores.food -= eaten
     report.consumed = eaten
@@ -217,6 +230,7 @@ def _explore(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> 
         raise ValueError(f"{target} is not on the frontier; it cannot be explored into")
 
     tile = state.world.reveal(target)
+    state.last_revealed = tile.terrain
     report.revealed = target
     report.revealed_terrain = tile.terrain
     report.note(
@@ -224,13 +238,34 @@ def _explore(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> 
     )
 
 
-def _draw_event(state: GameState, rng: Rng, report: TurnReport) -> None:
+def _draw_event(
+    state: GameState, rng: Rng, report: TurnReport, events: Sequence[Event]
+) -> None:
     """Fire at most one event from the corpus.
 
-    Wired in step 2 of the build order. Until then a turn is pure simulation, which is
-    enough to balance the food math against.
+    A turn where nothing is eligible is a quiet turn, not an error. Events that ask a
+    question stop here and wait; events that simply happen apply themselves and move on.
     """
-    return
+    if not events:
+        return
+
+    event = table.draw(events, state.snapshot(), rng, state.fired_events)
+    if event is None:
+        return
+
+    state.fired_events.append(event.id)
+    report.event_id = event.id
+    report.note(event.title)
+
+    if event.has_choices:
+        state.pending = PendingChoice(
+            event_id=event.id,
+            title=event.title,
+            body=event.body,
+            options=event.options,
+        )
+    elif not event.effect.is_empty:
+        apply_effect(state, event.effect)
 
 
 def _grow(state: GameState, rng: Rng, report: TurnReport) -> None:
@@ -282,12 +317,15 @@ def _advance(state: GameState, report: TurnReport) -> None:
 
 
 def _judge(state: GameState) -> None:
-    """Decide whether the run is over. Losing takes precedence over finishing."""
-    if state.outcome is not None:
-        return
+    """Decide whether the run is over.
+
+    Dying overrides having finished, and can do so after the fact: an event choice answered
+    on the last turn that kills the last adult buries the clan even though the clock had
+    already run out. Surviving the run is not a shield against the answer you just gave.
+    """
     if state.population.adults <= 0:
         state.outcome = Outcome.BURIED
-    elif state.turn >= balance.TURNS_PER_RUN:
+    elif state.outcome is None and state.turn >= balance.TURNS_PER_RUN:
         state.outcome = Outcome.ENDURED
 
 

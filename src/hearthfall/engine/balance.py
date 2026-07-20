@@ -26,18 +26,23 @@ MORALE_MAX = 10
 
 # --- Food ------------------------------------------------------------------------------
 
-# Food a single forager brings in per turn, by season. Winter is not merely lean: it is the
-# season where hands cannot solve the problem, which is what makes the autumn stockpile a
-# decision rather than a formality.
+# Food a single forager brings in per turn, by season. Winter is not merely lean: there is
+# nothing out there to find, so hands cannot solve the problem at all. That is what makes
+# the autumn stockpile a decision rather than a formality, and it hands winter a different
+# allocation puzzle: with foraging worthless, the free hands go to tending or to the fog.
 FORAGE_YIELD: dict[Season, int] = {
-    Season.SPRING: 3,
-    Season.SUMMER: 4,
+    Season.SPRING: 2,
+    Season.SUMMER: 3,
     Season.AUTUMN: 5,
-    Season.WINTER: 1,
+    Season.WINTER: 0,
 }
 
 FOOD_PER_ADULT = 2
 FOOD_PER_CHILD = 1
+
+# Extra food every mouth needs in winter. Cold is a cost, not just a lack of yield, and this
+# is what turns winter from a lean season into the one that decides the run.
+WINTER_EXTRA_FOOD = 1
 
 # --- Spoilage --------------------------------------------------------------------------
 

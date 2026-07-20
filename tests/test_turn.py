@@ -9,8 +9,10 @@ from __future__ import annotations
 import unittest
 
 from hearthfall.engine import balance, turn
+from hearthfall.engine.events.loader import Event
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
+    ChoiceOption,
     Effect,
     GameState,
     Orders,
@@ -328,6 +330,120 @@ class TestEffects(unittest.TestCase):
         self.assertEqual(len(state.population.children), 3)
         turn.apply_effect(state, Effect(children=-3))
         self.assertEqual(state.population.children, [])
+
+
+class TestEventsInATurn(unittest.TestCase):
+    def flavor(self, **effect_kwargs) -> Event:
+        return Event(
+            id="flavor",
+            title="A Quiet Thing",
+            body="...",
+            effect=Effect(**effect_kwargs),
+        )
+
+    def fork(self) -> Event:
+        return Event(
+            id="fork",
+            title="A Hard Thing",
+            body="...",
+            options=(
+                ChoiceOption(text="Bear it", effect=Effect(food=-10, morale=1)),
+                ChoiceOption(text="Refuse it", effect=Effect(morale=-3)),
+            ),
+        )
+
+    def test_no_corpus_means_no_events(self):
+        report = turn.resolve(a_state(), Orders(), Rng(1))
+        self.assertIsNone(report.event_id)
+
+    def test_a_flavor_event_applies_itself(self):
+        state = a_state(food=100)
+        report = turn.resolve(state, Orders(), Rng(1), [self.flavor(food=-20)])
+        self.assertEqual(report.event_id, "flavor")
+        self.assertIsNone(report.pending)
+        # Consumed 12, rotted, then the event took its 20.
+        self.assertLess(state.stores.food, 100 - 12 - 20 + 1)
+
+    def test_a_fork_waits_for_an_answer(self):
+        state = a_state()
+        report = turn.resolve(state, Orders(), Rng(1), [self.fork()])
+        self.assertIsNotNone(report.pending)
+        self.assertEqual(report.pending, state.pending)
+        self.assertEqual(report.pending.event_id, "fork")
+        self.assertEqual(len(report.pending.options), 2)
+
+    def test_the_next_turn_is_blocked_until_the_answer_comes(self):
+        state = a_state()
+        turn.resolve(state, Orders(), Rng(1), [self.fork()])
+        with self.assertRaises(RuntimeError):
+            turn.resolve(state, Orders(), Rng(1))
+
+    def test_answering_applies_the_chosen_effect_and_unblocks(self):
+        state = a_state(food=100, morale=5)
+        turn.resolve(state, Orders(), Rng(1), [self.fork()])
+        food_before = state.stores.food
+        turn.apply_choice(state, 0)
+        self.assertIsNone(state.pending)
+        self.assertEqual(state.stores.food, food_before - 10)
+        self.assertEqual(state.population.morale, 6)
+        turn.resolve(state, Orders(), Rng(1))  # no longer blocked
+
+    def test_the_other_option_has_the_other_effect(self):
+        state = a_state(morale=5)
+        turn.resolve(state, Orders(), Rng(1), [self.fork()])
+        turn.apply_choice(state, 1)
+        self.assertEqual(state.population.morale, 2)
+
+    def test_answering_nothing_is_refused(self):
+        with self.assertRaises(RuntimeError):
+            turn.apply_choice(a_state(), 0)
+
+    def test_an_option_out_of_range_is_refused(self):
+        state = a_state()
+        turn.resolve(state, Orders(), Rng(1), [self.fork()])
+        for index in [-1, 2, 99]:
+            with self.assertRaises(IndexError):
+                turn.apply_choice(state, index)
+
+    def test_a_fired_event_is_recorded(self):
+        state = a_state()
+        turn.resolve(state, Orders(), Rng(1), [self.flavor(morale=1)])
+        self.assertEqual(state.fired_events, ["flavor"])
+
+    def test_a_once_event_never_comes_round_again(self):
+        state = a_state(food=10_000)
+        once = Event(id="once", title="T", body="B", once=True, effect=Effect(morale=1))
+        fired = 0
+        for _ in range(6):
+            fired += turn.resolve(state, Orders(), Rng(1), [once]).event_id is not None
+        self.assertEqual(fired, 1)
+
+    def test_an_answer_that_kills_the_last_adult_buries_the_clan(self):
+        # Even on the final turn, having survived the clock is not a shield against the
+        # answer you just gave.
+        state = a_state(
+            adults=1, children=[], food=1000, turn_number=balance.TURNS_PER_RUN - 1
+        )
+        lethal = Event(
+            id="lethal",
+            title="T",
+            body="B",
+            options=(ChoiceOption(text="Go alone", effect=Effect(adults=-1)),),
+        )
+        report = turn.resolve(state, Orders(), Rng(1), [lethal])
+        self.assertIs(report.outcome, Outcome.ENDURED)
+        turn.apply_choice(state, 0)
+        self.assertIs(state.outcome, Outcome.BURIED)
+
+    def test_exploring_records_the_terrain_for_content_to_read(self):
+        state = a_state()
+        report = turn.resolve(state, Orders(explore=2), Rng(1))
+        self.assertEqual(
+            state.snapshot()["terrain_revealed"], str(report.revealed_terrain)
+        )
+
+    def test_terrain_revealed_starts_as_none(self):
+        self.assertEqual(turn.new_game(1).snapshot()["terrain_revealed"], "none")
 
 
 class TestNewGame(unittest.TestCase):

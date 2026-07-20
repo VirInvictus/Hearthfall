@@ -1,0 +1,129 @@
+# What the scouts bring back. Keyed to the ground most recently walked into.
+#
+# In Phase 0 terrain is flavor and a condition key; it gates no resources. Phase 2 is where
+# the ground starts to matter, and where these grow into real intel.
+
+[[event]]
+id = "wander.stones_in_the_forest"
+weight = 3
+when = ["terrain_revealed == forest"]
+title = "Stones in the Forest"
+body = """
+Set upright, in a line, going somewhere. Older than the trees around them, which means
+someone walked this way when there was nothing here to walk to.
+"""
+
+  [[event.choice]]
+  text = "Follow the line and see where it ends."
+  [event.choice.effect]
+  food = -4
+  morale = 2
+
+  [[event.choice]]
+  text = "Mark it and leave it. There is work at home."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "wander.the_marsh_road"
+weight = 3
+when = ["terrain_revealed == marsh"]
+title = "The Marsh Road"
+body = """
+There is a way through, laid down in split logs, sunk and rotten but holding. Roads are
+built by people. People are the thing you most want and least want to find.
+"""
+
+  [[event.choice]]
+  text = "Take the road as far as it goes."
+  [event.choice.effect]
+  food = -5
+  morale = 1
+
+  [[event.choice]]
+  text = "Go round. Whatever built it might still be using it."
+  [event.choice.effect]
+  food = -2
+
+[[event]]
+id = "wander.the_high_ground"
+weight = 3
+when = ["terrain_revealed == hills"]
+title = "The High Ground"
+body = """
+From the top you can see three days in every direction, and for the first time the dark has
+edges. It is not good news, exactly. It is knowing, which is better.
+"""
+[event.effect]
+morale = 2
+
+[[event]]
+id = "wander.black_water"
+weight = 3
+when = ["terrain_revealed == water"]
+title = "Black Water"
+body = """
+Too wide to cross and too still to trust. There are fish in it, and there is something in
+the way the birds refuse to land on it.
+"""
+
+  [[event.choice]]
+  text = "Fish it anyway. Hunger outranks a feeling."
+  [event.choice.effect]
+  food = 10
+  morale = -2
+
+  [[event.choice]]
+  text = "Leave it be."
+  [event.choice.effect]
+  morale = 1
+
+[[event]]
+id = "wander.open_ground"
+weight = 2
+when = ["terrain_revealed == plain"]
+title = "Open Ground"
+body = """
+Grass to the horizon and nothing standing in it. Easy walking, nothing to eat, and nowhere
+at all to hide if it turns out you needed to.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "wander.the_far_edge"
+weight = 3
+once = true
+when = ["tiles_known > 8"]
+title = "The Far Edge"
+body = """
+The map in the dirt by the fire has become a thing people stand and look at. It has a shape
+now. It has a middle, and the middle is here.
+"""
+[event.effect]
+morale = 2
+
+[[event]]
+id = "wander.nothing_left_to_find"
+weight = 3
+once = true
+when = ["tiles_unknown < 4"]
+title = "Nothing Left to Find"
+body = """
+The scouts come back early because there is nowhere further to go that is not already
+drawn. The dark turned out to have a size. Everyone is quieter than they expected to be.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "wander.a_cold_camp"
+weight = 2
+when = ["tiles_known > 4", "morale < 7"]
+title = "A Cold Camp"
+body = """
+Someone else's fire, three days dead, and the bones of a meal that was not shared out
+evenly. They went east. Nobody suggests following.
+"""
+[event.effect]
+morale = -1

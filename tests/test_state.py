@@ -24,6 +24,7 @@ SNAPSHOT_KEYS = {
     "tiles_known",
     "tiles_unknown",
     "terrain_home",
+    "terrain_revealed",
 }
 
 
