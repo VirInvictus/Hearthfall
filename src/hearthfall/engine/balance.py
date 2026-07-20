@@ -1,0 +1,99 @@
+"""Every tuning constant, in one file.
+
+Balance is an empirical question answered by playing, not by reasoning. Keeping the numbers
+here means a balance pass is one diff and one review, instead of a hunt through the rules.
+Nothing in here is sacred; all of it is a first guess aimed at the Phase 0 question, which
+is whether the allocate-and-survive loop is tolerable for thirty minutes.
+
+Rules live in `turn.py`. Numbers live here. Do not inline a constant into a rule.
+"""
+
+from __future__ import annotations
+
+from hearthfall.engine.state import Season
+from hearthfall.engine.world import Terrain
+
+# --- The run ---------------------------------------------------------------------------
+
+TURNS_PER_RUN = 20  # five winters
+STARTING_ADULTS = 6
+STARTING_CHILDREN = 2
+STARTING_FOOD = 30
+STARTING_MORALE = 6
+
+MORALE_MIN = 0
+MORALE_MAX = 10
+
+# --- Food ------------------------------------------------------------------------------
+
+# Food a single forager brings in per turn, by season. Winter is not merely lean: it is the
+# season where hands cannot solve the problem, which is what makes the autumn stockpile a
+# decision rather than a formality.
+FORAGE_YIELD: dict[Season, int] = {
+    Season.SPRING: 3,
+    Season.SUMMER: 4,
+    Season.AUTUMN: 5,
+    Season.WINTER: 1,
+}
+
+FOOD_PER_ADULT = 2
+FOOD_PER_CHILD = 1
+
+# --- Spoilage --------------------------------------------------------------------------
+
+# Fraction of surviving stores lost per turn before tending. Summer rots, winter preserves.
+# This is what stops a stockpile from being a number that only goes up.
+SPOIL_RATE: dict[Season, float] = {
+    Season.SPRING: 0.10,
+    Season.SUMMER: 0.15,
+    Season.AUTUMN: 0.08,
+    Season.WINTER: 0.04,
+}
+
+# Each tender removes this much spoilage fraction, down to SPOIL_RATE_FLOOR. Tending can
+# never fully defeat rot; three tenders on a summer store is a real dent, not a solution.
+SPOIL_REDUCTION_PER_TENDER = 0.03
+SPOIL_RATE_FLOOR = 0.02
+
+# --- Starvation ------------------------------------------------------------------------
+
+# One death per this much unmet food demand, rounded up. Children die first: it is the
+# grimdark reading and the mechanically correct one, since adults are what keep the hearth
+# fed and losing them first would make every shortfall terminal.
+FOOD_PER_STARVATION_DEATH = 3
+MORALE_LOSS_PER_STARVATION = 2
+MORALE_LOSS_PER_DEATH = 1
+
+# --- Population ------------------------------------------------------------------------
+
+CHILD_MATURES_AFTER = 4  # turns, so a child born in spring works the following spring
+
+# A birth needs surplus in the store and morale above the line. Both gates matter: a
+# well-fed miserable clan does not grow, and neither does a happy starving one.
+BIRTH_FOOD_THRESHOLD = 40
+BIRTH_MORALE_THRESHOLD = 6
+BIRTH_CHANCE = 0.35
+
+# --- Morale ----------------------------------------------------------------------------
+
+# Morale drifts toward this value when nothing pushes it. Without the drift, a single bad
+# winter permanently flattens the clan and every later event lands on the floor.
+MORALE_DRIFT_TARGET = 5
+
+# --- World -----------------------------------------------------------------------------
+
+MAP_WIDTH = 5
+MAP_HEIGHT = 5
+
+# Explorers needed to reveal one tile. Fewer than this reveals nothing, which is what makes
+# an explore assignment a commitment rather than a spare-hand default.
+EXPLORERS_PER_REVEAL = 2
+
+# Terrain draw weights at generation. Water is rare and, in Phase 0, purely scenery.
+TERRAIN_WEIGHTS: dict[Terrain, int] = {
+    Terrain.PLAIN: 8,
+    Terrain.FOREST: 6,
+    Terrain.HILLS: 4,
+    Terrain.MARSH: 3,
+    Terrain.WATER: 2,
+}

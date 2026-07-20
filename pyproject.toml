@@ -22,3 +22,8 @@ hearthfall = "hearthfall.tui.app:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hearthfall"]
+
+[tool.pyright]
+# The package lives under src/ and tests run with PYTHONPATH=src, so the language server
+# needs telling where to look or every intra-package import reads as unresolved.
+extraPaths = ["src"]
