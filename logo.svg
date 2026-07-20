@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Hearthfall logo">
+  <rect width="128" height="128" rx="24" fill="#181616"/>
+  <!-- the fog: everything past the firelight is unscouted -->
+  <path d="M18 34h20M50 34h16M78 34h32M18 22h30M60 22h22M94 22h16"
+        stroke="#54546d" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <!-- the hearth: stacked stones -->
+  <path d="M30 100h68" stroke="#c5c9c5" stroke-width="6" stroke-linecap="round"/>
+  <path d="M38 88h22M68 88h22M52 76h24" stroke="#a6a69c" stroke-width="6" stroke-linecap="round"/>
+  <!-- the fire -->
+  <path d="M64 66c-9-8-4-18 0-24 4 8 14 10 12 20-1 6-6 10-12 4z"
+        fill="#c4746e"/>
+  <path d="M64 62c-4-4-2-9 0-12 2 4 7 5 6 10-1 3-3 5-6 2z"
+        fill="#c0a36e"/>
+</svg>
