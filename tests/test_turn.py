@@ -467,3 +467,80 @@ class TestNewGame(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestForecast(unittest.TestCase):
+    """The forecast has one job: agree with what resolution actually does.
+
+    It duplicates the food math rather than sharing code with the mutating steps, so these
+    tests are the thing that keeps the two from drifting apart. If someone retunes a
+    constant or reorders the tick and only fixes one side, this fails.
+    """
+
+    def _cases(self):
+        for turn_number in range(4):  # one of each season
+            for food in (0, 7, 40, 100):
+                for adults, children in ((6, []), (3, [1, 2]), (1, [4])):
+                    for orders in (
+                        Orders(),
+                        Orders(forage=1),
+                        Orders(tend=1),
+                        Orders(forage=2, tend=1),
+                    ):
+                        if orders.assigned > adults:
+                            continue
+                        yield turn_number, food, adults, children, orders
+
+    def test_forecast_matches_resolution(self):
+        for turn_number, food, adults, children, orders in self._cases():
+            with self.subTest(
+                turn=turn_number, food=food, adults=adults, orders=orders
+            ):
+                projected = turn.forecast(
+                    a_state(
+                        adults=adults,
+                        children=list(children),
+                        food=food,
+                        turn_number=turn_number,
+                    ),
+                    orders,
+                )
+                report = turn.resolve(
+                    a_state(
+                        adults=adults,
+                        children=list(children),
+                        food=food,
+                        turn_number=turn_number,
+                    ),
+                    orders,
+                    Rng(1),
+                )
+                self.assertEqual(projected.produced, report.produced)
+                self.assertEqual(projected.eaten, report.consumed)
+                self.assertEqual(projected.shortfall, report.shortfall)
+                self.assertEqual(projected.would_starve, report.starved)
+                self.assertEqual(projected.spoiled, report.spoiled)
+
+    def test_forecast_does_not_mutate(self):
+        state = a_state(food=50, adults=6)
+        before = (state.stores.food, state.population.adults, state.turn)
+        turn.forecast(state, Orders(forage=3, tend=2))
+        self.assertEqual(
+            (state.stores.food, state.population.adults, state.turn), before
+        )
+
+    def test_closing_food_is_opening_plus_net(self):
+        f = turn.forecast(a_state(food=60), Orders(forage=4))
+        self.assertEqual(f.closing_food, f.opening_food + f.net)
+
+    def test_winter_foraging_cannot_help(self):
+        winter = turn.forecast(a_state(turn_number=3, food=40), Orders(forage=6))
+        idle = turn.forecast(a_state(turn_number=3, food=40), Orders())
+        self.assertEqual(winter.produced, 0)
+        self.assertEqual(winter.closing_food, idle.closing_food)
+
+    def test_tending_reduces_spoilage_to_a_floor(self):
+        light = turn.forecast(a_state(turn_number=1, food=100), Orders(tend=1))
+        heavy = turn.forecast(a_state(turn_number=1, food=100), Orders(tend=6))
+        self.assertLess(heavy.spoiled, light.spoiled)
+        self.assertGreaterEqual(heavy.spoil_rate, balance.SPOIL_RATE_FLOOR)

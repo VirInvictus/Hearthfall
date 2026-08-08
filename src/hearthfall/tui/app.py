@@ -25,7 +25,13 @@ from hearthfall import VERSION
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
 from hearthfall.engine.rng import Rng
-from hearthfall.engine.state import GameState, Orders, Outcome, PendingChoice
+from hearthfall.engine.state import (
+    GameState,
+    Orders,
+    Outcome,
+    PendingChoice,
+    Season,
+)
 from hearthfall.engine.world import Terrain
 
 # ASCII where it can be, so nothing depends on a font being installed. The fog block is the
@@ -122,11 +128,14 @@ class Hearthfall(App[None]):
     CSS = """
     Screen { background: #181616; color: #c5c9c5; }
     #main { height: 1fr; }
-    #left { width: 46; }
+    #left { width: 52; }
     #status { padding: 1 2; background: #1d1c19; }
     #map { padding: 1 2; height: auto; }
     #spacer { height: 1fr; }
     #allocation { padding: 1 2; height: auto; background: #1d1c19; }
+    /* The ledger sits directly under the allocation because it is the allocation
+       answered: the numbers move as you assign. */
+    #ledger { padding: 1 2; height: auto; background: #1d1c19; border-top: solid #2d2b28; }
 
     /* Textual's stock button variants are a different palette's blue. */
     Button { background: #2d2b28; color: #c5c9c5; border: none; height: 3; }
@@ -134,7 +143,9 @@ class Hearthfall(App[None]):
     Button:focus { text-style: bold; }
     #commit { color: #c0a36e; text-style: bold; }
     #commit:disabled { color: #625e5a; }
-    #chronicle { width: 1fr; padding: 1 2; border-left: solid #2d2b28; }
+    /* max-width keeps prose readable: on a wide terminal an unbounded RichLog
+       stretches event text to a line length nobody can track back from. */
+    #chronicle { width: 1fr; max-width: 100; padding: 1 2; border-left: solid #2d2b28; }
     * {
         scrollbar-background: #1d1c19;
         scrollbar-color: #2d2b28;
@@ -208,6 +219,7 @@ class Hearthfall(App[None]):
                         id="hint",
                     )
                     yield Button("Resolve the season", id="commit")
+                yield Static(id="ledger")
             yield RichLog(id="chronicle", wrap=True, markup=True)
         yield Footer()
 
@@ -265,7 +277,53 @@ class Hearthfall(App[None]):
             if idle
             else "Every hand assigned."
         )
+        self.query_one("#ledger", Static).update(self.render_ledger())
         self.query_one("#commit", Button).disabled = state.is_over
+
+    def render_ledger(self) -> Text:
+        """The season's food ledger for the current allocation.
+
+        Every number here comes from `turn.forecast`; this method only lays them out. It
+        exists because the allocation was previously a guess: you committed three foragers
+        and found out afterwards whether that fed anyone. Seeing the arithmetic move as you
+        assign is what turns the allocation into a decision you can reason about.
+        """
+        if self.state.is_over:
+            return Text("The run is over.", "#625e5a")
+
+        f = turn.forecast(
+            self.state,
+            Orders(
+                forage=self.counts["forage"],
+                explore=self.counts["explore"],
+                tend=self.counts["tend"],
+            ),
+        )
+
+        def row(label: str, value: int, style: str) -> None:
+            ledger.append(f"  {label:<20}", "#625e5a")
+            ledger.append(f"{value:>+5}\n", style)
+
+        ledger = Text()
+        ledger.append("This season\n", "bold #c0a36e")
+        row("Foragers bring", f.produced, "#8a9a7b" if f.produced else "#625e5a")
+        row(f"{self.state.population.total} mouths eat", -f.eaten, "#c4746e")
+        row("Rot in the store", -f.spoiled, "#c4746e" if f.spoiled else "#625e5a")
+
+        ledger.append("  " + "─" * 25 + "\n", "#2d2b28")
+        # The store reads as a transition rather than a total, because what the player is
+        # deciding is which direction the pile moves, not what it happens to be.
+        ledger.append("  Store  ", "#625e5a")
+        ledger.append(f"{f.opening_food}", "#625e5a")
+        ledger.append(" → ", "#625e5a")
+        ledger.append(f"{f.closing_food}", "bold")
+        ledger.append(f"  ({f.net:+})\n", "#8a9a7b" if f.net >= 0 else "#c4746e")
+
+        if f.would_starve:
+            ledger.append(f"\n  {f.would_starve} would starve.\n", "bold #c4746e")
+        elif f.season is Season.WINTER:
+            ledger.append("\n  Nothing grows in winter.\n", "#8992a7")
+        return ledger
 
     def render_map(self) -> str:
         world = self.state.world

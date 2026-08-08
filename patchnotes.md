@@ -1,5 +1,35 @@
 # Patch notes
 
+## v0.1.1 (2026-08-08)
+
+The allocation stops being a guess.
+
+- **A season ledger sits under the allocation and moves as you assign.** Foragers
+  bring, mouths eat, rot takes, and the store goes from one number to another with
+  the net beside it. Until now you committed three foragers and found out
+  afterwards whether that fed anyone, which made the central decision of the game
+  something you could only learn by losing.
+- **`turn.forecast` is the engine half.** It projects the food ledger for a set of
+  orders while mutating nothing. The skin is forbidden from computing numbers (if
+  a number is on screen, the engine produced it), so showing the consequence of an
+  allocation required the engine to be able to say it.
+- **It stops at spoilage on purpose.** Everything later in the tick (exploration,
+  the event draw, births) consumes the RNG, and a forecast that guessed at those
+  would be lying about the one thing a forecast is for. What it reports is
+  certain; what it omits is genuinely unknowable.
+- The projection duplicates the food math rather than sharing code with the
+  mutating resolution steps, because coupling them would mean either making
+  resolution non-mutating or making the forecast run against a throwaway copy of
+  the world. `TestForecast` asserts the two agree across every season, store
+  level, and household shape, so a retuned constant or a reordered tick fails the
+  suite instead of quietly desynchronising the display. Suite 148 to 153 tests.
+- The chronicle gained a maximum width. On a wide terminal an unbounded log
+  stretched event prose to a line length nobody can track back from.
+
+This is groundwork for Phase 1 rather than Phase 1 itself. Spoilage tuning and the
+winter draw-down are both decisions the player cannot weigh while the numbers are
+invisible, so the ledger comes first.
+
 ## v0.1.0 (2026-07-20)
 
 Phase 0 ships. The game is playable start to finish: allocate a finite clan across

@@ -37,6 +37,19 @@ does with winter.
 - [ ] Seasons that bite: winter draw-down balanced survivable but never safe
 - [ ] Spoilage tuned so stockpiling is a decision rather than a ratchet
 - [ ] Morale as a real pressure, not a display number
+- [x] **The season ledger (v0.1.1).** `turn.forecast` projects the food ledger
+      for a set of orders without mutating anything, and the skin renders it
+      under the allocation so the arithmetic moves as you assign. Before this,
+      allocation was a guess: you committed three foragers and learned
+      afterwards whether that fed anyone. Prerequisite for tuning spoilage and
+      the winter draw-down, because neither is a decision the player can weigh
+      while the numbers are invisible.
+      Forecast stops at spoilage deliberately: everything later in the tick
+      consumes the RNG, and a forecast that guessed at the event draw would be
+      lying about the one thing a forecast is for. It duplicates the food math
+      rather than sharing code with the mutating steps, and `TestForecast`
+      asserts the two agree across every season, store level, and household
+      shape, so drift is caught rather than designed out.
 - [ ] Close the gap left open in Phase 0: once a player finds the winter insight the run is
       nearly safe (190 in 200). The seasonal read should be the first lesson, not the last
       one; Phase 1's pressures need to give a canny player something new to lose.

@@ -56,6 +56,91 @@ class TurnReport:
         self.log.append(line)
 
 
+@dataclass(frozen=True)
+class Forecast:
+    """What this season's allocation would do to the store, before luck gets a vote.
+
+    The frontend is not allowed to compute numbers, so a player who wants to see the
+    consequence of an allocation before committing to it needs the engine to say. This is
+    that answer: the deterministic prefix of `resolve`, run without touching state.
+
+    It stops at spoilage on purpose. Everything after that in the tick (exploration, the
+    event draw, births) consumes the RNG, and a forecast that guessed at those would be
+    lying about the one thing a forecast is for. `certain` is the honest boundary.
+    """
+
+    season: Season
+    produced: int
+    demand: int
+    eaten: int
+    shortfall: int
+    would_starve: int
+    spoil_rate: float
+    spoiled: int
+    opening_food: int
+    closing_food: int
+
+    @property
+    def net(self) -> int:
+        """Change in the store across the season. Negative means the pile is shrinking."""
+        return self.closing_food - self.opening_food
+
+
+def forecast(state: GameState, orders: Orders) -> Forecast:
+    """Project this turn's food ledger for `orders`, mutating nothing.
+
+    Mirrors `_produce`, `_consume`, `_starve`, and `_spoil` in that order, because the
+    order is what determines the numbers (this turn's foraging feeds this turn's mouths;
+    rot lands on what is left rather than on what someone was about to eat).
+
+    The duplication with those functions is deliberate and thin: they mutate, this does
+    not, and coupling them would mean either making resolution non-mutating or making the
+    forecast run a throwaway copy of the world. `test_turn` asserts the two agree, so drift
+    is caught rather than designed out.
+    """
+    season = state.season
+    population = state.population
+
+    produced = orders.forage * balance.FORAGE_YIELD[season]
+    opening = state.stores.food
+    after_produce = opening + produced
+
+    winter_extra = balance.WINTER_EXTRA_FOOD if season is Season.WINTER else 0
+    demand = population.adults * (
+        balance.FOOD_PER_ADULT + winter_extra
+    ) + population.child_count * (balance.FOOD_PER_CHILD + winter_extra)
+    eaten = min(demand, after_produce)
+    shortfall = demand - eaten
+    would_starve = (
+        min(
+            math.ceil(shortfall / balance.FOOD_PER_STARVATION_DEATH),
+            population.total,
+        )
+        if shortfall
+        else 0
+    )
+
+    after_eat = after_produce - eaten
+    rate = max(
+        balance.SPOIL_RATE_FLOOR,
+        balance.SPOIL_RATE[season] - orders.tend * balance.SPOIL_REDUCTION_PER_TENDER,
+    )
+    spoiled = int(after_eat * rate)
+
+    return Forecast(
+        season=season,
+        produced=produced,
+        demand=demand,
+        eaten=eaten,
+        shortfall=shortfall,
+        would_starve=would_starve,
+        spoil_rate=rate,
+        spoiled=spoiled,
+        opening_food=opening,
+        closing_food=after_eat - spoiled,
+    )
+
+
 def new_game(seed: int) -> GameState:
     """A fresh run. Everything downstream of this is a function of the seed."""
     rng = Rng(seed)
