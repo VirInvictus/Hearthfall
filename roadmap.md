@@ -43,22 +43,60 @@ the answer to it. Do not try to fix it by making winter harsher.
 
 ---
 
-## Sub-project 1: the fact ledger (planned). HOLDS THE KILL SWITCH
+## Sub-project 1: the fact ledger (in progress). HOLDS THE KILL SWITCH
 
 *Question: does paying to look pull the player forward?*
 
-- [ ] `engine/intel.py`: facts with a value, a staleness, and a price to refresh
-- [ ] Tile fog migrated to be intel's first client, not a parallel system
-- [ ] Scouts as a distinct role, better at reveal, with a real opportunity cost
-- [ ] Larger generated map, terrain-gated resources, terrain-keyed event tables
-- [ ] Exploration returns readable reports rather than a single revealed tile
-- [ ] Facts that visibly age in the UI, so "we are guessing" is legible before it bites
-- [ ] Event corpus grown toward 80
+Built in slices, each green before the next starts.
 
-**This slice holds the kill switch, and it is the cheapest place to hold it.** It is the first
-time a scout goes out, a report comes back, and the report changes what you do next. If the
-fog does not pull here, the central premise is wrong. Council drama, combat depth, and a
+- [x] **Slice 1: the ledger (2026-08-08).** `engine/intel.py` with `Fact`, `FactKind`,
+      `Staleness`, and `Ledger`. Fog migrated off `Tile.revealed` entirely; `World` is pure
+      geography and a test asserts its knowledge API stays gone, so a second source of truth
+      cannot quietly return. Half-lives are injected rather than imported, because `balance`
+      imports `state` and `state` owns a `Ledger`. Fact keys namespace places apart from
+      names (`terrain@1,2` vs `presence#stonefold`) so sub-project 4 can add neighbours
+      without reshaping keys. No gameplay change. 169 tests.
+- [ ] **Slice 2: known ground is workable ground.** See the finding below. Terrain gains a
+      forage bonus and a forager capacity; foraging draws on tiles the clan has actually
+      walked. `_produce` and `forecast` must both change, and `TestForecast` is what keeps
+      them agreeing.
+- [ ] **Slice 3: scouts as a gradient.** Replace the `EXPLORERS_PER_REVEAL` cliff. Two learn
+      the terrain, three also learn what can be foraged there, four also learn what lives
+      there. Turns a threshold into a slope.
+- [ ] **Slice 4: reports.** Scouts return the facts they learned, rendered as prose.
+- [ ] **Slice 5: staleness that bites.** `PRESENCE` facts age visibly and an old fact should
+      be able to mislead. Adds the first staleness keys to `snapshot()`.
+- [ ] **Slice 6: corpus toward 80**, terrain-keyed.
+
+Deferred within this sub-project, deliberately: a larger map. It is a balance change on top
+of a balance change, and slice 2 already moves every food constant. Do it once slice 2's
+numbers have settled, not alongside them.
+
+> **The finding that reframes this sub-project (2026-08-08).** Exploring is currently almost
+> mechanically pointless. `FORAGE_YIELD` is keyed on season alone, so a known tile feeds
+> nothing but the event table, and the kill-switch question can only answer *no* because
+> looking does not pay. That is a missing mechanic, not a tuning problem.
+>
+> The fix is slice 2: **ground you have walked is ground you can work.** Each known tile
+> carries a forage bonus by terrain and supports a number of foragers; foragers beyond the
+> capacity the clan has revealed bring back nothing. Exploration then raises the economic
+> ceiling, and the cost of scouting is repaid in what the clan can eat next year. That is
+> `spec.md` §1 expressed in food, and it is the smallest change that makes the kill-switch
+> question answerable at all.
+>
+> Expect this to break the balance hard, and expect to re-measure. The Phase 0 figure to beat
+> is the 190-in-200 endurance of a season-reading policy; `tests/test_playthrough.py` already
+> has the harness for measuring it.
+
+**This sub-project holds the kill switch, and it is the cheapest place to hold it.** It is the
+first time a scout goes out, a report comes back, and the report changes what you do next. If
+the fog does not pull here, the central premise is wrong. Council drama, combat depth, and a
 grand-strategy endgame will not retrofit a reason to explore. Stop.
+
+**Open naming question, not yet decided:** `Orders.explore` versus `Orders.scout`. The spec
+and every design conversation say "scout"; the code says "explore". Left alone during slice 1
+to avoid churn in a commit that was already touching ten files. Worth settling before slice 4
+writes reports in the scouts' voice.
 
 ## Sub-project 2: households (planned)
 
