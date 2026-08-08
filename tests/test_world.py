@@ -1,4 +1,9 @@
-"""The map, the fog, and the frontier."""
+"""The map: terrain generation and geometry.
+
+Fog, the frontier, and reveal used to live here. They moved to `test_intel.py` when knowledge
+became a property of a fact rather than of a tile (`spec.md` §1). What is left is the part of
+the world that is true whether or not anybody has looked at it.
+"""
 
 from __future__ import annotations
 
@@ -33,12 +38,6 @@ class TestGeneration(unittest.TestCase):
         world = a_world(width=4, height=6)
         self.assertEqual(len(world.tiles), 24)
 
-    def test_only_the_home_tile_starts_revealed(self):
-        world = a_world()
-        self.assertEqual(world.revealed(), [world.home])
-        self.assertEqual(world.known_count, 1)
-        self.assertEqual(world.unknown_count, 24)
-
     def test_the_hearth_stands_on_liveable_ground(self):
         # Whatever the terrain draw said, home is never marsh or water.
         for seed in range(20):
@@ -47,6 +46,17 @@ class TestGeneration(unittest.TestCase):
 
     def test_home_is_the_centre(self):
         self.assertEqual(a_world(width=5, height=5).home, (2, 2))
+
+    def test_the_world_holds_no_opinion_about_what_is_known(self):
+        # The whole point of the migration: geography carries no knowledge. If a `revealed`
+        # flag ever comes back here, there are two answers to "do we know this ground".
+        world = a_world()
+        self.assertFalse(hasattr(world.tile(world.home), "revealed"))
+        for attribute in ("reveal", "frontier", "revealed", "known_count"):
+            self.assertFalse(
+                hasattr(world, attribute),
+                f"World.{attribute} belongs to the ledger now",
+            )
 
 
 class TestNeighbours(unittest.TestCase):
@@ -63,37 +73,12 @@ class TestNeighbours(unittest.TestCase):
         for coord in [(0, 0), (2, 2), (4, 4), (1, 3)]:
             self.assertEqual(world.neighbours(coord), sorted(world.neighbours(coord)))
 
-
-class TestFrontier(unittest.TestCase):
-    def test_the_frontier_starts_around_the_hearth(self):
-        world = a_world()
-        self.assertEqual(world.frontier(), [(1, 2), (2, 1), (2, 3), (3, 2)])
-
-    def test_revealing_pushes_the_frontier_outward(self):
-        world = a_world()
-        world.reveal((2, 1))
-        self.assertIn((2, 0), world.frontier())
-        self.assertNotIn((2, 1), world.frontier())
-
-    def test_the_frontier_never_includes_a_known_tile(self):
-        world = a_world()
-        world.reveal((2, 1))
-        world.reveal((2, 3))
-        for coord in world.frontier():
-            self.assertFalse(world.tile(coord).revealed)
-
-    def test_a_fully_revealed_map_has_no_frontier(self):
+    def test_in_bounds(self):
         world = a_world(width=3, height=3)
-        for coord in list(world.tiles):
-            world.reveal(coord)
-        self.assertEqual(world.frontier(), [])
-        self.assertTrue(world.fully_explored)
-
-    def test_counts_track_reveals(self):
-        world = a_world()
-        world.reveal((2, 1))
-        self.assertEqual(world.known_count, 2)
-        self.assertEqual(world.unknown_count, 23)
+        self.assertTrue(world.in_bounds((0, 0)))
+        self.assertTrue(world.in_bounds((2, 2)))
+        self.assertFalse(world.in_bounds((3, 0)))
+        self.assertFalse(world.in_bounds((-1, 0)))
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ import unittest
 
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import Event
+from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     ChoiceOption,
@@ -35,9 +36,16 @@ def a_state(
     turn_number: int = 0,
     seed: int = 1,
 ) -> GameState:
+    world = World.generate(5, 5, Rng(seed), WEIGHTS)
+    # Mirrors `turn.new_game`: the clan starts knowing the ground under its own feet and
+    # nothing else. Building the ledger here rather than letting it default keeps the
+    # half-lives explicit in the fixture.
+    ledger = Ledger(halflives=balance.FACT_HALFLIFE)
+    ledger.reveal(world, world.home, turn=0)
     return GameState(
         seed=seed,
-        world=World.generate(5, 5, Rng(seed), WEIGHTS),
+        world=world,
+        ledger=ledger,
         population=Population(
             adults=adults, children=list(children or []), morale=morale
         ),
@@ -163,7 +171,7 @@ class TestExploration(unittest.TestCase):
             state, Orders(explore=balance.EXPLORERS_PER_REVEAL - 1), Rng(1)
         )
         self.assertIsNone(report.revealed)
-        self.assertEqual(state.world.known_count, 1)
+        self.assertEqual(state.ledger.known_count, 1)
 
     def test_enough_explorers_reveal_a_frontier_tile(self):
         state = a_state()
@@ -171,12 +179,12 @@ class TestExploration(unittest.TestCase):
             state, Orders(explore=balance.EXPLORERS_PER_REVEAL), Rng(1)
         )
         self.assertIsNotNone(report.revealed)
-        self.assertEqual(state.world.known_count, 2)
-        self.assertTrue(state.world.tile(report.revealed).revealed)
+        self.assertEqual(state.ledger.known_count, 2)
+        self.assertTrue(state.ledger.knows(FactKind.TERRAIN, report.revealed))
 
     def test_a_named_target_is_honoured(self):
         state = a_state()
-        target = state.world.frontier()[0]
+        target = state.ledger.frontier(state.world)[0]
         report = turn.resolve(state, Orders(explore=2, explore_target=target), Rng(1))
         self.assertEqual(report.revealed, target)
 
@@ -195,7 +203,7 @@ class TestExploration(unittest.TestCase):
     def test_exploring_a_finished_map_is_survivable(self):
         state = a_state()
         for coord in list(state.world.tiles):
-            state.world.reveal(coord)
+            state.ledger.reveal(state.world, coord, state.turn)
         report = turn.resolve(state, Orders(explore=4), Rng(1))
         self.assertIsNone(report.revealed)
 

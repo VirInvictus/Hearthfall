@@ -24,6 +24,7 @@ from textual.widgets import Button, Footer, Label, RichLog, Static
 from hearthfall import VERSION
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
+from hearthfall.engine.intel import FactKind
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     GameState,
@@ -110,7 +111,7 @@ class EndScreen(ModalScreen[bool]):
         return (
             f"Seed {state.seed}. {state.turn} seasons, year {state.year}.\n"
             f"{state.population.total} left standing, {state.stores.food} food in the store, "
-            f"{state.world.known_count} of {len(state.world.tiles)} tiles known."
+            f"{state.ledger.known_count} of {len(state.world.tiles)} tiles known."
         )
 
     @on(Button.Pressed, "#again")
@@ -327,6 +328,7 @@ class Hearthfall(App[None]):
 
     def render_map(self) -> str:
         world = self.state.world
+        ledger = self.state.ledger
         target = self.explore_target()
         lines = []
         for y in range(world.height):
@@ -336,7 +338,7 @@ class Hearthfall(App[None]):
                 tile = world.tile(coord)
                 if coord == world.home:
                     cells.append(f"[bold #c4746e]{HEARTH}[/]")
-                elif tile.revealed:
+                elif ledger.knows(FactKind.TERRAIN, coord):
                     cells.append(f"[{COLOURS[tile.terrain]}]{GLYPHS[tile.terrain]}[/]")
                 elif coord == target:
                     cells.append("[bold #c0a36e]?[/]")
@@ -356,7 +358,7 @@ class Hearthfall(App[None]):
         return "\n".join(lines) + f"\n\n{legend}\n{scouting}"
 
     def explore_target(self) -> tuple[int, int] | None:
-        frontier = self.state.world.frontier()
+        frontier = self.state.ledger.frontier(self.state.world)
         if not frontier:
             return None
         return frontier[self.target_index % len(frontier)]

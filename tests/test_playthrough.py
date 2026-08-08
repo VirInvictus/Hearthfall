@@ -29,7 +29,9 @@ def steady_orders(state) -> Orders:
     """
     adults = state.population.adults
     explore = (
-        balance.EXPLORERS_PER_REVEAL if adults >= 5 and state.world.frontier() else 0
+        balance.EXPLORERS_PER_REVEAL
+        if adults >= 5 and state.ledger.frontier(state.world)
+        else 0
     )
     tend = 1 if adults - explore >= 3 else 0
     return Orders(forage=adults - explore - tend, explore=explore, tend=tend)
@@ -67,7 +69,7 @@ def play(seed: int, choice: int = 0) -> Transcript:
         turns=state.turn,
         survivors=state.population.total,
         food=state.stores.food,
-        tiles_known=state.world.known_count,
+        tiles_known=state.ledger.known_count,
         events=events,
         lines=lines,
     )
@@ -83,7 +85,7 @@ def winter_scout_orders(state) -> Orders:
     winter = state.season is Season.WINTER
     explore = (
         balance.EXPLORERS_PER_REVEAL
-        if winter and adults >= 3 and state.world.frontier()
+        if winter and adults >= 3 and state.ledger.frontier(state.world)
         else 0
     )
     tend = 1 if adults - explore >= 2 else 0
@@ -107,7 +109,7 @@ def play_with(seed: int, policy, choice: int = 0) -> Transcript:
         turns=state.turn,
         survivors=state.population.total,
         food=state.stores.food,
-        tiles_known=state.world.known_count,
+        tiles_known=state.ledger.known_count,
         events=events,
         lines=[],
     )

@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from hearthfall.engine import balance
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event
+from hearthfall.engine.intel import Ledger
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     Effect,
@@ -150,9 +151,14 @@ def new_game(seed: int) -> GameState:
         rng=rng,
         weights=balance.TERRAIN_WEIGHTS,
     )
+    # The clan knows the ground it is standing on and nothing else. Revealing home is a fact
+    # about the clan, which is why it happens here and not inside World.generate.
+    ledger = Ledger(halflives=balance.FACT_HALFLIFE)
+    ledger.reveal(world, world.home, turn=0)
     return GameState(
         seed=seed,
         world=world,
+        ledger=ledger,
         population=Population(
             adults=balance.STARTING_ADULTS,
             children=[balance.CHILD_MATURES_AFTER] * balance.STARTING_CHILDREN,
@@ -303,7 +309,7 @@ def _explore(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> 
             report.note("Too few went out to find anything worth the walk.")
         return
 
-    frontier = state.world.frontier()
+    frontier = state.ledger.frontier(state.world)
     if not frontier:
         report.note("There is nothing left within reach to walk into.")
         return
@@ -314,7 +320,10 @@ def _explore(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> 
     elif target not in frontier:
         raise ValueError(f"{target} is not on the frontier; it cannot be explored into")
 
-    tile = state.world.reveal(target)
+    # Learned this turn, before _advance ticks the clock, so the fact is stamped with the
+    # season the scouts actually walked it.
+    state.ledger.reveal(state.world, target, state.turn)
+    tile = state.world.tile(target)
     state.last_revealed = tile.terrain
     report.revealed = target
     report.revealed_terrain = tile.terrain

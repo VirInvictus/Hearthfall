@@ -10,6 +10,7 @@ Rules live in `turn.py`. Numbers live here. Do not inline a constant into a rule
 
 from __future__ import annotations
 
+from hearthfall.engine.intel import FactKind
 from hearthfall.engine.state import Season
 from hearthfall.engine.world import Terrain
 
@@ -101,4 +102,19 @@ TERRAIN_WEIGHTS: dict[Terrain, int] = {
     Terrain.HILLS: 4,
     Terrain.MARSH: 3,
     Terrain.WATER: 2,
+}
+
+# --- Intel -------------------------------------------------------------------------------
+
+# Seasons a fact stays trustworthy. Past one half-life it reads as aging, past two as stale.
+# None means it never rots.
+#
+# Terrain is None because ground does not move, which is what lets the old boolean fog keep
+# working underneath the ledger. Presence is deliberately shorter than a year: a band seen
+# last spring tells you almost nothing this spring, and that decay is the pressure that makes
+# scouting a standing cost rather than a thing you finish.
+FACT_HALFLIFE: dict[FactKind, int | None] = {
+    FactKind.TERRAIN: None,
+    FactKind.FORAGE: 8,
+    FactKind.PRESENCE: 2,
 }

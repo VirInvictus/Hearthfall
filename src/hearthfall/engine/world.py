@@ -1,11 +1,12 @@
-"""The map: tiles, terrain, and fog.
+"""The map: tiles, terrain, and geometry. Nothing about what the player knows.
 
-In Phase 0 terrain is flavor and an event key. It gates no resources and no yields; that is
-Phase 2's job. What matters here is that the fog exists, that revealing costs hands, and
-that reveal order is reproducible from a seed.
+Knowledge used to live here as `Tile.revealed`. It moved to `intel.py` when the spine was
+generalised (`spec.md` §1): fog is a property of a fact, not of a tile, and keeping a second
+copy of it here would have meant two answers to "do we know this ground" that had to be kept
+agreeing. The world is now just what is true; the ledger is what the clan believes.
 
-Sizes and weights arrive as arguments rather than being read from `balance`, which keeps
-this module a leaf and the import graph acyclic.
+Sizes and weights arrive as arguments rather than being read from `balance`, which keeps this
+module a leaf and the import graph acyclic.
 """
 
 from __future__ import annotations
@@ -29,7 +30,6 @@ class Terrain(StrEnum):
 @dataclass
 class Tile:
     terrain: Terrain
-    revealed: bool = False
 
 
 @dataclass
@@ -47,10 +47,11 @@ class World:
         rng: Rng,
         weights: dict[Terrain, int],
     ) -> World:
-        """Build a fogged map with the home tile revealed at the centre.
+        """Build a map. Every tile exists and every tile is unknown to anybody.
 
         Coordinates are walked in sorted order so the same seed lays down the same terrain
-        regardless of how a dict happens to iterate.
+        regardless of how a dict happens to iterate. Revealing the home tile is the caller's
+        job now; it is a fact about the clan, not about the ground.
         """
         home = (width // 2, height // 2)
         table = [(terrain, weight) for terrain, weight in weights.items()]
@@ -60,7 +61,7 @@ class World:
             for x in range(width)
         }
         # The hearth stands on ground you can live on, whatever the draw said.
-        tiles[home] = Tile(terrain=Terrain.PLAIN, revealed=True)
+        tiles[home] = Tile(terrain=Terrain.PLAIN)
         return cls(width=width, height=height, home=home, tiles=tiles)
 
     def tile(self, coord: Coord) -> Tile:
@@ -75,37 +76,3 @@ class World:
         x, y = coord
         candidates = [(x, y - 1), (x - 1, y), (x + 1, y), (x, y + 1)]
         return sorted(c for c in candidates if self.in_bounds(c))
-
-    def revealed(self) -> list[Coord]:
-        return sorted(coord for coord, tile in self.tiles.items() if tile.revealed)
-
-    def frontier(self) -> list[Coord]:
-        """Unrevealed tiles orthogonally adjacent to something known.
-
-        This is the set the player may explore into: the map opens outward from the hearth
-        rather than letting anyone poke at a far corner.
-        """
-        edge = {
-            neighbour
-            for coord in self.revealed()
-            for neighbour in self.neighbours(coord)
-            if not self.tiles[neighbour].revealed
-        }
-        return sorted(edge)
-
-    def reveal(self, coord: Coord) -> Tile:
-        tile = self.tiles[coord]
-        tile.revealed = True
-        return tile
-
-    @property
-    def known_count(self) -> int:
-        return sum(1 for tile in self.tiles.values() if tile.revealed)
-
-    @property
-    def unknown_count(self) -> int:
-        return len(self.tiles) - self.known_count
-
-    @property
-    def fully_explored(self) -> bool:
-        return not self.frontier()

@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from hearthfall.engine.intel import Ledger
 from hearthfall.engine.world import Coord, Terrain, World
 
 
@@ -119,6 +120,9 @@ class Orders:
 class GameState:
     seed: int
     world: World
+    # What is true and what the clan believes are two objects on purpose; the gap between
+    # them is the game (`spec.md` §1).
+    ledger: Ledger
     population: Population
     stores: Stores
     turn: int = 0
@@ -157,8 +161,8 @@ class GameState:
             "people": self.population.total,
             "food": self.stores.food,
             "morale": self.population.morale,
-            "tiles_known": self.world.known_count,
-            "tiles_unknown": self.world.unknown_count,
+            "tiles_known": self.ledger.known_count,
+            "tiles_unknown": self.ledger.unknown_count(self.world),
             "terrain_home": str(self.world.tile(self.world.home).terrain),
             "terrain_revealed": str(self.last_revealed)
             if self.last_revealed
