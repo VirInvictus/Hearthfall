@@ -27,17 +27,19 @@ class Terrain(StrEnum):
     WATER = "water"
 
 
-@dataclass
+@dataclass(slots=True)
 class Tile:
     terrain: Terrain
 
 
-@dataclass
+@dataclass(slots=True)
 class World:
     width: int
     height: int
     home: Coord
-    tiles: dict[Coord, Tile] = field(default_factory=dict)
+    # The parameterised factory is not decoration: a bare `dict` makes the field's element
+    # types unknown to a strict checker, and that unknown then spreads to every caller.
+    tiles: dict[Coord, Tile] = field(default_factory=dict[Coord, Tile])
 
     @classmethod
     def generate(

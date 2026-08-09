@@ -30,7 +30,7 @@ from hearthfall.engine.state import (
 from hearthfall.engine.world import Coord, Terrain, World
 
 
-@dataclass
+@dataclass(slots=True)
 class TurnReport:
     """What happened, in numbers the caller can render and in lines it can print.
 
@@ -49,7 +49,7 @@ class TurnReport:
     revealed: Coord | None = None
     revealed_terrain: Terrain | None = None
     event_id: str | None = None
-    log: list[str] = field(default_factory=list)
+    log: list[str] = field(default_factory=list[str])
     pending: PendingChoice | None = None
     outcome: Outcome | None = None
 
@@ -57,7 +57,7 @@ class TurnReport:
         self.log.append(line)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Forecast:
     """What this season's allocation would do to the store, before luck gets a vote.
 

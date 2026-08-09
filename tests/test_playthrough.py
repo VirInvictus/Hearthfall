@@ -13,6 +13,8 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass
 
+from support import not_none
+
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
 from hearthfall.engine.rng import Rng
@@ -118,7 +120,7 @@ def play_with(seed: int, policy, choice: int = 0) -> Transcript:
 def summarise(seeds: range = range(50)) -> dict[Outcome, int]:
     tally: dict[Outcome, int] = {Outcome.ENDURED: 0, Outcome.BURIED: 0}
     for seed in seeds:
-        tally[play(seed).outcome] += 1
+        tally[not_none(play(seed).outcome)] += 1
     return tally
 
 

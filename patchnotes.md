@@ -1,5 +1,33 @@
 # Patch notes
 
+## v0.1.2 (2026-08-09)
+
+No gameplay change. The language question got asked properly and the answer got enforced.
+
+- **Python is confirmed as the language, on the record, against Rust.** `spec.md` §8 carries
+  the reasoning: a full playthrough measures ~0.5 ms, so neither gameplay performance nor
+  balance-sweep throughput is a constraint, and the risk this project actually carries is a
+  corpus that never gets written. Re-opening it was legitimate rather than second-guessing,
+  because the port is cheapest now and gets dearer every sub-project.
+- **What Rust would have bought is bought directly instead.** Pyright runs in strict mode over
+  `engine/` and gates the whole tree in CI, at **0 errors**. Every engine dataclass is
+  `slots=True`, frozen where it is a value type, which closes off accidental attribute
+  aliasing on the mutable state graph.
+- **The TOML boundary in `events/loader.py` is now typed end to end.** It was the source of 37
+  of the 53 strict findings, all of them `Unknown` leaking out of `tomllib` and spreading into
+  every validation rule. Two narrowing helpers confine the casts to one place, so the parse
+  rules read as being about content again. This is the highest-value half of the change: the
+  loader is where malformed content meets the engine, and its entire job is catching it.
+- **Fixed a silent local/CI split.** CI pinned `ruff==0.15.20` while a newer local ruff had
+  widened its default rule set, so `ruff check` failed on a tree CI called clean (two findings
+  predating this work). `ruff` and `pyright` are now dependency-group entries resolved through
+  the committed lockfile, so local and CI run the same binaries by construction.
+- `hypothesis` and `textual-dev` added as dev-only dependencies. Neither is imported by the
+  engine, the skin, or the shipped wheel; the engine remains dependency-free, and
+  `test_architecture` still enforces it.
+- `tests/support.py` adds `not_none` and `an_int`, because `assertIsNotNone` does not narrow a
+  type and `snapshot()` values are deliberately `int | str`.
+
 ## v0.1.1 (2026-08-08)
 
 The allocation stops being a guess.

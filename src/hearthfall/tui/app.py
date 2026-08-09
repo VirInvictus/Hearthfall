@@ -13,10 +13,12 @@ from __future__ import annotations
 import argparse
 import random
 import sys
+from typing import ClassVar
 
 from rich.text import Text
 from textual import on
 from textual.app import App, ComposeResult
+from textual.binding import BindingType
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Label, RichLog, Static
@@ -175,7 +177,7 @@ class Hearthfall(App[None]):
     .option { width: 100%; height: auto; text-align: left; content-align: left middle; margin-bottom: 1; }
     """
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[BindingType]] = [
         ("f", "assign('forage', 1)", "Forage"),
         ("F", "assign('forage', -1)", ""),
         ("e", "assign('explore', 1)", "Explore"),

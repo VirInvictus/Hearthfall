@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import unittest
 
+from support import not_none
+
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import (
     Event,
@@ -206,8 +208,8 @@ class TestDraw(unittest.TestCase):
     def test_the_same_seed_draws_the_same_event(self):
         corpus = [Event(id=str(index), title="T", body="B") for index in range(10)]
         self.assertEqual(
-            table.draw(corpus, REFERENCE, Rng(3)).id,
-            table.draw(corpus, REFERENCE, Rng(3)).id,
+            not_none(table.draw(corpus, REFERENCE, Rng(3))).id,
+            not_none(table.draw(corpus, REFERENCE, Rng(3))).id,
         )
 
     def test_weight_biases_the_draw(self):
@@ -216,7 +218,7 @@ class TestDraw(unittest.TestCase):
             Event(id="common", title="T", body="B", weight=19),
         ]
         rng = Rng(2026)
-        drawn = [table.draw(corpus, REFERENCE, rng).id for _ in range(500)]
+        drawn = [not_none(table.draw(corpus, REFERENCE, rng)).id for _ in range(500)]
         self.assertGreater(drawn.count("common"), drawn.count("rare") * 5)
 
 

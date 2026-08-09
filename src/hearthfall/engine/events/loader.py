@@ -14,8 +14,9 @@ from __future__ import annotations
 
 import tomllib
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import resources
+from typing import cast
 
 from hearthfall.engine.events.conditions import Condition, Snapshot, parse_all
 from hearthfall.engine.state import ChoiceOption, Effect
@@ -34,7 +35,19 @@ class EventError(ValueError):
     """Malformed content. Always names the source and the event it came from."""
 
 
-@dataclass(frozen=True)
+# `tomllib` always produces str-keyed tables, but a `dict` narrowed from `object` reads as
+# `dict[Unknown, Unknown]` to a strict type checker, and that unknown then leaks into every
+# rule below. These two do the narrowing once so the parse rules stay about content rather
+# than about types. The casts are safe by the TOML grammar: keys are strings, always.
+def _as_table(value: object) -> dict[str, object] | None:
+    return cast("dict[str, object]", value) if isinstance(value, dict) else None
+
+
+def _as_array(value: object) -> list[object] | None:
+    return cast("list[object]", value) if isinstance(value, list) else None
+
+
+@dataclass(frozen=True, slots=True)
 class Event:
     id: str
     title: str
@@ -43,7 +56,7 @@ class Event:
     once: bool = False
     when: tuple[Condition, ...] = ()
     options: tuple[ChoiceOption, ...] = ()
-    effect: Effect = Effect()
+    effect: Effect = field(default_factory=Effect)
 
     @property
     def has_choices(self) -> bool:
@@ -84,7 +97,7 @@ def parse_corpus(documents: Mapping[str, str], reference: Snapshot) -> list[Even
 
 def parse_document(text: str, source: str, reference: Snapshot) -> list[Event]:
     try:
-        document = tomllib.loads(text)
+        document: dict[str, object] = tomllib.loads(text)
     except tomllib.TOMLDecodeError as error:
         raise EventError(f"{source}: not valid TOML: {error}") from error
 
@@ -92,52 +105,56 @@ def parse_document(text: str, source: str, reference: Snapshot) -> list[Event]:
     if unknown:
         raise EventError(f"{source}: unknown top-level key(s) {sorted(unknown)}")
 
-    raw_events = document.get("event", [])
-    if not isinstance(raw_events, list):
+    raw_events = _as_array(document.get("event", []))
+    if raw_events is None:
         raise EventError(f"{source}: [[event]] must be an array of tables")
 
     return [_parse_event(raw, source, reference) for raw in raw_events]
 
 
 def _parse_event(raw: object, source: str, reference: Snapshot) -> Event:
-    if not isinstance(raw, dict):
+    table = _as_table(raw)
+    if table is None:
         raise EventError(f"{source}: each event must be a table")
 
-    identifier = raw.get("id")
+    identifier = table.get("id")
     if not isinstance(identifier, str) or not identifier:
         raise EventError(f"{source}: an event is missing a non-empty string id")
 
     where = f"{source}: event {identifier!r}"
 
-    unknown = set(raw) - EVENT_KEYS
+    unknown = set(table) - EVENT_KEYS
     if unknown:
         raise EventError(f"{where} has unknown key(s) {sorted(unknown)}")
 
-    title = _require_text(raw, "title", where)
-    body = _require_text(raw, "body", where)
+    title = _require_text(table, "title", where)
+    body = _require_text(table, "body", where)
 
-    weight = raw.get("weight", 1)
+    weight = table.get("weight", 1)
     if not isinstance(weight, int) or isinstance(weight, bool) or weight < 1:
         raise EventError(
             f"{where} has weight {weight!r}; it must be an integer above zero"
         )
 
-    once = raw.get("once", False)
+    once = table.get("once", False)
     if not isinstance(once, bool):
         raise EventError(f"{where} has once = {once!r}; it must be true or false")
 
-    when = raw.get("when", [])
-    if not isinstance(when, list) or not all(
-        isinstance(clause, str) for clause in when
-    ):
+    raw_when = _as_array(table.get("when", []))
+    if raw_when is None:
         raise EventError(f"{where} has a `when` that is not a list of strings")
+    when: list[str] = []
+    for clause in raw_when:
+        if not isinstance(clause, str):
+            raise EventError(f"{where} has a `when` that is not a list of strings")
+        when.append(clause)
     try:
         conditions = parse_all(when, reference)
     except ValueError as error:
         raise EventError(f"{where}: {error}") from error
 
-    has_choice = "choice" in raw
-    has_effect = "effect" in raw
+    has_choice = "choice" in table
+    has_effect = "effect" in table
     if has_choice and has_effect:
         raise EventError(
             f"{where} has both choices and a top-level effect; "
@@ -152,7 +169,7 @@ def _parse_event(raw: object, source: str, reference: Snapshot) -> Event:
             weight=weight,
             once=once,
             when=conditions,
-            options=_parse_choices(raw["choice"], where),
+            options=_parse_choices(table["choice"], where),
         )
 
     return Event(
@@ -162,18 +179,20 @@ def _parse_event(raw: object, source: str, reference: Snapshot) -> Event:
         weight=weight,
         once=once,
         when=conditions,
-        effect=_parse_effect(raw.get("effect", {}), where),
+        effect=_parse_effect(table.get("effect", {}), where),
     )
 
 
 def _parse_choices(raw: object, where: str) -> tuple[ChoiceOption, ...]:
-    if not isinstance(raw, list) or not raw:
+    array = _as_array(raw)
+    if array is None or not array:
         raise EventError(f"{where} has an empty or malformed [[event.choice]] array")
 
     options: list[ChoiceOption] = []
-    for index, choice in enumerate(raw):
+    for index, entry in enumerate(array):
         label = f"{where}, choice {index}"
-        if not isinstance(choice, dict):
+        choice = _as_table(entry)
+        if choice is None:
             raise EventError(f"{label} is not a table")
 
         unknown = set(choice) - CHOICE_KEYS
@@ -191,23 +210,29 @@ def _parse_choices(raw: object, where: str) -> tuple[ChoiceOption, ...]:
 
 
 def _parse_effect(raw: object, where: str) -> Effect:
-    if not isinstance(raw, dict):
+    table = _as_table(raw)
+    if table is None:
         raise EventError(f"{where} has an effect that is not a table")
 
-    unknown = set(raw) - EFFECT_KEYS
+    unknown = set(table) - EFFECT_KEYS
     if unknown:
         known = ", ".join(sorted(EFFECT_KEYS))
         raise EventError(
             f"{where} has unknown effect key(s) {sorted(unknown)}; known: {known}"
         )
 
-    for key, value in raw.items():
+    # Validating and collecting in one pass, so what reaches Effect is already int-typed.
+    # `bool` is excluded explicitly because it is an int subclass, and `food = true` should
+    # be a content error rather than a silent 1.
+    deltas: dict[str, int] = {}
+    for key, value in table.items():
         if not isinstance(value, int) or isinstance(value, bool):
             raise EventError(
                 f"{where} has effect {key} = {value!r}; it must be an integer"
             )
+        deltas[key] = value
 
-    return Effect(**raw)
+    return Effect(**deltas)
 
 
 def _require_text(raw: dict[str, object], key: str, where: str) -> str:

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import unittest
 
+from support import an_int
+
 from hearthfall.engine import turn
 from hearthfall.engine.state import Orders, Population, Season
 
@@ -38,20 +40,24 @@ class TestSnapshot(unittest.TestCase):
 
     def test_people_is_adults_plus_children(self):
         snapshot = turn.new_game(1).snapshot()
-        self.assertEqual(snapshot["people"], snapshot["adults"] + snapshot["children"])
+        self.assertEqual(
+            snapshot["people"],
+            an_int(snapshot["adults"]) + an_int(snapshot["children"]),
+        )
 
     def test_tile_counts_cover_the_whole_map(self):
         state = turn.new_game(1)
         snapshot = state.snapshot()
         self.assertEqual(
-            snapshot["tiles_known"] + snapshot["tiles_unknown"], len(state.world.tiles)
+            an_int(snapshot["tiles_known"]) + an_int(snapshot["tiles_unknown"]),
+            len(state.world.tiles),
         )
 
     def test_the_snapshot_tracks_the_state(self):
         state = turn.new_game(1)
         before = state.snapshot()
         state.stores.food += 7
-        self.assertEqual(state.snapshot()["food"], before["food"] + 7)
+        self.assertEqual(state.snapshot()["food"], an_int(before["food"]) + 7)
 
 
 class TestTheCalendar(unittest.TestCase):

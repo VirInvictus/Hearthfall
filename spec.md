@@ -261,12 +261,43 @@ amount of council drama or combat depth retrofits a reason to explore. Stop ther
 
 - **Language: Python.** 90% data and logic. Balance iteration velocity dominates. Not C. Not
   yet, maybe not ever.
+
+  **Re-opened and confirmed 2026-08-09**, against Rust specifically, on the grounds that the
+  game is heading somewhere complicated and the port is cheapest now. It stays Python, and
+  the reasoning is worth keeping because the question will come back:
+
+  - *Performance is not in play and structurally cannot be.* A full 20-turn playthrough
+    measures **~0.5 ms**. One tick per season, tens of tiles, hundreds of agents at the
+    ceiling. §9.9 refuses the maneuvering map, which is the one feature that would have made
+    this a compute problem.
+  - *Nor is measurement throughput*, which is the better Rust argument for a game whose thesis
+    is empirical balance. At 0.5 ms a run, 100,000 seeds is under a minute. Even assuming
+    sub-project 8 makes a tick 100× heavier, a 100,000-seed sweep is ~80 minutes serial and
+    seeded runs parallelise perfectly.
+  - *The risk this project actually carries is content*, and Python is what protects it. The
+    corpus is the game; the engine is a weekend. Anything that taxes the
+    write-event, sweep, read-the-numbers loop taxes the thing most likely to kill Hearthfall.
+  - *Textual is a real asset.* §5's chronicle spine, the Ctrl+P palette, and the glyph tiers
+    are weeks of work at ratatui's level of abstraction.
+
+  **What Rust would genuinely have bought is type safety, so buy that directly instead.**
+  Pyright runs in **strict** mode over `engine/` and as a CI gate over the whole tree, and
+  every engine dataclass is `slots=True` (frozen where it is a value). That covers the two
+  real Python hazards here: a new `FactKind` or `Effect` field that some site forgot, and
+  accidental attribute aliasing on the mutable state graph. It does not cover exhaustive
+  matching, which remains the honest gap.
 - **Frontend: Textual.** A fat modern dependency, accepted for velocity, shed-able because the
   engine does not know it exists.
 - **The engine takes no dependencies at all.**
 - **Data: TOML**, read with stdlib `tomllib`.
 - **Determinism: seeded RNG, one source, injectable.** Repeated for weight.
-- **Tests: the engine is tested; the skin is not.**
+- **Tests: the engine is tested; the skin is not.** Stdlib `unittest`, with `hypothesis`
+  available for the invariants that are genuinely properties rather than examples (forecast
+  parity, determinism, no order sequence driving a store negative).
+- **Dev tooling is pinned in the lockfile, not by CI.** `ruff` and `pyright` are dependency-group
+  entries, so `uv run ruff check` locally is the exact binary CI runs. They drifted once, with
+  CI on a ruff whose default rule set was narrower than the developer's, which meant a working
+  tree could fail locally and pass in CI.
 - **The interface spine is the chronicle.** A running saga is the permanent centre; the map,
   the ring, and the households are panes over it. This is the only layout that makes
   unattended seasons readable, and it is native to a terminal in a way it would not be in GTK.

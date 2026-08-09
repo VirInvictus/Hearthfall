@@ -42,6 +42,20 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 - Run tests with `./run_tests.sh` (or
   `PYTHONPATH=src python3 -m unittest discover -s tests`).
 - Tests are stdlib `unittest`, matching the rest of the author's Python projects.
+- **Run the tools through `uv run`.** `ruff` and `pyright` are pinned in the `dev` dependency
+  group and resolved from the committed lockfile, so `uv run ruff check src tests` is exactly
+  what CI runs. A bare `ruff` is whatever is on `PATH` and has disagreed with CI before.
+- **Pyright is strict over `engine/` and gates the whole tree.** The four CI steps are
+  `ruff check`, `ruff format --check`, `pyright src tests`, and the suite. Keep it at zero.
+- Engine dataclasses carry `slots=True`, and `frozen=True` too when they are value types.
+  This is deliberate (`spec.md` §8): it is a chunk of what a stricter language would have
+  given, bought without leaving Python.
+- Two idioms exist to keep strict mode honest rather than to satisfy it. `field(default_factory=list[str])`
+  is parameterised because a bare `list` leaves the element type unknown and that unknown
+  spreads to callers. `tests/support.py` holds `not_none` and `an_int` because
+  `assertIsNotNone` does not narrow a type and `snapshot()` values are deliberately `int | str`.
+- `hypothesis` is available for invariants that are genuinely properties (forecast parity,
+  determinism) rather than examples. It does not replace the example tests.
 
 ## Content
 

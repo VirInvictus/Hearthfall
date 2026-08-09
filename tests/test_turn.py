@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import unittest
 
+from support import not_none
+
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import Event
 from hearthfall.engine.intel import FactKind, Ledger
@@ -180,7 +182,7 @@ class TestExploration(unittest.TestCase):
         )
         self.assertIsNotNone(report.revealed)
         self.assertEqual(state.ledger.known_count, 2)
-        self.assertTrue(state.ledger.knows(FactKind.TERRAIN, report.revealed))
+        self.assertTrue(state.ledger.knows(FactKind.TERRAIN, not_none(report.revealed)))
 
     def test_a_named_target_is_honoured(self):
         state = a_state()
@@ -377,8 +379,8 @@ class TestEventsInATurn(unittest.TestCase):
         report = turn.resolve(state, Orders(), Rng(1), [self.fork()])
         self.assertIsNotNone(report.pending)
         self.assertEqual(report.pending, state.pending)
-        self.assertEqual(report.pending.event_id, "fork")
-        self.assertEqual(len(report.pending.options), 2)
+        self.assertEqual(not_none(report.pending).event_id, "fork")
+        self.assertEqual(len(not_none(report.pending).options), 2)
 
     def test_the_next_turn_is_blocked_until_the_answer_comes(self):
         state = a_state()

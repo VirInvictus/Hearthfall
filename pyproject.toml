@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hearthfall"
-version = "0.1.1"
+version = "0.1.2"
 description = "A grimdark clan-survival game for the terminal"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -20,10 +20,34 @@ dependencies = [
 [project.scripts]
 hearthfall = "hearthfall.tui.app:main"
 
+# Tooling only. None of this is imported by the engine, by the skin, or by the shipped wheel;
+# `hypothesis` is reached for from tests and `textual-dev` is a command-line devtool.
+#
+# ruff and pyright are pinned here rather than installed by CI, and the lockfile is committed,
+# so `uv run ruff check` locally is the exact binary CI runs. They drifted once: CI pinned
+# ruff 0.15.20 while a newer local ruff had widened its default rule set, so `ruff check`
+# failed on a working tree that CI called clean.
+[dependency-groups]
+dev = [
+  "hypothesis>=6.100",
+  "pyright==1.1.411",
+  "ruff==0.16.2",
+  "textual-dev>=1.7",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/hearthfall"]
 
 [tool.pyright]
 # The package lives under src/ and tests run with PYTHONPATH=src, so the language server
 # needs telling where to look or every intra-package import reads as unresolved.
-extraPaths = ["src"]
+extraPaths = ["src", "tests"]
+# Without this the editor's language server resolves the interpreter but not Textual, and
+# every `from textual...` in the skin reads as a missing import.
+venvPath = "."
+venv = ".venv"
+# Strict where the invariants live. The engine is the part that must not drift: it is
+# stdlib-only, it owns determinism, and it is the half that outlives the skin. The Textual
+# skin and the tests sit at the default level, because strict there mostly means annotating
+# around Textual's own generics for no correctness gain.
+strict = ["src/hearthfall/engine"]

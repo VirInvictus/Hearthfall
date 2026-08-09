@@ -34,7 +34,7 @@ class Outcome(StrEnum):
     BURIED = "buried"  # no adults remain
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Effect:
     """A bundle of deltas an event choice applies. Structured, never an expression string.
 
@@ -52,13 +52,13 @@ class Effect:
         return not (self.food or self.morale or self.adults or self.children)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ChoiceOption:
     text: str
     effect: Effect
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PendingChoice:
     """A fired event awaiting the player's answer.
 
@@ -73,11 +73,11 @@ class PendingChoice:
     options: tuple[ChoiceOption, ...]
 
 
-@dataclass
+@dataclass(slots=True)
 class Population:
     adults: int
     # One entry per child, holding the turns remaining until they can be assigned work.
-    children: list[int] = field(default_factory=list)
+    children: list[int] = field(default_factory=list[int])
     morale: int = 5
 
     @property
@@ -89,12 +89,12 @@ class Population:
         return self.adults + self.child_count
 
 
-@dataclass
+@dataclass(slots=True)
 class Stores:
     food: int = 0
 
 
-@dataclass
+@dataclass(slots=True)
 class Orders:
     """One turn's labor allocation. Everything not assigned still eats."""
 
@@ -116,7 +116,7 @@ class Orders:
             )
 
 
-@dataclass
+@dataclass(slots=True)
 class GameState:
     seed: int
     world: World
@@ -132,7 +132,7 @@ class GameState:
     # per turn so that `snapshot()` stays the only seam content reads through.
     last_revealed: Terrain | None = None
     # Ids of events that have fired, so `once = true` entries do not come round again.
-    fired_events: list[str] = field(default_factory=list)
+    fired_events: list[str] = field(default_factory=list[str])
 
     @property
     def season(self) -> Season:

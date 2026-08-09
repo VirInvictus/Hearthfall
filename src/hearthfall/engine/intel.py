@@ -40,7 +40,7 @@ class Staleness(StrEnum):
     NEVER = "never"  # not a degree of trust: we have never looked
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Fact:
     kind: FactKind
     subject: Subject
@@ -61,7 +61,7 @@ def _key(kind: FactKind, subject: Subject) -> str:
     return f"{kind}#{subject}"
 
 
-@dataclass
+@dataclass(slots=True)
 class Ledger:
     """Everything the clan believes, and when it last checked.
 
@@ -70,7 +70,7 @@ class Ledger:
 
     # A None half-life means the fact never goes stale.
     halflives: Mapping[FactKind, int | None]
-    facts: dict[str, Fact] = field(default_factory=dict)
+    facts: dict[str, Fact] = field(default_factory=dict[str, Fact])
 
     # --- Learning and recall ------------------------------------------------------------
 

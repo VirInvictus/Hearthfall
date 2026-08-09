@@ -39,7 +39,7 @@ class ConditionError(ValueError):
     """A condition that cannot be parsed or cannot ever be meaningfully evaluated."""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Condition:
     key: str
     op: str
