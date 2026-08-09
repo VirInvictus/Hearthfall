@@ -25,6 +25,7 @@ SNAPSHOT_KEYS = {
     "morale",
     "tiles_known",
     "tiles_unknown",
+    "tiles_surveyed",
     "forage_capacity",
     "hands_without_ground",
     "households",
@@ -120,10 +121,10 @@ class TestPopulation(unittest.TestCase):
 
 class TestOrders(unittest.TestCase):
     def test_assigned_counts_every_job(self):
-        self.assertEqual(Orders(forage=2, explore=1, tend=3).assigned, 6)
+        self.assertEqual(Orders(forage=2, scout=1, tend=3).assigned, 6)
 
     def test_an_exact_allocation_is_legal(self):
-        Orders(forage=2, explore=1, tend=3).validate(adults=6)
+        Orders(forage=2, scout=1, tend=3).validate(adults=6)
 
     def test_leaving_hands_idle_is_legal(self):
         Orders(forage=1).validate(adults=6)

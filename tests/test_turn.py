@@ -39,11 +39,14 @@ def a_state(
     seed: int = 1,
 ) -> GameState:
     world = World.generate(5, 5, Rng(seed), WEIGHTS)
-    # Mirrors `turn.new_game`: the clan starts knowing the ground under its own feet and
-    # nothing else. Building the ledger here rather than letting it default keeps the
-    # half-lives explicit in the fixture.
+    # Mirrors `turn.new_game`: the clan starts knowing the ground under its own feet, walked
+    # and surveyed both, and nothing else. Building the ledger here rather than letting it
+    # default keeps the half-lives explicit in the fixture.
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
+    ledger.survey(
+        world.home, balance.TERRAIN_CAPACITY[world.tile(world.home).terrain], turn=0
+    )
     return GameState(
         seed=seed,
         world=world,
@@ -194,19 +197,15 @@ class TestSpoilage(unittest.TestCase):
 
 
 class TestExploration(unittest.TestCase):
-    def test_too_few_explorers_reveal_nothing(self):
+    def test_too_few_scouts_reveal_nothing(self):
         state = a_state()
-        report = turn.resolve(
-            state, Orders(explore=balance.EXPLORERS_PER_REVEAL - 1), Rng(1)
-        )
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_WALK - 1), Rng(1))
         self.assertIsNone(report.revealed)
         self.assertEqual(state.ledger.known_count, 1)
 
-    def test_enough_explorers_reveal_a_frontier_tile(self):
+    def test_enough_scouts_reveal_a_frontier_tile(self):
         state = a_state()
-        report = turn.resolve(
-            state, Orders(explore=balance.EXPLORERS_PER_REVEAL), Rng(1)
-        )
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_WALK), Rng(1))
         self.assertIsNotNone(report.revealed)
         self.assertEqual(state.ledger.known_count, 2)
         self.assertTrue(state.ledger.knows(FactKind.TERRAIN, not_none(report.revealed)))
@@ -214,27 +213,117 @@ class TestExploration(unittest.TestCase):
     def test_a_named_target_is_honoured(self):
         state = a_state()
         target = state.ledger.frontier(state.world)[0]
-        report = turn.resolve(state, Orders(explore=2, explore_target=target), Rng(1))
+        report = turn.resolve(state, Orders(scout=2, scout_target=target), Rng(1))
         self.assertEqual(report.revealed, target)
 
     def test_exploring_off_the_frontier_is_refused(self):
         state = a_state()
         with self.assertRaises(ValueError):
-            turn.resolve(state, Orders(explore=2, explore_target=(0, 0)), Rng(1))
+            turn.resolve(state, Orders(scout=2, scout_target=(0, 0)), Rng(1))
 
     def test_an_unnamed_target_is_drawn_reproducibly(self):
         first, second = a_state(), a_state()
         self.assertEqual(
-            turn.resolve(first, Orders(explore=2), Rng(7)).revealed,
-            turn.resolve(second, Orders(explore=2), Rng(7)).revealed,
+            turn.resolve(first, Orders(scout=2), Rng(7)).revealed,
+            turn.resolve(second, Orders(scout=2), Rng(7)).revealed,
         )
 
     def test_exploring_a_finished_map_is_survivable(self):
         state = a_state()
         for coord in list(state.world.tiles):
             state.ledger.reveal(state.world, coord, state.turn)
-        report = turn.resolve(state, Orders(explore=4), Rng(1))
+        report = turn.resolve(state, Orders(scout=4), Rng(1))
         self.assertIsNone(report.revealed)
+
+
+class TestScoutingIsAGradient(unittest.TestCase):
+    """Slice 3: party size decides how well the ground gets known, not whether it does.
+
+    Two walk it and learn what it is. A third stops and looks properly, and the tile becomes
+    ground the clan knows how to work. The cliff at `SCOUTS_TO_WALK` is still there, because a
+    lone scout genuinely cannot cover ground, but past it the return is a slope.
+    """
+
+    def test_a_walking_party_learns_the_terrain_and_no_more(self):
+        state = a_state()
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_WALK), Rng(1))
+        walked = not_none(report.revealed)
+        self.assertTrue(state.ledger.knows(FactKind.TERRAIN, walked))
+        self.assertFalse(state.ledger.knows(FactKind.FORAGE, walked))
+        self.assertIsNone(report.surveyed)
+
+    def test_a_bigger_party_also_surveys_what_it_walked_into(self):
+        state = a_state()
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_SURVEY), Rng(1))
+        self.assertEqual(report.surveyed, report.revealed)
+        self.assertTrue(state.ledger.knows(FactKind.FORAGE, not_none(report.surveyed)))
+
+    def test_a_survey_raises_the_forage_ceiling(self):
+        walking, surveying = a_state(), a_state()
+        target = walking.ledger.frontier(walking.world)[0]
+        turn.resolve(
+            walking, Orders(scout=balance.SCOUTS_TO_WALK, scout_target=target), Rng(1)
+        )
+        turn.resolve(
+            surveying,
+            Orders(scout=balance.SCOUTS_TO_SURVEY, scout_target=target),
+            Rng(1),
+        )
+        self.assertGreater(surveying.forage_capacity, walking.forage_capacity)
+
+    def test_the_party_surveys_the_best_ground_it_knows_of(self):
+        """Not necessarily the tile it just walked into.
+
+        Orders stay scalar and the engine places the work, exactly as it places foragers.
+        A party that walks into thin ground gives the good ground it already knows about the
+        proper look instead, which is what keeps scouting worth doing after the frontier has
+        stopped being interesting.
+        """
+        state = a_state()
+        forest = (state.world.home[0], state.world.home[1] - 1)
+        state.world.tiles[forest].terrain = Terrain.FOREST
+        state.ledger.reveal(state.world, forest, turn=0)  # walked, never surveyed
+        target = next(
+            coord for coord in state.ledger.frontier(state.world) if coord != forest
+        )
+
+        report = turn.resolve(
+            state,
+            Orders(scout=balance.SCOUTS_TO_SURVEY, scout_target=target),
+            Rng(1),
+        )
+        self.assertEqual(report.revealed, target)
+        self.assertEqual(report.surveyed, forest)
+
+    def test_a_survey_that_would_buy_nothing_is_not_made(self):
+        # Nothing left to walk into and nothing left to look harder at. The hands are wasted,
+        # and the report says so rather than quietly re-surveying known ground.
+        state = a_state()
+        for coord in list(state.world.tiles):
+            state.ledger.reveal(state.world, coord, state.turn)
+            state.ledger.survey(
+                coord, balance.TERRAIN_CAPACITY[state.world.tile(coord).terrain], turn=0
+            )
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_SURVEY), Rng(1))
+        self.assertIsNone(report.revealed)
+        self.assertIsNone(report.surveyed)
+
+    def test_surveying_still_pays_once_the_map_is_walked_out(self):
+        """The property that keeps scouting from switching itself off halfway through a run.
+
+        A clan that has walked every tile it can reach has run out of ground to find, but not
+        out of ground to learn.
+        """
+        state = a_state()
+        for coord in list(state.world.tiles):
+            state.ledger.reveal(state.world, coord, state.turn)
+        before = turn.forage_take(
+            state.ledger, foragers=0, season=state.season
+        ).capacity
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_SURVEY), Rng(1))
+        self.assertIsNone(report.revealed)
+        self.assertIsNotNone(report.surveyed)
+        self.assertGreater(state.forage_capacity, before)
 
 
 class TestPopulationGrowth(unittest.TestCase):
@@ -353,7 +442,7 @@ class TestOrders(unittest.TestCase):
     def test_orders_cannot_assign_more_people_than_exist(self):
         state = a_state(adults=3)
         with self.assertRaises(ValueError):
-            turn.resolve(state, Orders(forage=2, explore=2), Rng(1))
+            turn.resolve(state, Orders(forage=2, scout=2), Rng(1))
 
     def test_orders_cannot_be_negative(self):
         state = a_state(adults=3)
@@ -494,7 +583,7 @@ class TestEventsInATurn(unittest.TestCase):
 
     def test_exploring_records_the_terrain_for_content_to_read(self):
         state = a_state()
-        report = turn.resolve(state, Orders(explore=2), Rng(1))
+        report = turn.resolve(state, Orders(scout=2), Rng(1))
         self.assertEqual(
             state.snapshot()["terrain_revealed"], str(report.revealed_terrain)
         )

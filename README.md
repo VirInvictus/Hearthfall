@@ -46,8 +46,11 @@ not scouted yet. Each season you split a finite clan three ways:
 - **Forage** brings in food, scaled by the season *and by the ground you have walked*. Each
   known tile supports only so many foragers; hands beyond that come back with nothing. Winter
   yields nothing anywhere, because there is nothing out there to find.
-- **Explore** reveals a tile of the dark, and costs you the hands that went. It is the only
-  thing that raises the ceiling on how much labour can be spent on food at all.
+- **Scout** costs you the hands that went, and how many went decides what they bring home.
+  Two can cover ground: they walk into the dark and learn what is out there, and the clan can
+  work it thinly. A third means the party can stop and survey somewhere, which is what lifts a
+  tile to the whole crew its terrain will carry. Scouting is the only thing that raises the
+  ceiling on how much labour can be spent on food at all.
 - **Tend** slows the rot in the store, and can never quite stop it.
 
 Then the season resolves, the world asks you something with no clean answer, and you live

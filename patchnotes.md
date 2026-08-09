@@ -1,5 +1,40 @@
 # Patch notes
 
+## v0.6.0 (2026-08-09)
+
+**Scouts became a gradient.** How many you send now decides what they come back with, instead
+of two being the price of a tile and every hand past that being wasted.
+
+- **Two scouts walk.** They go into the dark and learn what the ground is, and the clan can
+  work that ground thinly: one forager, at the tile's full yield.
+- **Three scouts also survey.** The party stops somewhere and works out what the place will
+  actually feed, which lifts that tile to the whole crew its terrain will carry. A forest is
+  worth one hand walked and three surveyed.
+- **Which tile gets surveyed is the engine's call, not a new order.** The party looks at the
+  best ground the clan knows of and has never worked out, usually but not always the tile it
+  just walked into. Orders stay scalar and the engine places the work, exactly as it places
+  foragers. A survey that would raise nothing is not made, and the report says so rather than
+  logging a survey that moved no number.
+
+Measured over 200 seeds, the third scout used to be worth *less* than nothing (5.8 survivors
+against 6.2 for a policy that never sent it). It is now worth 4.9 against 3.1. `WALKED_CAPACITY`
+is the number the whole slice rides on and it was chosen by sweeping it: at 0 a walking party
+is useless (14 runs in 200 endured) and the cliff has merely moved to three scouts; at 2 only a
+forest gains anything from a survey and the gap collapses to 5.2 against 5.6.
+
+**What it does not do is fix the plateau.** Parties still stop going out once the ground is
+ahead of the hands, in the same 5.9 seasons of 20 as before. That was expected: the fix is a
+second thing worth spending people on, which is sub-projects 6 to 8.
+
+**`Orders.explore` is now `Orders.scout`**, settled while the code was already open. The spec
+and every design conversation said scout; only the code said explore. The key binding moves
+from `e` to `s` with it.
+
+Also: the map fades ground that has been walked but never surveyed, and the panel under it
+prices the party before you commit, naming the tile it would survey and the hands that would
+buy. Both rungs are visible before the season is spent, which is the season ledger's idiom
+applied to the fog. Suite 238 to 255 tests.
+
 ## v0.5.1 (2026-08-09)
 
 Six defects found by playing the game rather than by testing it.

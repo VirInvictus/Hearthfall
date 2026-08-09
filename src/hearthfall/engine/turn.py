@@ -59,6 +59,10 @@ class TurnReport:
     households_split: int = 0
     revealed: Coord | None = None
     revealed_terrain: Terrain | None = None
+    # Where a big enough party stopped and worked out what the ground will feed. Separate from
+    # `revealed` because they are two different things the same party can bring home, and
+    # usually but not always the same tile.
+    surveyed: Coord | None = None
     event_id: str | None = None
     log: list[str] = field(default_factory=list[str])
     pending: PendingChoice | None = None
@@ -99,14 +103,15 @@ def forage_take(ledger: Ledger, foragers: int, season: Season) -> ForageTake:
     """
     base = balance.FORAGE_YIELD[season]
 
-    ground: list[tuple[Coord, Terrain]] = []
+    ground: list[tuple[Coord, Terrain, int]] = []
     capacity = 0
     for coord in ledger.revealed():
         terrain = _believed_terrain(ledger, coord)
         if terrain is None:
             continue
-        capacity += balance.TERRAIN_CAPACITY[terrain]
-        ground.append((coord, terrain))
+        tile_capacity = _believed_capacity(ledger, coord, terrain)
+        capacity += tile_capacity
+        ground.append((coord, terrain, tile_capacity))
 
     # Richest ground first. Greedy is optimal here, not merely convenient: a tile's yield per
     # forager does not depend on how many work it, so there is never a reason to pass over
@@ -116,10 +121,10 @@ def forage_take(ledger: Ledger, foragers: int, season: Season) -> ForageTake:
     remaining = max(0, foragers)
     food = 0
     worked: list[tuple[Coord, Terrain, int]] = []
-    for coord, terrain in ground:
+    for coord, terrain, tile_capacity in ground:
         if remaining <= 0:
             break
-        hands = min(remaining, balance.TERRAIN_CAPACITY[terrain])
+        hands = min(remaining, tile_capacity)
         if not hands:
             continue  # dead ground: it must not swallow a hand better ground could use
         remaining -= hands
@@ -135,8 +140,8 @@ def forage_take(ledger: Ledger, foragers: int, season: Season) -> ForageTake:
 def _refresh_ground(state: GameState) -> None:
     """Re-count what the known ground supports, after the ledger has changed.
 
-    Called from `new_game` and after a reveal, which are the only two moments the answer can
-    move. Season is irrelevant to capacity, so any season gives the same count.
+    Called from `new_game`, after a reveal, and after a survey, which are the only moments the
+    answer can move. Season is irrelevant to capacity, so any season gives the same count.
     """
     state.forage_capacity = forage_take(
         state.ledger, foragers=0, season=state.season
@@ -150,6 +155,24 @@ def _per_forager(base: int, terrain: Terrain) -> int:
     without a special case anywhere.
     """
     return base * balance.TERRAIN_FORAGE[terrain] // 10
+
+
+def _believed_capacity(ledger: Ledger, coord: Coord, terrain: Terrain) -> int:
+    """How many hands the clan knows how to use on a tile.
+
+    Slice 3's gradient, in one expression. A surveyed tile is worth what its terrain supports;
+    a tile the scouts only walked past is worth a token crew. The `min` is what stops a survey
+    from making water workable, and it means a marsh survey buys nothing, with no special case
+    for either.
+
+    A surveyed capacity is read back out of the ledger rather than recomputed from the terrain
+    table, because the fact is what the clan believes and slice 5 exists to let that fact age
+    out from under the ground it describes.
+    """
+    surveyed = ledger.value(FactKind.FORAGE, coord)
+    if isinstance(surveyed, int):
+        return max(0, surveyed)
+    return min(balance.WALKED_CAPACITY, balance.TERRAIN_CAPACITY[terrain])
 
 
 def _believed_terrain(ledger: Ledger, coord: Coord) -> Terrain | None:
@@ -279,9 +302,14 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
         weights=balance.TERRAIN_WEIGHTS,
     )
     # The clan knows the ground it is standing on and nothing else. Revealing home is a fact
-    # about the clan, which is why it happens here and not inside World.generate.
+    # about the clan, which is why it happens here and not inside World.generate. Home starts
+    # surveyed as well as walked: whatever else the clan has not looked at, it knows what its
+    # own ground will feed.
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
+    ledger.survey(
+        world.home, balance.TERRAIN_CAPACITY[world.tile(world.home).terrain], turn=0
+    )
     state = GameState(
         seed=seed,
         world=world,
@@ -349,7 +377,7 @@ def resolve(
     _produce(state, orders, season, report)
     _consume(state, orders, report)
     _spoil(state, orders, season, report)
-    _explore(state, orders, rng, report)
+    _scout(state, orders, rng, report)
     _draw_event(state, rng, report, events)
     _grow(state, rng, report)
     _advance(state, report)
@@ -505,22 +533,35 @@ def _spoil(
         report.note(f"{spoiled} food rotted in the store.")
 
 
-def _explore(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> None:
-    if orders.explore < balance.EXPLORERS_PER_REVEAL:
-        if orders.explore:
+def _scout(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> None:
+    """Send a party out. What it comes back with depends on how many went.
+
+    Two can cover ground: they walk into the dark and learn what is there. A third means the
+    party can also stop somewhere and work out what the place will actually feed, which is the
+    only thing that raises the ceiling on foraging. The walk happens first, so the tile just
+    found is a candidate for the same season's survey.
+    """
+    if orders.scout < balance.SCOUTS_TO_WALK:
+        if orders.scout:
             report.note("Too few went out to find anything worth the walk.")
         return
 
+    _walk(state, orders, rng, report)
+    if orders.scout >= balance.SCOUTS_TO_SURVEY:
+        _survey(state, report)
+
+
+def _walk(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> None:
     frontier = state.ledger.frontier(state.world)
     if not frontier:
         report.note("There is nothing left within reach to walk into.")
         return
 
-    target = orders.explore_target
+    target = orders.scout_target
     if target is None:
         target = rng.choice(frontier)
     elif target not in frontier:
-        raise ValueError(f"{target} is not on the frontier; it cannot be explored into")
+        raise ValueError(f"{target} is not on the frontier; it cannot be scouted into")
 
     # Learned this turn, before _advance ticks the clock, so the fact is stamped with the
     # season the scouts actually walked it.
@@ -532,6 +573,81 @@ def _explore(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> 
     report.revealed_terrain = tile.terrain
     report.note(
         f"The scouts came back knowing {tile.terrain} to the {_bearing(state, target)}."
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class SurveyPlan:
+    """Where a big enough party would stop and look, and what it would buy.
+
+    Public because the skin has to be able to show the price of the third scout before the
+    season is committed, and the frontend computes nothing. `_survey` and the allocation panel
+    read the same answer, so what the player is promised is what the turn then does.
+    """
+
+    coord: Coord
+    terrain: Terrain  # believed, not true: it is what the clan is deciding on
+    gain: int  # hands the survey would add to the forage ceiling
+
+
+def survey_plan(state: GameState) -> SurveyPlan | None:
+    """The best ground the clan knows of but has never worked out. None if there is none.
+
+    Which tile that is, is the engine's call rather than an order, exactly as the placement of
+    foragers is: orders stay scalar and the map stays a knowledge surface (`spec.md` §9.9).
+    Candidates are ranked on what the clan *believes* is out there, because a decision to go
+    and look can only be made on belief.
+    """
+    ledger = state.ledger
+    best: SurveyPlan | None = None
+    for coord in ledger.revealed():
+        believed = _believed_terrain(ledger, coord)
+        if believed is None:
+            continue
+        gain = balance.TERRAIN_CAPACITY[believed] - _believed_capacity(
+            ledger, coord, believed
+        )
+        if gain <= 0:
+            continue
+        # Richest ground first when two tiles would gain the same, so a forest gets looked at
+        # before a plain. Season is deliberately not in the ranking: how good a place is does
+        # not depend on when you ask, and in winter every yield is zero and it would collapse.
+        if best is None or (
+            -gain,
+            -balance.TERRAIN_FORAGE[believed],
+            coord,
+        ) < (-best.gain, -balance.TERRAIN_FORAGE[best.terrain], best.coord):
+            best = SurveyPlan(coord=coord, terrain=believed, gain=gain)
+    return best
+
+
+def _survey(state: GameState, report: TurnReport) -> None:
+    """Carry out the plan.
+
+    What the survey *learns* comes from the world even though the plan was made on belief,
+    because looking is how a belief gets corrected.
+
+    A survey that would raise nothing is not made. The scouts are not going to walk out to a
+    marsh to confirm it is still a marsh, and saying so is more honest than logging a survey
+    that moved no number.
+    """
+    ledger = state.ledger
+    plan = survey_plan(state)
+    if plan is None:
+        report.note("The party found nothing else worth a closer look.")
+        return
+
+    coord = plan.coord
+    terrain = state.world.tile(coord).terrain
+    # A survey re-learns the ground as well as measuring it: the party is standing on the
+    # tile, so this is the moment a wrong belief about it gets corrected.
+    ledger.reveal(state.world, coord, state.turn)
+    ledger.survey(coord, balance.TERRAIN_CAPACITY[terrain], state.turn)
+    _refresh_ground(state)
+    report.surveyed = coord
+    report.note(
+        f"They worked out what {_place(state, coord, terrain)} will feed: "
+        f"{balance.TERRAIN_CAPACITY[terrain]} can work it now."
     )
 
 

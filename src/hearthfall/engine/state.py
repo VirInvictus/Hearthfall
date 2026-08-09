@@ -272,19 +272,19 @@ class Orders:
     """One turn's labor allocation. Everything not assigned still eats."""
 
     forage: int = 0
-    explore: int = 0
+    scout: int = 0
     tend: int = 0
-    explore_target: Coord | None = None
+    scout_target: Coord | None = None
     # How a short store gets divided. Only bites when there is not enough to go round, which
     # is what keeps it a decision about scarcity rather than a setting.
     rationing: Rationing = Rationing.EQUAL
 
     @property
     def assigned(self) -> int:
-        return self.forage + self.explore + self.tend
+        return self.forage + self.scout + self.tend
 
     def validate(self, adults: int) -> None:
-        if min(self.forage, self.explore, self.tend) < 0:
+        if min(self.forage, self.scout, self.tend) < 0:
             raise ValueError("orders cannot assign a negative number of people")
         if self.assigned > adults:
             raise ValueError(
@@ -358,6 +358,10 @@ class GameState:
             "households_resentful": self.population.resentful(self.resentful_at),
             "tiles_known": self.ledger.known_count,
             "tiles_unknown": self.ledger.unknown_count(self.world),
+            # Walked and surveyed are two different amounts of knowing (slice 3), so content
+            # can tell a clan that has seen a lot of ground from one that understands any of
+            # it. Never larger than tiles_known: a survey re-walks the tile it looks at.
+            "tiles_surveyed": len(self.ledger.surveyed()),
             # Lets content fire on a clan with more hands than ground, which is the pressure
             # slice 2 introduced and the reason a season starts to feel cramped.
             "forage_capacity": self.forage_capacity,

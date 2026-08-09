@@ -36,13 +36,13 @@ def steady_orders(state) -> Orders:
     Phase 0 numbers were measured against, and re-basing it would throw that comparison away.
     """
     adults = state.population.adults
-    explore = (
-        balance.EXPLORERS_PER_REVEAL
+    scout = (
+        balance.SCOUTS_TO_WALK
         if adults >= 5 and state.ledger.frontier(state.world)
         else 0
     )
-    tend = 1 if adults - explore >= 3 else 0
-    return Orders(forage=adults - explore - tend, explore=explore, tend=tend)
+    tend = 1 if adults - scout >= 3 else 0
+    return Orders(forage=adults - scout - tend, scout=scout, tend=tend)
 
 
 # --- Policies that differ in exactly one thing -------------------------------------------
@@ -66,7 +66,7 @@ def homebody_orders(state) -> Orders:
     return Orders(forage=forage, tend=adults - forage)
 
 
-def explorer_orders(state) -> Orders:
+def scouting_orders(state) -> Orders:
     """Scouts while the map is the binding constraint, forages once it is not.
 
     One insight above the homebody: ground you have walked is ground you can work, so when
@@ -74,34 +74,54 @@ def explorer_orders(state) -> Orders:
     """
     adults = state.population.adults
     capacity = ground_capacity(state)
-    scouting_is_free = capacity <= adults - balance.EXPLORERS_PER_REVEAL
-    explore = (
-        balance.EXPLORERS_PER_REVEAL
+    scouting_is_free = capacity <= adults - balance.SCOUTS_TO_WALK
+    scout = (
+        balance.SCOUTS_TO_WALK
         if scouting_is_free and state.ledger.frontier(state.world)
         else 0
     )
-    forage = min(adults - explore, capacity)
-    return Orders(forage=forage, explore=explore, tend=adults - explore - forage)
+    forage = min(adults - scout, capacity)
+    return Orders(forage=forage, scout=scout, tend=adults - scout - forage)
+
+
+def surveying_orders(state) -> Orders:
+    """`scouting_orders` with one more insight: send the third scout and look properly.
+
+    One rung above `scouting_orders` and identical to it in every other respect, so the gap
+    between the two measures the slice 3 gradient and nothing else. The third hand costs a
+    season's foraging and buys a tile worth its full terrain capacity instead of a token crew.
+    """
+    adults = state.population.adults
+    capacity = ground_capacity(state)
+    scout = (
+        balance.SCOUTS_TO_SURVEY
+        if capacity <= adults - balance.SCOUTS_TO_SURVEY
+        else balance.SCOUTS_TO_WALK
+        if capacity <= adults - balance.SCOUTS_TO_WALK
+        else 0
+    )
+    scout = min(scout, max(0, adults - 1))
+    forage = min(adults - scout, capacity)
+    return Orders(forage=forage, scout=scout, tend=adults - scout - forage)
 
 
 def season_aware_orders(state) -> Orders:
-    """`explorer_orders` plus the winter insight: winter yields nothing, so do not forage it.
+    """`scouting_orders` plus the winter insight: winter yields nothing, so do not forage it.
 
-    The one dimension that separates this from `explorer_orders`. In winter the foraging hands
+    The one dimension that separates this from `scouting_orders`. In winter the foraging hands
     go to tending instead, which is worth real food because winter stores are what the clan
     lives on and rot is the only thing still taking from them.
     """
     if state.season is not Season.WINTER:
-        return explorer_orders(state)
+        return scouting_orders(state)
 
     adults = state.population.adults
-    explore = (
-        balance.EXPLORERS_PER_REVEAL
-        if adults >= balance.EXPLORERS_PER_REVEAL + 1
-        and state.ledger.frontier(state.world)
+    scout = (
+        balance.SCOUTS_TO_WALK
+        if adults >= balance.SCOUTS_TO_WALK + 1 and state.ledger.frontier(state.world)
         else 0
     )
-    return Orders(forage=0, explore=explore, tend=adults - explore)
+    return Orders(forage=0, scout=scout, tend=adults - scout)
 
 
 @dataclass
@@ -111,6 +131,7 @@ class Transcript:
     survivors: int
     food: int
     tiles_known: int
+    tiles_surveyed: int
     events: list[str]
     lines: list[str]
 
@@ -137,6 +158,7 @@ def play(seed: int, choice: int = 0) -> Transcript:
         survivors=state.population.total,
         food=state.stores.food,
         tiles_known=state.ledger.known_count,
+        tiles_surveyed=len(state.ledger.surveyed()),
         events=events,
         lines=lines,
     )
@@ -150,13 +172,13 @@ def winter_scout_orders(state) -> Orders:
     """
     adults = state.population.adults
     winter = state.season is Season.WINTER
-    explore = (
-        balance.EXPLORERS_PER_REVEAL
+    scout = (
+        balance.SCOUTS_TO_WALK
         if winter and adults >= 3 and state.ledger.frontier(state.world)
         else 0
     )
-    tend = 1 if adults - explore >= 2 else 0
-    return Orders(forage=adults - explore - tend, explore=explore, tend=tend)
+    tend = 1 if adults - scout >= 2 else 0
+    return Orders(forage=adults - scout - tend, scout=scout, tend=tend)
 
 
 def play_with(seed: int, policy, choice: int = 0) -> Transcript:
@@ -177,6 +199,7 @@ def play_with(seed: int, policy, choice: int = 0) -> Transcript:
         survivors=state.population.total,
         food=state.stores.food,
         tiles_known=state.ledger.known_count,
+        tiles_surveyed=len(state.ledger.surveyed()),
         events=events,
         lines=[],
     )
@@ -269,7 +292,7 @@ class TestTheCorpusIsAlive(unittest.TestCase):
         for seed in range(60):
             seen.update(play(seed).events)
             seen.update(play_with(seed, homebody_orders).events)
-            seen.update(play_with(seed, explorer_orders).events)
+            seen.update(play_with(seed, scouting_orders).events)
             seen.update(play_with(seed, season_aware_orders).events)
             seen.update(play_with(seed, season_aware_orders, choice=1).events)
         return seen
@@ -315,7 +338,7 @@ class TestAllocationIsADecision(unittest.TestCase):
         # "naive" policy scouted more, so it won, and the test read that as winter not
         # mattering.
         self.assertGreater(
-            people_left(season_aware_orders), people_left(explorer_orders)
+            people_left(season_aware_orders), people_left(scouting_orders)
         )
 
 
@@ -323,7 +346,7 @@ class TestPayingToLookPullsYouForward(unittest.TestCase):
     """Sub-project 1's kill switch, as an assertion rather than a note in the roadmap.
 
     `roadmap.md` says: if the fog does not pull here, the central premise is wrong, and no
-    amount of council drama or combat depth retrofits a reason to explore. Stop.
+    amount of council drama or combat depth retrofits a reason to scout. Stop.
 
     Before slice 2 this could not have been written down. `FORAGE_YIELD` was keyed on season
     alone, so a revealed tile fed nothing but the event table and a scout was a hand thrown
@@ -333,11 +356,11 @@ class TestPayingToLookPullsYouForward(unittest.TestCase):
     """
 
     def test_a_clan_that_scouts_outlives_one_that_stays_home(self):
-        explorer, homebody = endured(explorer_orders), endured(homebody_orders)
+        scouting, homebody = endured(scouting_orders), endured(homebody_orders)
         self.assertGreater(
-            explorer,
+            scouting,
             homebody,
-            f"scouting endured {explorer}/60 against {homebody}/60 for staying home; "
+            f"scouting endured {scouting}/60 against {homebody}/60 for staying home; "
             "paying to look does not pay, which is the premise failing",
         )
 
@@ -345,8 +368,38 @@ class TestPayingToLookPullsYouForward(unittest.TestCase):
         # The sharper form of the same question. Staying home does not usually wipe you out,
         # it grinds you down to two or three people on one tile, which the win condition is
         # generous enough to call surviving. What scouting buys is a clan worth the name.
-        explorer, homebody = people_left(explorer_orders), people_left(homebody_orders)
-        self.assertGreater(explorer, homebody * 2)
+        scouting, homebody = people_left(scouting_orders), people_left(homebody_orders)
+        self.assertGreater(scouting, homebody * 2)
+
+    def test_looking_harder_pays_more_than_looking_wider(self):
+        """Slice 3's own question, and the reason the third scout exists.
+
+        Measured over 200 seeds while the slice was built: a policy that only ever walks ends
+        with 3.1 people, one that surveys with 4.9. Before slice 3 the same third hand was
+        worth *nothing* (5.8 against 6.2, i.e. slightly harmful), because a walked tile and a
+        surveyed one were the same tile. That is the threshold-into-slope, in survivors.
+
+        The value of `WALKED_CAPACITY` is what this rides on and it was picked here: at 0 a
+        walking party is useless (14 runs in 200 endured) and the cliff has merely moved to
+        three scouts; at 2 only a forest gains anything from a survey and the gap collapses to
+        5.2 against 5.6. One is the value that leaves both rungs worth standing on.
+        """
+        surveying, walking = people_left(surveying_orders), people_left(scouting_orders)
+        self.assertGreater(
+            surveying,
+            walking,
+            f"surveying left {surveying} people against {walking} for walking alone; "
+            "the third scout buys nothing and the gradient is flat",
+        )
+
+    def test_a_survey_is_the_only_thing_that_lifts_a_tile_to_its_full_worth(self):
+        # The mechanism behind the outcome above. Walking the same ground with a smaller party
+        # leaves the ceiling where it was, however many tiles get walked.
+        for seed in range(8):
+            with self.subTest(seed=seed):
+                surveying = play_with(seed, surveying_orders)
+                walking = play_with(seed, scouting_orders)
+                self.assertGreater(surveying.tiles_surveyed, walking.tiles_surveyed)
 
     def test_scouting_actually_raises_the_food_ceiling(self):
         # The mechanism behind the outcome, asserted separately so a pass above cannot be
@@ -354,7 +407,7 @@ class TestPayingToLookPullsYouForward(unittest.TestCase):
         for seed in range(12):
             with self.subTest(seed=seed):
                 self.assertGreater(
-                    play_with(seed, explorer_orders).tiles_known,
+                    play_with(seed, scouting_orders).tiles_known,
                     play_with(seed, homebody_orders).tiles_known,
                 )
 

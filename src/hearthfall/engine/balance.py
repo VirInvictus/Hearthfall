@@ -88,11 +88,11 @@ TERRAIN_FORAGE: dict[Terrain, int] = {
     Terrain.WATER: 0,
 }
 
-# How many foragers a single known tile supports. Hands beyond the total capacity of the
-# ground the clan has revealed bring back nothing at all, and that ceiling is the mechanism
-# that makes scouting pay: it is the only thing that raises how much labour can be spent on
-# food. Water supports nobody, so a bad reveal is genuinely bad and exploring stays a gamble
-# rather than becoming a ratchet.
+# How many foragers a single *surveyed* tile supports. Hands beyond the total capacity of the
+# ground the clan knows bring back nothing at all, and that ceiling is the mechanism that
+# makes scouting pay: it is the only thing that raises how much labour can be spent on food.
+# Water supports nobody, so a bad reveal is genuinely bad and scouting stays a gamble rather
+# than becoming a ratchet.
 TERRAIN_CAPACITY: dict[Terrain, int] = {
     Terrain.PLAIN: 2,
     Terrain.FOREST: 3,
@@ -100,6 +100,18 @@ TERRAIN_CAPACITY: dict[Terrain, int] = {
     Terrain.MARSH: 1,
     Terrain.WATER: 0,
 }
+
+# What a tile supports when the clan has walked it but never looked properly. Knowing a
+# forest is there is not the same as knowing where in it the food is, so ground the scouts
+# only passed through takes a token crew at full yield rather than a proper one.
+#
+# This is the number that turns slice 3's threshold into a slope, and it is the whole balance
+# risk of the slice: a walked-only map is roughly half the capacity of the old one. It is 1
+# rather than 0 because a tile that feeds nobody until a second, larger party goes back to it
+# makes year one unsurvivable, and because the clan should be able to eat off ground it has
+# seen. Taken with TERRAIN_CAPACITY it also means a marsh survey buys nothing, which is
+# correct: there is not much in a marsh to find.
+WALKED_CAPACITY = 1
 
 # Extra food every mouth needs in winter. Cold is a cost, not just a lack of yield, and this
 # is what turns winter from a lean season into the one that decides the run.
@@ -170,9 +182,19 @@ MORALE_DRIFT_TARGET = 5
 MAP_WIDTH = 5
 MAP_HEIGHT = 5
 
-# Explorers needed to reveal one tile. Fewer than this reveals nothing, which is what makes
-# an explore assignment a commitment rather than a spare-hand default.
-EXPLORERS_PER_REVEAL = 2
+# Scouts needed to walk one tile of the dark. Fewer than this finds nothing, which is what
+# makes a scouting party a commitment rather than a spare-hand default.
+SCOUTS_TO_WALK = 2
+
+# Scouts needed to also survey a tile: to stop, look properly, and come back knowing how much
+# of the ground the clan can actually work. Slice 3 exists to turn the old single threshold
+# into this slope, so that a party is a question of how much rather than whether.
+#
+# The party surveys the best unsurveyed ground the clan knows of, which is usually but not
+# always the tile it just walked into. That means a scouting party still buys something after
+# the frontier stops being interesting, which is the direct answer to exploration switching
+# itself off partway through a run.
+SCOUTS_TO_SURVEY = 3
 
 # Terrain draw weights at generation. Water is rare and, in Phase 0, purely scenery.
 TERRAIN_WEIGHTS: dict[Terrain, int] = {

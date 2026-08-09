@@ -66,7 +66,7 @@ RATION_WORDS: dict[Rationing, str] = {
 
 JOBS = [
     ("forage", "Forage", "food from the season"),
-    ("explore", "Explore", "reveals a tile of the dark"),
+    ("scout", "Scout", "walks the dark, and surveys what it finds"),
     ("tend", "Tend", "slows the rot in the store"),
 ]
 
@@ -189,8 +189,8 @@ class Hearthfall(App[None]):
     BINDINGS: ClassVar[list[BindingType]] = [
         ("f", "assign('forage', 1)", "Forage"),
         ("F", "assign('forage', -1)", ""),
-        ("e", "assign('explore', 1)", "Explore"),
-        ("E", "assign('explore', -1)", ""),
+        ("s", "assign('scout', 1)", "Scout"),
+        ("S", "assign('scout', -1)", ""),
         ("t", "assign('tend', 1)", "Tend"),
         ("T", "assign('tend', -1)", ""),
         ("w", "cycle_target", "Where to scout"),
@@ -208,7 +208,7 @@ class Hearthfall(App[None]):
     def start(self, seed: int) -> None:
         self.state = turn.new_game(seed)
         self.rng = Rng(seed)
-        self.counts = {"forage": 0, "explore": 0, "tend": 0}
+        self.counts = {"forage": 0, "scout": 0, "tend": 0}
         self.rationing = Rationing.EQUAL
         self.target_index = 0
 
@@ -229,7 +229,7 @@ class Hearthfall(App[None]):
                             yield Static(f" {label}", classes="job")
                     yield Static(id="idle", classes="idle")
                     yield Static(
-                        "[#625e5a]f/e/t to assign · hold shift to take back[/]",
+                        "[#625e5a]f/s/t to assign · hold shift to take back[/]",
                         id="hint",
                     )
                     yield Button("Resolve the season", id="commit")
@@ -344,7 +344,7 @@ class Hearthfall(App[None]):
             self.state,
             Orders(
                 forage=self.counts["forage"],
-                explore=self.counts["explore"],
+                scout=self.counts["scout"],
                 tend=self.counts["tend"],
                 rationing=self.rationing,
             ),
@@ -400,7 +400,7 @@ class Hearthfall(App[None]):
     def render_map(self) -> str:
         world = self.state.world
         ledger = self.state.ledger
-        target = self.explore_target()
+        target = self.scout_target()
         lines = []
         for y in range(world.height):
             cells = []
@@ -410,7 +410,12 @@ class Hearthfall(App[None]):
                 if coord == world.home:
                     cells.append(f"[bold #c4746e]{HEARTH}[/]")
                 elif ledger.knows(FactKind.TERRAIN, coord):
-                    cells.append(f"[{COLOURS[tile.terrain]}]{GLYPHS[tile.terrain]}[/]")
+                    # Dim means walked but never surveyed: the clan knows what is there and
+                    # not what it is worth, which is the difference slice 3 exists to draw.
+                    style = COLOURS[tile.terrain]
+                    if not ledger.knows(FactKind.FORAGE, coord):
+                        style = f"dim {style}"
+                    cells.append(f"[{style}]{GLYPHS[tile.terrain]}[/]")
                 elif coord == target:
                     cells.append("[bold #c0a36e]?[/]")
                 else:
@@ -419,18 +424,41 @@ class Hearthfall(App[None]):
 
         # Two lines on purpose. One line is 58 characters and the panel is 52, so it used to
         # wrap between "%" and "marsh" and read as a layout bug rather than a legend.
+        # Three lines, and each one has to fit 52 columns. A wrapped legend reads as a layout
+        # bug rather than a legend, which is how the second line got split off in the first
+        # place.
         legend = (
             f"[#625e5a]{HEARTH} hearth   . plain   T forest\n"
-            f"^ hills    % marsh   ~ water[/]"
+            f"^ hills    % marsh   ~ water\n"
+            f"[dim]faded: walked, never surveyed[/][/]"
         )
-        scouting = (
-            f"[#c0a36e]Scouts head for {target}.[/]"
-            if target and self.counts["explore"] >= balance.EXPLORERS_PER_REVEAL
-            else "[#625e5a]Nobody is going out.[/]"
-        )
-        return "\n".join(lines) + f"\n\n{legend}\n{scouting}"
+        return "\n".join(lines) + f"\n\n{legend}\n{self.render_party(target)}"
 
-    def explore_target(self) -> tuple[int, int] | None:
+    def render_party(self, target: tuple[int, int] | None) -> str:
+        """What the party the player has assigned would actually come back with.
+
+        Both rungs are priced here rather than left to be discovered, which is the season
+        ledger's idiom applied to the fog: a commitment shows its arithmetic before you make
+        it. The survey half comes from `turn.survey_plan`, the same answer the turn will use,
+        so this cannot promise a tile the resolution then declines to look at.
+        """
+        party = self.counts["scout"]
+        if party < balance.SCOUTS_TO_WALK:
+            return "[#625e5a]Nobody is going out.[/]"
+
+        walk = f"Scouts head for {target}." if target else "Nowhere left to walk."
+        if party < balance.SCOUTS_TO_SURVEY:
+            return f"[#c0a36e]{walk}[/]\n[#625e5a]One more would survey.[/]"
+
+        plan = turn.survey_plan(self.state)
+        if plan is None:
+            return f"[#c0a36e]{walk}[/]\n[#625e5a]Nothing known is worth surveying.[/]"
+        return (
+            f"[#c0a36e]{walk}[/]\n[#c0a36e]They survey the {plan.terrain} "
+            f"at {plan.coord}: +{plan.gain} hands.[/]"
+        )
+
+    def scout_target(self) -> tuple[int, int] | None:
         frontier = self.state.ledger.frontier(self.state.world)
         if not frontier:
             return None
@@ -475,11 +503,11 @@ class Hearthfall(App[None]):
 
         orders = Orders(
             forage=self.counts["forage"],
-            explore=self.counts["explore"],
+            scout=self.counts["scout"],
             tend=self.counts["tend"],
             rationing=self.rationing,
-            explore_target=self.explore_target()
-            if self.counts["explore"] >= balance.EXPLORERS_PER_REVEAL
+            scout_target=self.scout_target()
+            if self.counts["scout"] >= balance.SCOUTS_TO_WALK
             else None,
         )
         report = turn.resolve(self.state, orders, self.rng, self.corpus)
@@ -491,7 +519,7 @@ class Hearthfall(App[None]):
         for line in report.log:
             chronicle.write(f"  {line}")
 
-        self.counts = {"forage": 0, "explore": 0, "tend": 0}
+        self.counts = {"forage": 0, "scout": 0, "tend": 0}
         self.target_index = 0
         self.refresh_view()
 

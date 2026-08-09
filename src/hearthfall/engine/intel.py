@@ -125,6 +125,19 @@ class Ledger:
         """Walk onto a tile and learn what the ground is."""
         self.learn(FactKind.TERRAIN, coord, world.tile(coord).terrain, turn)
 
+    def survey(self, coord: Coord, capacity: int, turn: int) -> None:
+        """Stop on a tile and work out how much of it the clan can actually work.
+
+        The second rung of slice 3's gradient. Walking a tile answers *what* it is; surveying
+        it answers *how many hands it will take*, which is the number the food math is
+        bounded by. The capacity arrives as an argument for the same reason the half-lives
+        do: it comes from `balance`, and `balance` imports `state`, which owns a Ledger.
+
+        Surveying the same ground again is legal and resets the clock, which is what makes it
+        a standing cost rather than a box to tick once a FORAGE fact can go stale.
+        """
+        self.learn(FactKind.FORAGE, coord, capacity, turn)
+
     def revealed(self) -> list[Coord]:
         """Tiles whose terrain we have learned, sorted for determinism.
 
@@ -135,6 +148,14 @@ class Ledger:
             fact.subject
             for fact in self.facts.values()
             if fact.kind is FactKind.TERRAIN and isinstance(fact.subject, tuple)
+        )
+
+    def surveyed(self) -> list[Coord]:
+        """Tiles the clan has looked at properly, sorted for determinism."""
+        return sorted(
+            fact.subject
+            for fact in self.facts.values()
+            if fact.kind is FactKind.FORAGE and isinstance(fact.subject, tuple)
         )
 
     def frontier(self, world: World) -> list[Coord]:

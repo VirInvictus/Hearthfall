@@ -147,9 +147,49 @@ Built in slices, each green before the next starts.
       *Still open, and the reason this is not the plateau fix:* the labour allocation itself is
       unchanged, so gate question 1 is answered by events rather than solved.
 
-- [ ] **Slice 3: scouts as a gradient.** Replace the `EXPLORERS_PER_REVEAL` cliff. Two learn
-      the terrain, three also learn what can be foraged there, four also learn what lives
-      there. Turns a threshold into a slope.
+- [x] **Slice 3: scouts as a gradient (2026-08-09).** Two scouts walk a tile and learn what the
+      ground is; the clan can then work it thinly (`WALKED_CAPACITY`, one hand at the tile's
+      full yield). Three also survey: the party stops somewhere and works out what the place
+      will feed, writing the `FORAGE` fact that lifts a tile to its whole terrain capacity.
+      A forest is worth one hand walked and three surveyed.
+
+      **Which tile is surveyed is the engine's call, not a new order.** The party looks at the
+      best ground the clan knows of but has never worked out, which is usually the tile it just
+      walked into and need not be. Orders stay scalar and the engine places the work, exactly
+      as it places foragers (§9.9). A survey that would raise nothing is not made: marsh and
+      water gain nothing, and the report says the hands were wasted rather than logging a
+      survey that moved no number. Because `FACT_HALFLIFE[FORAGE]` is eight seasons, slice 5
+      will make surveys expire, which is what turns scouting into a standing cost.
+
+      **The third scout was worth less than nothing before this, and now pays.** Over 200
+      seeds a policy that only walks ends with 3.1 people and one that surveys with 4.9; under
+      the old rules the same third hand measured 5.8 against 6.2. `WALKED_CAPACITY` was chosen
+      by sweeping it: at 0 a walking party is useless (14 runs in 200 endure) and the cliff has
+      only moved to three scouts; at 2 nothing but a forest gains from a survey and the gap
+      collapses to 5.2 against 5.6.
+
+      **It does not fix the plateau, and was not expected to.** Parties still stop going out
+      once ground is ahead of hands, in the same 5.9 seasons of 20 as before.
+
+      **Gate verdict: ships.** Read across two full runs.
+      1. *A real decision every season?* **Better early, still no late.** The choice between
+         widening and deepening is now priced on screen before it is made (year 1 autumn, seed
+         3: forage +16, walk +10, survey +5), where previously the third hand bought nothing
+         and there was no trade to weigh. From about year 4 capacity exceeds the adults again
+         and every scouting option is pure loss, which is the plateau and not this slice.
+      2. *Slack to decide with?* **Unchanged.** A competent policy's worst year-one headcount
+         is 6.7 of 8 against 7.0 before the slice. Harsher by a fraction of a person, which is
+         not the disheartening kind.
+      3. *Worth telling someone about?* **A little more.** "They worked out what the forest to
+         the west will feed: 3 can work it now" is a beat, and a wasted third scout now says so
+         out loud. The corpus itself is untouched; that is still slice 6.
+
+      Settled here as well: `Orders.explore` became `Orders.scout` throughout, since the code
+      was already open and slice 4 writes reports in the scouts' voice. Suite 238 → 255.
+
+      *The presence rung is deliberately not built.* Two scouts walk and three survey; a fourth
+      learning what lives on a tile waits for sub-project 4, because nothing lives on the map
+      yet and a tier that costs four adults to write a fact nobody reads is a trap.
 - [ ] **Slice 4: reports.** Scouts return the facts they learned, rendered as prose.
 - [ ] **Slice 5: staleness that bites.** `PRESENCE` facts age visibly and an old fact should
       be able to mislead. Adds the first staleness keys to `snapshot()`.
@@ -185,10 +225,8 @@ first time a scout goes out, a report comes back, and the report changes what yo
 the fog does not pull here, the central premise is wrong. Council drama, combat depth, and a
 grand-strategy endgame will not retrofit a reason to explore. Stop.
 
-**Open naming question, not yet decided:** `Orders.explore` versus `Orders.scout`. The spec
-and every design conversation say "scout"; the code says "explore". Left alone during slice 1
-to avoid churn in a commit that was already touching ten files. Worth settling before slice 4
-writes reports in the scouts' voice.
+**Settled in slice 3:** `Orders.explore` versus `Orders.scout`. It is `scout`, everywhere, and
+the key binding moved from `e` to `s` with it.
 
 ## Sub-project 2: households (in progress)
 
@@ -385,6 +423,4 @@ not quietly built either.
 **Settled without code, for the record:** everything already randomises per new game, including
 the map, terrain, and event order. `main()` and the new-run action both draw a fresh seed.
 
-**Still unsettled:** `Orders.explore` versus `Orders.scout`. Every design conversation says
-scout; the code says explore. Settle it before sub-project 1 slice 4 writes reports in the
-scouts' voice.
+**Settled 2026-08-09, in slice 3:** the order is `Orders.scout`, not `Orders.explore`.

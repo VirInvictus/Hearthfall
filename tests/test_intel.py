@@ -164,6 +164,33 @@ class TestTheMapAsFacts(unittest.TestCase):
         ledger.reveal(world, world.home, turn=0)
         self.assertEqual(ledger.frontier(world), sorted(ledger.frontier(world)))
 
+    def test_surveying_records_what_the_ground_supports(self):
+        world, ledger = a_world(), a_ledger()
+        ledger.reveal(world, world.home, turn=0)
+        ledger.survey(world.home, capacity=3, turn=2)
+        self.assertEqual(ledger.value(FactKind.FORAGE, world.home), 3)
+        self.assertEqual(ledger.surveyed(), [world.home])
+
+    def test_walking_ground_is_not_surveying_it(self):
+        world, ledger = a_world(), a_ledger()
+        ledger.reveal(world, world.home, turn=0)
+        self.assertEqual(ledger.surveyed(), [])
+        self.assertFalse(ledger.knows(FactKind.FORAGE, world.home))
+
+    def test_a_survey_can_be_made_again_and_resets_its_clock(self):
+        # Which is what makes it a standing cost once slice 5 lets a survey go stale.
+        world, ledger = a_world(), a_ledger()
+        ledger.reveal(world, world.home, turn=0)
+        ledger.survey(world.home, capacity=2, turn=0)
+        ledger.survey(world.home, capacity=2, turn=9)
+        self.assertEqual(ledger.age(FactKind.FORAGE, world.home, now=9), 0)
+
+    def test_surveyed_tiles_come_back_sorted(self):
+        ledger = a_ledger()
+        for coord in ((2, 3), (0, 1), (4, 4)):
+            ledger.survey(coord, capacity=1, turn=0)
+        self.assertEqual(ledger.surveyed(), sorted(ledger.surveyed()))
+
     def test_presence_facts_do_not_count_as_map_knowledge(self):
         # Seeing smoke from a distance is not the same as having walked the ground.
         world, ledger = a_world(), a_ledger()

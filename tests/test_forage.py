@@ -24,11 +24,19 @@ AUTUMN = (
 )  # base yield 5, the season with the most room to show a difference
 
 
-def a_ledger(*terrains: Terrain) -> Ledger:
-    """A ledger believing one tile of each terrain given, laid left to right along y=0."""
+def a_ledger(*terrains: Terrain, surveyed: bool = True) -> Ledger:
+    """A ledger believing one tile of each terrain given, laid left to right along y=0.
+
+    Surveyed by default, because most of these tests are about the greedy fill rather than
+    about how well the ground is known, and fully known ground is the case where a tile
+    supports what its terrain says it supports. Pass `surveyed=False` for ground the clan has
+    only walked past.
+    """
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     for x, terrain in enumerate(terrains):
         ledger.learn(FactKind.TERRAIN, (x, 0), terrain, turn=0)
+        if surveyed:
+            ledger.survey((x, 0), balance.TERRAIN_CAPACITY[terrain], turn=0)
     return ledger
 
 
@@ -64,6 +72,54 @@ class TestCapacityIsTheCeiling(unittest.TestCase):
     def test_knowing_nothing_leaves_every_hand_idle(self):
         take = turn.forage_take(a_ledger(), foragers=4, season=AUTUMN)
         self.assertEqual((take.food, take.capacity, take.idle), (0, 0, 4))
+
+
+class TestSurveyedGroundSupportsMore(unittest.TestCase):
+    """Slice 3. Walking a tile and surveying it are two different amounts of knowing.
+
+    A party that walks past a forest learns it is a forest. A party big enough to stop and
+    look learns where the nut trees stand, and only then can the clan put a proper crew on it.
+    The yield one forager takes is a property of the ground and does not change; what changes
+    is how many hands the clan knows how to use there.
+    """
+
+    def test_walked_ground_supports_only_a_token_crew(self):
+        take = turn.forage_take(
+            a_ledger(Terrain.FOREST, surveyed=False), foragers=4, season=AUTUMN
+        )
+        self.assertEqual(take.capacity, balance.WALKED_CAPACITY)
+        self.assertEqual(take.idle, 4 - balance.WALKED_CAPACITY)
+
+    def test_surveying_unlocks_the_terrain_capacity(self):
+        walked = turn.forage_take(
+            a_ledger(Terrain.FOREST, surveyed=False), foragers=4, season=AUTUMN
+        )
+        surveyed = turn.forage_take(a_ledger(Terrain.FOREST), foragers=4, season=AUTUMN)
+        self.assertEqual(surveyed.capacity, balance.TERRAIN_CAPACITY[Terrain.FOREST])
+        self.assertGreater(surveyed.food, walked.food)
+
+    def test_a_forager_takes_the_same_from_ground_however_well_it_is_known(self):
+        walked = turn.forage_take(
+            a_ledger(Terrain.FOREST, surveyed=False), foragers=1, season=AUTUMN
+        )
+        surveyed = turn.forage_take(a_ledger(Terrain.FOREST), foragers=1, season=AUTUMN)
+        self.assertEqual(walked.food, surveyed.food)
+
+    def test_surveying_cannot_make_water_workable(self):
+        # The `min` against the terrain table is what keeps this true with no special case.
+        take = turn.forage_take(
+            a_ledger(Terrain.WATER, surveyed=False), foragers=3, season=AUTUMN
+        )
+        self.assertEqual((take.capacity, take.food), (0, 0))
+
+    def test_a_survey_of_marsh_buys_nothing(self):
+        # Marsh supports one either way, which is why the scouts decline to survey it: the
+        # engine only spends a survey where it raises the ceiling.
+        walked = turn.forage_take(
+            a_ledger(Terrain.MARSH, surveyed=False), foragers=3, season=AUTUMN
+        )
+        surveyed = turn.forage_take(a_ledger(Terrain.MARSH), foragers=3, season=AUTUMN)
+        self.assertEqual(walked.capacity, surveyed.capacity)
 
 
 class TestTheBestGroundIsWorkedFirst(unittest.TestCase):
@@ -147,6 +203,7 @@ class TestItReadsBeliefRatherThanTruth(unittest.TestCase):
     def test_a_tile_the_ledger_believes_is_forest_is_foraged_as_forest(self):
         ledger = Ledger(halflives=balance.FACT_HALFLIFE)
         ledger.learn(FactKind.TERRAIN, (0, 0), Terrain.FOREST, turn=0)
+        ledger.survey((0, 0), balance.TERRAIN_CAPACITY[Terrain.FOREST], turn=0)
         take = turn.forage_take(ledger, foragers=3, season=AUTUMN)
         self.assertEqual(take.food, 3 * per_forager(AUTUMN, Terrain.FOREST))
 
@@ -208,8 +265,8 @@ class TestTheCachedCapacityNeverLies(unittest.TestCase):
             # Scouting whenever the clan can spare two, so the ledger actually grows and the
             # cache is asked to move rather than sitting on its starting value all run.
             adults = state.population.adults
-            explore = 2 if adults >= 3 else 0
-            turn.resolve(state, Orders(forage=adults - explore, explore=explore), rng)
+            scout = 2 if adults >= 3 else 0
+            turn.resolve(state, Orders(forage=adults - scout, scout=scout), rng)
             if state.pending is not None:
                 turn.apply_choice(state, 0)
 

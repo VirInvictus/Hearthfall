@@ -136,8 +136,9 @@ how many seasons resolve before the game stops and asks you something.
   quiet years cost three lines in the chronicle, not twelve screens of clicking.
 
 **A season holds two decisions, not one.** Labour is the first: hands split between foraging,
-scouting, and tending, against a forage ceiling that only new ground can raise. **Rationing is
-the second, and it only exists when the store is short.** Equal shares, the workers first, or
+scouting, and tending, against a forage ceiling that only knowing more ground can raise, by
+walking ground the clan has never seen or by surveying ground it has only walked past.
+**Rationing is the second, and it only exists when the store is short.** Equal shares, the workers first, or
 the children first. It is deliberately absent in a good season, because a question with no
 stakes asked every turn teaches the player to stop reading.
 
@@ -324,7 +325,7 @@ plan. `roadmap.md` holds the detail. The order is load-bearing.
 used to be a map feature scheduled after a content phase. Under this design they are the
 foundation, so the question that can cancel the project gets asked first and cheapest: *does
 paying to look pull the player forward?* If the answer is no, the premise is wrong and no
-amount of council drama or combat depth retrofits a reason to explore. Stop there.
+amount of council drama or combat depth retrofits a reason to scout. Stop there.
 
 **It answered yes** (2026-08-09, sub-project 1 slice 2). Over 200 seeds a clan that never
 scouts ends with 1.4 people, one that scouts ends with 6.5, one that also reads winter ends
