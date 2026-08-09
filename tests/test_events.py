@@ -242,3 +242,40 @@ class TestShippedCorpus(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTheCooldown(unittest.TestCase):
+    """A repeatable event is repeatable across a run, not across consecutive seasons.
+
+    Measured before this existed: every run in a sixty-seed sample replayed at least one event
+    verbatim, and the worst came round an extra forty-nine times across those runs. Reading the
+    same paragraph twice is what makes a corpus feel thin whatever its size.
+    """
+
+    def corpus(self):
+        return [
+            Event(id="a", title="T", body="B"),
+            Event(id="b", title="T", body="B"),
+        ]
+
+    def test_a_recent_event_is_not_drawn_again(self):
+        drawn = table.draw(self.corpus(), REFERENCE, Rng(1), recent=["a"])
+        self.assertEqual(not_none(drawn).id, "b")
+
+    def test_an_event_off_cooldown_can_come_round_again(self):
+        ids = {
+            not_none(table.draw(self.corpus(), REFERENCE, Rng(seed), recent=[])).id
+            for seed in range(20)
+        }
+        self.assertIn("a", ids)
+
+    def test_a_cooldown_covering_everything_leaves_a_quiet_season(self):
+        # Not an error. A turn with nothing eligible is a quiet turn.
+        self.assertIsNone(
+            table.draw(self.corpus(), REFERENCE, Rng(1), recent=["a", "b"])
+        )
+
+    def test_an_empty_cooldown_excludes_nothing(self):
+        # Guards a real trap: `xs[-0:]` is the whole list, so a zero cooldown computed by
+        # slicing would silently mean "never repeat, ever" rather than "no cooldown".
+        self.assertIsNotNone(table.draw(self.corpus(), REFERENCE, Rng(1), recent=()))

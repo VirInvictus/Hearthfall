@@ -134,8 +134,6 @@ MORALE_LOSS_PER_DEATH = 1
 
 CHILD_MATURES_AFTER = 4  # turns, so a child born in spring works the following spring
 
-# A birth needs surplus in the store and morale above the line. Both gates matter: a
-# well-fed miserable clan does not grow, and neither does a happy starving one.
 # A household that is fed, settled, and has two adults in it builds toward a child. The meter
 # is silent, slow, and deterministic: no roll, so growth is something the clan *earns* rather
 # than something that either fires or does not. A player who keeps a hearth fed can watch it
@@ -184,6 +182,18 @@ TERRAIN_WEIGHTS: dict[Terrain, int] = {
     Terrain.MARSH: 3,
     Terrain.WATER: 2,
 }
+
+# Seasons an event must sit out before it can come round again. Zero disables the cooldown.
+#
+# Measured across sixty runs, by how many of them replayed an event verbatim: no cooldown 60,
+# 8 seasons 57, 12 seasons 49, 16 seasons 9. Event density barely moves (89% of seasons carry
+# an event either way), so this buys variety without buying silence.
+#
+# It is set this high because the corpus is small. Twenty seasons drawing from thirty-four
+# events cannot avoid repeating without something like this, and reading the same paragraph
+# twice is what makes a corpus feel thin whatever its size. The real fix is more events, which
+# is what slice 6 is for; lower this as the corpus grows.
+EVENT_COOLDOWN = 16
 
 # --- Intel -------------------------------------------------------------------------------
 

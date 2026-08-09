@@ -138,7 +138,10 @@ class Hearthfall(App[None]):
     CSS = """
     Screen { background: #181616; color: #c5c9c5; }
     #main { height: 1fr; }
-    #left { width: 52; }
+    /* Scrollable as a safety net. The ledger's last two lines are the starvation warning
+       and the rationing prompt, and on a short terminal they were being clipped below the
+       fold, so a player about to lose four people saw only the store going to zero. */
+    #left { width: 52; overflow-y: auto; }
     #status { padding: 1 2; background: #1d1c19; }
     #map { padding: 1 2; height: auto; }
     #spacer { height: 1fr; }
@@ -168,7 +171,6 @@ class Hearthfall(App[None]):
     .step { width: 5; min-width: 5; }
     .count { width: 4; height: 3; content-align: center middle; }
     .job { width: 1fr; height: 3; content-align: left middle; }
-    .idle { color: #c4746e; }
     #commit { width: 100%; margin-top: 1; }
     ModalScreen { align: center middle; background: #181616 70%; }
     #event {
@@ -275,6 +277,8 @@ class Hearthfall(App[None]):
         status.append("Morale ")
         status.append(f"{population.morale}", "bold")
         status.append(f"/{balance.MORALE_MAX}", "#625e5a")
+        status.append("\n")
+        self.append_hearths(status, population)
         self.query_one("#status", Static).update(status)
         self.query_one("#map", Static).update(self.render_map())
 
@@ -285,12 +289,45 @@ class Hearthfall(App[None]):
 
         idle = population.adults - sum(self.counts.values())
         self.query_one("#idle", Static).update(
-            f"{idle} idle, and everyone eats regardless."
+            Text(f"{idle} idle, and everyone eats regardless.", "#c4746e")
             if idle
-            else "Every hand assigned."
+            else Text("Every hand assigned.", "#8a9a7b")
         )
         self.query_one("#ledger", Static).update(self.render_ledger())
         self.query_one("#commit", Button).disabled = state.is_over
+
+    def append_hearths(self, status: Text, population) -> None:
+        """The kin groups, as size and mood.
+
+        Households arrived in v0.4.0 and were invisible: the layer that starves, resents, and
+        now bears children had no representation on screen at all, which made rationing a
+        choice about people the player could not see.
+
+        Mood is shown; resentment deliberately is not. It is meant to stay a quiet meter, and
+        a number the player can watch is a number the player optimises against.
+        """
+        hearths = [h for h in population.households if not h.is_empty]
+        status.append("Hearths", "#625e5a")
+        if not hearths:
+            status.append("  none left", "#c4746e")
+            return
+
+        # Past a handful the row would wrap and stop being readable, so it collapses to the
+        # count and the one that is worst off, which is the household that matters anyway.
+        if len(hearths) > 4:
+            worst = min(h.mood for h in hearths)
+            status.append(f"  {len(hearths)}", "bold")
+            status.append("   worst mood ", "#625e5a")
+            status.append(f"{worst}", "bold #c4746e" if worst <= 3 else "bold")
+            return
+
+        for household in hearths:
+            status.append("  ")
+            status.append(f"{household.size}", "bold")
+            status.append("/", "#625e5a")
+            status.append(
+                f"{household.mood}", "#c4746e" if household.mood <= 3 else "#8a9a7b"
+            )
 
     def render_ledger(self) -> Text:
         """The season's food ledger for the current allocation.
@@ -320,6 +357,19 @@ class Hearthfall(App[None]):
         ledger = Text()
         ledger.append("This season\n", "bold #c0a36e")
 
+        # The verdict before the arithmetic. A player scanning this panel wants to know
+        # whether anyone dies; the breakdown is why, and why can wait one line. This also
+        # keeps the warning at the top of the block, where a short terminal cannot cut it off.
+        if f.would_starve:
+            ledger.append(f"  {f.would_starve} would starve.", "bold #c4746e")
+            ledger.append("   Ration by ", "#625e5a")
+            ledger.append(f"{RATION_WORDS[self.rationing]}", "bold #c0a36e")
+            ledger.append(" (r)\n\n", "#625e5a")
+        elif f.shortfall:
+            ledger.append("  Not enough. Ration by ", "#625e5a")
+            ledger.append(f"{RATION_WORDS[self.rationing]}", "bold #c0a36e")
+            ledger.append(" (r)\n\n", "#625e5a")
+
         # The ceiling comes first, above the arithmetic, because it is the one number that
         # tells the player what to do about a bad season: walk further. Hands with nowhere to
         # go are silent otherwise, and a mechanic the player cannot see is not a decision.
@@ -343,16 +393,7 @@ class Hearthfall(App[None]):
         ledger.append(f"{f.closing_food}", "bold")
         ledger.append(f"  ({f.net:+})\n", "#8a9a7b" if f.net >= 0 else "#c4746e")
 
-        # Rationing only appears when it bites. Offering the choice in a good season would
-        # train the player to ignore it, and it is meant to be the hardest call they make.
-        if f.shortfall:
-            ledger.append("\n  Not enough. Ration by ", "#625e5a")
-            ledger.append(f"{RATION_WORDS[self.rationing]}", "bold #c0a36e")
-            ledger.append("  (r)\n", "#625e5a")
-
-        if f.would_starve:
-            ledger.append(f"\n  {f.would_starve} would starve.\n", "bold #c4746e")
-        elif f.season is Season.WINTER:
+        if f.season is Season.WINTER and not f.shortfall:
             ledger.append("\n  Nothing grows in winter.\n", "#8992a7")
         return ledger
 
@@ -376,9 +417,11 @@ class Hearthfall(App[None]):
                     cells.append(f"[#3a3733]{FOG}[/]")
             lines.append(" ".join(cells))
 
+        # Two lines on purpose. One line is 58 characters and the panel is 52, so it used to
+        # wrap between "%" and "marsh" and read as a layout bug rather than a legend.
         legend = (
-            f"[#625e5a]{HEARTH} hearth   . plain   T forest   ^ hills   "
-            f"% marsh   ~ water[/]"
+            f"[#625e5a]{HEARTH} hearth   . plain   T forest\n"
+            f"^ hills    % marsh   ~ water[/]"
         )
         scouting = (
             f"[#c0a36e]Scouts head for {target}.[/]"

@@ -241,6 +241,13 @@ class TestTheFoundingClan(unittest.TestCase):
         self.assertEqual(population.adults, balance.STARTING_ADULTS)
         self.assertEqual(population.child_count, balance.STARTING_CHILDREN)
 
+    def test_the_hearths_do_not_bear_in_lockstep(self):
+        # Found level, all three reached the bond target on the same season and the chronicle
+        # read "3 children were born to the clan", which is a batch job rather than three
+        # things that happened. Staggering the founding bond spreads them across seasons.
+        bonds = {h.bond for h in turn.new_game(1).population.households}
+        self.assertGreater(len(bonds), 1, "every hearth starts on the same schedule")
+
     def test_the_split_does_not_depend_on_the_seed(self):
         # Who is in which household at turn zero is not something a run should differ on.
         shapes = {

@@ -306,7 +306,16 @@ def _founding_households() -> Population:
     """
     count = balance.STARTING_HOUSEHOLDS
     households = [
-        Household(adults=0, mood=balance.STARTING_MORALE) for _ in range(count)
+        # Staggered bond, so the hearths do not move in lockstep. Started level, all three
+        # reached BOND_TO_BEAR on the same season and the chronicle read "3 children were born
+        # to the clan", which is a batch job rather than a thing that happened. Spread out,
+        # each birth is its own line in its own season.
+        Household(
+            adults=0,
+            mood=balance.STARTING_MORALE,
+            bond=index * (balance.BOND_TO_BEAR // count),
+        )
+        for index in range(count)
     ]
     for index in range(balance.STARTING_ADULTS):
         households[index % count].adults += 1
@@ -537,7 +546,19 @@ def _draw_event(
     if not events:
         return
 
-    event = table.draw(events, state.snapshot(), rng, state.fired_events)
+    event = table.draw(
+        events,
+        state.snapshot(),
+        rng,
+        state.fired_events,
+        # Guarded, because `xs[-0:]` is the whole list, not the empty one, so a cooldown
+        # of zero would silently mean "never repeat, ever" rather than "no cooldown".
+        recent=(
+            state.fired_events[-balance.EVENT_COOLDOWN :]
+            if balance.EVENT_COOLDOWN
+            else ()
+        ),
+    )
     if event is None:
         return
 

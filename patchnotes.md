@@ -1,5 +1,34 @@
 # Patch notes
 
+## v0.5.1 (2026-08-09)
+
+Six defects found by playing the game rather than by testing it.
+
+- **The starvation warning was being cut off.** "4 would starve" and the rationing prompt are
+  the last two lines of the season ledger, and on a short terminal they fell below the fold, so
+  a player about to lose four people saw only the store going to zero. The verdict now comes
+  *above* the arithmetic, where it cannot be clipped, and the column scrolls as a safety net.
+- **Households were invisible.** The layer that starves, resents, and bears children had no
+  representation on screen at all, which made rationing a choice about people you could not
+  see. The status panel now shows each hearth's size and mood. Resentment stays hidden, because
+  a meter you can watch is a meter you optimise against.
+- **"Every hand assigned" was rendered in the danger colour**, so a good state read as a
+  warning. The CSS class was painting the whole widget red regardless of what it said.
+- **Every run repeated an event verbatim.** All sixty runs in a sample did, and the worst
+  offender came round an extra forty-nine times across them. Repeatable events now sit out a
+  cooldown before they can fire again, which takes it to nine runs in sixty with no loss of
+  event density. The real fix is a larger corpus; this stops the thinness being loud.
+- **The clan bore children in batches.** All three hearths started level, so they reached the
+  bond target on the same season and the chronicle read "3 children were born to the clan",
+  which is a batch job rather than three things that happened. The founding bond is staggered,
+  and single births went from a minority to 151 of 174 birth seasons.
+- **The map legend wrapped mid-item** in the 52-column panel, breaking between "%" and "marsh"
+  so it read as a layout bug. Two deliberate lines instead of one accidental one.
+
+Also fixed a trap in the cooldown's own implementation: `xs[-0:]` is the whole list, not the
+empty one, so a cooldown of zero would have silently meant "never repeat, ever". Suite 234 to
+238 tests.
+
 ## v0.5.0 (2026-08-09)
 
 The clan can grow, and how you fed it decides whether it does.
