@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from hearthfall.engine import balance
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event
-from hearthfall.engine.intel import Ledger
+from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     Effect,
@@ -55,6 +55,90 @@ class TurnReport:
 
     def note(self, line: str) -> None:
         self.log.append(line)
+
+
+@dataclass(frozen=True, slots=True)
+class ForageTake:
+    """What the ground the clan knows gives to a number of foragers.
+
+    `capacity` and `idle` are carried rather than left for the caller to derive, because the
+    frontend computes nothing and "two of your hands had nowhere to go" is the entire point
+    of the mechanic. If the ceiling is not visible before the season is committed, paying to
+    look cannot pull the player forward and sub-project 1 fails its own question.
+    """
+
+    food: int
+    capacity: int
+    idle: int
+    # Where they worked and what each tile gave, best ground first. Prose, not arithmetic:
+    # the report reads it back so a season's foraging names real places.
+    worked: tuple[tuple[Coord, Terrain, int], ...]
+
+
+def forage_take(ledger: Ledger, foragers: int, season: Season) -> ForageTake:
+    """Work the known ground with `foragers` hands. Pure; touches no state.
+
+    Called by both `_produce` and `forecast`. Those two go on duplicating the *order* of the
+    tick deliberately, because one mutates and one must not, but the per-tile arithmetic is
+    written once: a greedy fill written twice is a real bug surface, and slices 3 and 5 both
+    change it again.
+
+    Note the signature takes a ledger and no world. That is the point of slice 2: the clan
+    forages the ground it *believes* is there.
+    """
+    base = balance.FORAGE_YIELD[season]
+
+    ground: list[tuple[Coord, Terrain]] = []
+    capacity = 0
+    for coord in ledger.revealed():
+        terrain = _believed_terrain(ledger, coord)
+        if terrain is None:
+            continue
+        capacity += balance.TERRAIN_CAPACITY[terrain]
+        ground.append((coord, terrain))
+
+    # Richest ground first. Greedy is optimal here, not merely convenient: a tile's yield per
+    # forager does not depend on how many work it, so there is never a reason to pass over
+    # better ground. Coordinate order breaks ties so two forests always fill in one sequence.
+    ground.sort(key=lambda entry: (-_per_forager(base, entry[1]), entry[0]))
+
+    remaining = max(0, foragers)
+    food = 0
+    worked: list[tuple[Coord, Terrain, int]] = []
+    for coord, terrain in ground:
+        if remaining <= 0:
+            break
+        hands = min(remaining, balance.TERRAIN_CAPACITY[terrain])
+        if not hands:
+            continue  # dead ground: it must not swallow a hand better ground could use
+        remaining -= hands
+        taken = hands * _per_forager(base, terrain)
+        food += taken
+        worked.append((coord, terrain, taken))
+
+    return ForageTake(
+        food=food, capacity=capacity, idle=remaining, worked=tuple(worked)
+    )
+
+
+def _per_forager(base: int, terrain: Terrain) -> int:
+    """One forager's take on one tile, in whole food.
+
+    Tenths, multiplied then floored, so winter's zero base stays zero on every terrain
+    without a special case anywhere.
+    """
+    return base * balance.TERRAIN_FORAGE[terrain] // 10
+
+
+def _believed_terrain(ledger: Ledger, coord: Coord) -> Terrain | None:
+    """What the clan thinks is on a tile, or None if nobody has walked it.
+
+    Read from the ledger and never from `world.tile`. The two agree today because `reveal`
+    copies the ground faithfully, and slice 5 exists to make them disagree; food math that
+    reads the world would ignore staleness forever. A test in `test_forage` pins this.
+    """
+    value = ledger.value(FactKind.TERRAIN, coord)
+    return Terrain(value) if isinstance(value, str) else None
 
 
 @dataclass(frozen=True, slots=True)

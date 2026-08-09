@@ -41,6 +41,37 @@ FORAGE_YIELD: dict[Season, int] = {
 FOOD_PER_ADULT = 2
 FOOD_PER_CHILD = 1
 
+# --- What the ground gives ---------------------------------------------------------------
+
+# Ground you have walked is ground you can work. Both tables below are keyed on terrain the
+# clan *believes* is there, read from the fact ledger rather than from the world, so a wrong
+# belief will one day cost real food.
+#
+# Per-terrain yield, in tenths of the season's base. Multiplicative rather than additive so
+# that winter, whose base is zero, stays zero on every terrain with no special case: nothing
+# is out there to find and good ground does not change that. An additive bonus would have
+# quietly made winter solvable with hands and deleted the season's whole allocation puzzle.
+TERRAIN_FORAGE: dict[Terrain, int] = {
+    Terrain.PLAIN: 10,
+    Terrain.FOREST: 15,
+    Terrain.HILLS: 7,
+    Terrain.MARSH: 5,
+    Terrain.WATER: 0,
+}
+
+# How many foragers a single known tile supports. Hands beyond the total capacity of the
+# ground the clan has revealed bring back nothing at all, and that ceiling is the mechanism
+# that makes scouting pay: it is the only thing that raises how much labour can be spent on
+# food. Water supports nobody, so a bad reveal is genuinely bad and exploring stays a gamble
+# rather than becoming a ratchet.
+TERRAIN_CAPACITY: dict[Terrain, int] = {
+    Terrain.PLAIN: 2,
+    Terrain.FOREST: 3,
+    Terrain.HILLS: 2,
+    Terrain.MARSH: 1,
+    Terrain.WATER: 0,
+}
+
 # Extra food every mouth needs in winter. Cold is a cost, not just a lack of yield, and this
 # is what turns winter from a lean season into the one that decides the run.
 WINTER_EXTRA_FOOD = 1
