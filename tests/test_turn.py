@@ -58,13 +58,42 @@ def a_state(
 
 class TestProduction(unittest.TestCase):
     def test_foragers_yield_by_season(self):
+        # Exactly as many hands as one plain supports, so this isolates the season from the
+        # capacity ceiling slice 2 added. Over-assign and you measure the ceiling instead.
+        hands = balance.TERRAIN_CAPACITY[Terrain.PLAIN]
         for offset, season in enumerate(
             [Season.SPRING, Season.SUMMER, Season.AUTUMN, Season.WINTER]
         ):
             state = a_state(turn_number=offset)
             self.assertEqual(state.season, season)
-            report = turn.resolve(state, Orders(forage=3), Rng(1))
-            self.assertEqual(report.produced, 3 * balance.FORAGE_YIELD[season])
+            report = turn.resolve(state, Orders(forage=hands), Rng(1))
+            per_forager = (
+                balance.FORAGE_YIELD[season]
+                * balance.TERRAIN_FORAGE[Terrain.PLAIN]
+                // 10
+            )
+            self.assertEqual(report.produced, hands * per_forager)
+
+    def test_the_known_ground_caps_what_hands_can_bring_in(self):
+        # Slice 2's central rule: five hands on one known plain is still one plain's worth.
+        # Before this, a forager was worth the same wherever the clan had or had not walked,
+        # so exploring bought nothing and the fog was scenery.
+        capacity = balance.TERRAIN_CAPACITY[Terrain.PLAIN]
+        state = a_state(turn_number=2)  # autumn, the season with the most to lose
+        report = turn.resolve(state, Orders(forage=5), Rng(1))
+        self.assertEqual(report.forage_capacity, capacity)
+        self.assertEqual(report.foragers_idle, 5 - capacity)
+        self.assertEqual(
+            report.produced, capacity * balance.FORAGE_YIELD[Season.AUTUMN]
+        )
+
+    def test_idle_hands_are_said_out_loud(self):
+        # If the ceiling is invisible the player cannot learn that scouting is the answer.
+        report = turn.resolve(a_state(), Orders(forage=6), Rng(1))
+        self.assertTrue(
+            any("no ground to work" in line for line in report.log),
+            f"nothing in the report told the player why: {report.log}",
+        )
 
     def test_no_foragers_produce_nothing(self):
         report = turn.resolve(a_state(), Orders(), Rng(1))

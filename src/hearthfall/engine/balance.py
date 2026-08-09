@@ -19,6 +19,17 @@ from hearthfall.engine.world import Terrain
 TURNS_PER_RUN = 20  # five winters
 STARTING_ADULTS = 6
 STARTING_CHILDREN = 2
+# Year one is a drawdown by design: one known plain supports two foragers against eight
+# mouths, so the clan cannot feed itself until it has walked more ground.
+#
+# Left at 30 after a measured attempt to raise it, and the attempt is worth recording because
+# the obvious fix does not work. Year one is too harsh (half the clan dies under good play)
+# while year two onward is too safe, and one scalar cannot move those in opposite directions:
+# 30 buries 7 runs in 50, 32 buries 6, 34 buries 3 and trips the "nothing is at stake" guard.
+# Raising it far enough to matter is worse still, because past BIRTH_FOOD_THRESHOLD the clan
+# has a child it cannot feed and measured survival for a clan that never scouts *falls*
+# (79% at 30, 53% at 60). The shape is wrong, not the magnitude, and the fix belongs with the
+# mid-game plateau rather than here. See roadmap.md, the standing gate.
 STARTING_FOOD = 30
 STARTING_MORALE = 6
 

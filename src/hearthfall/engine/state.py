@@ -131,6 +131,11 @@ class GameState:
     # The terrain most recently walked into. Kept on the state rather than passed around
     # per turn so that `snapshot()` stays the only seam content reads through.
     last_revealed: Terrain | None = None
+    # How many foragers the known ground supports. Cached here for the same reason, and by
+    # necessity: computing it needs the per-terrain tables, `balance` imports `state`, so a
+    # `state` that imported `balance` would close the loop. `turn._refresh_ground` owns it and
+    # a test asserts the cache never disagrees with a live count.
+    forage_capacity: int = 0
     # Ids of events that have fired, so `once = true` entries do not come round again.
     fired_events: list[str] = field(default_factory=list[str])
 
@@ -163,6 +168,12 @@ class GameState:
             "morale": self.population.morale,
             "tiles_known": self.ledger.known_count,
             "tiles_unknown": self.ledger.unknown_count(self.world),
+            # Lets content fire on a clan with more hands than ground, which is the pressure
+            # slice 2 introduced and the reason a season starts to feel cramped.
+            "forage_capacity": self.forage_capacity,
+            "hands_without_ground": max(
+                0, self.population.adults - self.forage_capacity
+            ),
             "terrain_home": str(self.world.tile(self.world.home).terrain),
             "terrain_revealed": str(self.last_revealed)
             if self.last_revealed

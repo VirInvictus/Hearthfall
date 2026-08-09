@@ -309,6 +309,17 @@ class Hearthfall(App[None]):
 
         ledger = Text()
         ledger.append("This season\n", "bold #c0a36e")
+
+        # The ceiling comes first, above the arithmetic, because it is the one number that
+        # tells the player what to do about a bad season: walk further. Hands with nowhere to
+        # go are silent otherwise, and a mechanic the player cannot see is not a decision.
+        ledger.append("  Ground known holds ", "#625e5a")
+        ledger.append(f"{f.forage_capacity}", "bold")
+        if f.foragers_idle:
+            ledger.append(f"  ·  {f.foragers_idle} idle\n", "bold #c4746e")
+        else:
+            ledger.append("\n", "#625e5a")
+
         row("Foragers bring", f.produced, "#8a9a7b" if f.produced else "#625e5a")
         row(f"{self.state.population.total} mouths eat", -f.eaten, "#c4746e")
         row("Rot in the store", -f.spoiled, "#c4746e" if f.spoiled else "#625e5a")

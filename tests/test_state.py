@@ -25,6 +25,8 @@ SNAPSHOT_KEYS = {
     "morale",
     "tiles_known",
     "tiles_unknown",
+    "forage_capacity",
+    "hands_without_ground",
     "terrain_home",
     "terrain_revealed",
 }

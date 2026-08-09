@@ -9,6 +9,34 @@ when the spine was generalised (`spec.md` §1). The old Phases 1 to 5 are in git
 work they described is not lost, it is redistributed across sub-projects 2, 5, 6, 7, and 8,
 and reordered so the kill switch is asked first.
 
+## The standing gate: play a year before calling a slice done
+
+**Added 2026-08-09, and it applies between every slice and every sub-project from here on.**
+
+No slice is finished when its tests are green. It is finished when a year of play has been
+read start to finish and judged **fun, interesting, and survivable**. This is a TUI game;
+gameplay is the product, and a green suite says only that the arithmetic agrees with itself.
+
+The gate, run at the end of every slice:
+
+- Print an annotated year: season by season, the allocation offered, the forecast, what
+  actually happened, and every event that fired with the choice taken.
+- Read it as a player would, not as an author. Three questions, answered out loud in the
+  slice's roadmap entry:
+  1. **Was there a real decision every season**, or did the allocation write itself?
+  2. **Was there slack to decide with?** A store pinned at zero for three seasons is not
+     difficulty, it is a run with the choices removed.
+  3. **Did anything happen worth telling someone about?**
+- A slice that fails this does not ship, and the answer is not to lower the difficulty
+  reflexively. It is to find which of the three questions failed and fix that one.
+
+**Why this exists.** Slice 2's first measurement passed every automated guard while year one
+killed half the clan under good play and left the store at zero for the rest of the run. The
+guards are shaped to catch a broken loop, not a joyless one, and nothing in the suite can tell
+the difference between hard and disheartening.
+
+---
+
 ## Phase 0: prove the foundation holds (shipped, v0.1.0)
 
 *Question: is the allocate-and-survive loop tolerable to sit inside for thirty minutes?*
@@ -56,10 +84,44 @@ Built in slices, each green before the next starts.
       imports `state` and `state` owns a `Ledger`. Fact keys namespace places apart from
       names (`terrain@1,2` vs `presence#stonefold`) so sub-project 4 can add neighbours
       without reshaping keys. No gameplay change. 169 tests.
-- [ ] **Slice 2: known ground is workable ground.** See the finding below. Terrain gains a
-      forage bonus and a forager capacity; foraging draws on tiles the clan has actually
-      walked. `_produce` and `forecast` must both change, and `TestForecast` is what keeps
-      them agreeing.
+- [x] **Slice 2: known ground is workable ground (2026-08-09).** Each known tile carries a
+      per-terrain yield and a forager capacity; hands beyond the capacity of revealed ground
+      bring back nothing. Terrain multiplies the season base in tenths, so winter's zero stays
+      zero with no special case. The engine places foragers greedily, best ground first, so
+      orders stay scalar and the map stays a knowledge surface (§9.9). `forage_take` reads
+      terrain from the ledger and takes no world argument at all: the clan forages the ground
+      it *believes* is there. Water is dead ground, so a reveal is a gamble. Suite 169 → 189.
+
+      **The kill switch answers yes, decisively.** Measured over 200 seeds, a policy that
+      never scouts ends with 1.4 people; one that scouts while the map is the binding
+      constraint ends with 6.5; one that also reads winter ends with 7.8. Paying to look pays.
+      `TestPayingToLookPullsYouForward` now asserts it, so the premise is defended by the
+      suite rather than by a note.
+
+      **Binary endurance died as a metric here.** Explorer 198/200 against season-aware
+      199/200 is noise, while a clan that never scouts still "endures" 152 times by shrinking
+      to two people on one tile, which the win condition counts as survival. The policy
+      comparisons moved to total survivors, which separates the same three policies
+      1.4 / 6.5 / 7.8.
+
+      **The standing gate failed this slice on two of its three questions**, and the failures
+      are recorded rather than tuned away:
+      1. *A real decision every season?* **No.** From year 2 onward the allocation is
+         identical every single season (`forage 5, scout 0, tend 0`) across every seed
+         examined. Capacity plateaus around 7, the clan settles at 5, and the last eight
+         seasons of a twenty-season run are one turn repeated. **Exploration switches itself
+         off**: once capacity exceeds the adults available, there is no reason to scout again,
+         so the mechanic this slice exists for stops mattering halfway through the run.
+      2. *Slack to decide with?* **Marginal.** The store reaches zero in year 2 on the seeds
+         read. The death spiral is self-correcting rather than threatening (people die, demand
+         falls, the survivors are comfortable), which removes tension instead of adding it.
+      3. *Anything worth telling someone about?* **Weakly.** Events repeat inside a single run
+         and are uniformly small nudges to food or morale. Nothing is game-altering and
+         nothing remembers anything.
+
+      `STARTING_FOOD` was the obvious lever and it does not work; see the note on it in
+      `balance.py`. The game is too harsh in year one and too safe from year two, and one
+      scalar cannot move those in opposite directions.
 - [ ] **Slice 3: scouts as a gradient.** Replace the `EXPLORERS_PER_REVEAL` cliff. Two learn
       the terrain, three also learn what can be foraged there, four also learn what lives
       there. Turns a threshold into a slope.

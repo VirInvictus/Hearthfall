@@ -23,11 +23,17 @@ from hearthfall.engine.state import Orders, Outcome, Season
 CORPUS = load_corpus(turn.new_game(0).snapshot())
 
 
+def ground_capacity(state) -> int:
+    """How many foragers the ground the clan has walked will support."""
+    return turn.forage_take(state.ledger, foragers=0, season=state.season).capacity
+
+
 def steady_orders(state) -> Orders:
     """A plain, defensible policy: keep a scouting party and a tender, forage with the rest.
 
-    Not a good player. Good enough that a run which still starves says something about the
-    balance rather than about the policy.
+    Not a good player, and since slice 2 it is a visibly naive one: it will happily send six
+    hands to ground that supports two. Kept exactly as it was because it is the baseline the
+    Phase 0 numbers were measured against, and re-basing it would throw that comparison away.
     """
     adults = state.population.adults
     explore = (
@@ -37,6 +43,65 @@ def steady_orders(state) -> Orders:
     )
     tend = 1 if adults - explore >= 3 else 0
     return Orders(forage=adults - explore - tend, explore=explore, tend=tend)
+
+
+# --- Policies that differ in exactly one thing -------------------------------------------
+#
+# The three below form a ladder, each adding a single insight to the one before it, so that a
+# comparison between any two of them measures that insight and nothing else. The older pair
+# (`steady_orders` and `winter_scout_orders`) differ in two dimensions at once, which did not
+# matter while exploring paid nothing and became actively misleading the moment it did: the
+# "naive" policy scouted more, so it won, and the test read that as the winter insight being
+# worthless.
+
+
+def homebody_orders(state) -> Orders:
+    """Never scouts. Works the ground it was born on, as well as that ground can be worked.
+
+    The floor of the kill-switch comparison: a player who understands capacity but refuses to
+    pay to look.
+    """
+    adults = state.population.adults
+    forage = min(adults, ground_capacity(state))
+    return Orders(forage=forage, tend=adults - forage)
+
+
+def explorer_orders(state) -> Orders:
+    """Scouts while the map is the binding constraint, forages once it is not.
+
+    One insight above the homebody: ground you have walked is ground you can work, so when
+    there are more hands than ground, hands should go and find ground.
+    """
+    adults = state.population.adults
+    capacity = ground_capacity(state)
+    scouting_is_free = capacity <= adults - balance.EXPLORERS_PER_REVEAL
+    explore = (
+        balance.EXPLORERS_PER_REVEAL
+        if scouting_is_free and state.ledger.frontier(state.world)
+        else 0
+    )
+    forage = min(adults - explore, capacity)
+    return Orders(forage=forage, explore=explore, tend=adults - explore - forage)
+
+
+def season_aware_orders(state) -> Orders:
+    """`explorer_orders` plus the winter insight: winter yields nothing, so do not forage it.
+
+    The one dimension that separates this from `explorer_orders`. In winter the foraging hands
+    go to tending instead, which is worth real food because winter stores are what the clan
+    lives on and rot is the only thing still taking from them.
+    """
+    if state.season is not Season.WINTER:
+        return explorer_orders(state)
+
+    adults = state.population.adults
+    explore = (
+        balance.EXPLORERS_PER_REVEAL
+        if adults >= balance.EXPLORERS_PER_REVEAL + 1
+        and state.ledger.frontier(state.world)
+        else 0
+    )
+    return Orders(forage=0, explore=explore, tend=adults - explore)
 
 
 @dataclass
@@ -197,11 +262,16 @@ class TestTheCorpusIsAlive(unittest.TestCase):
     """
 
     def fired(self) -> set[str]:
+        # The spread runs across the policy ladder, not just one policy answered two ways.
+        # Reachability depends on how prosperous a run gets, and a corpus entry gated on high
+        # morale is only ever seen by a player good enough to earn it.
         seen: set[str] = set()
         for seed in range(60):
             seen.update(play(seed).events)
-            seen.update(play_with(seed, winter_scout_orders).events)
-            seen.update(play_with(seed, winter_scout_orders, choice=1).events)
+            seen.update(play_with(seed, homebody_orders).events)
+            seen.update(play_with(seed, explorer_orders).events)
+            seen.update(play_with(seed, season_aware_orders).events)
+            seen.update(play_with(seed, season_aware_orders, choice=1).events)
         return seen
 
     def test_every_shipped_event_can_actually_happen(self):
@@ -211,18 +281,82 @@ class TestTheCorpusIsAlive(unittest.TestCase):
         )
 
 
+def endured(policy, seeds: range = range(60), choice: int = 0) -> int:
+    return sum(
+        1
+        for seed in seeds
+        if play_with(seed, policy, choice).outcome is Outcome.ENDURED
+    )
+
+
+def people_left(policy, seeds: range = range(60), choice: int = 0) -> int:
+    """Total survivors across a spread of runs. The measure that still discriminates.
+
+    Binary endurance has saturated: measured over 200 seeds, a scouting policy ends 198 and a
+    season-reading one 199, which is noise, while a clan that never scouts still "endures" 152
+    times. It does so by shrinking to one or two adults on one tile, which is a stable state
+    the win condition happens to count as survival.
+
+    Clan size separates the same policies 1.4 / 6.5 / 7.8, because the interesting question
+    slice 2 introduced is not whether anyone is left but how many the ground could carry. An
+    integer total rather than a mean, so the comparison never rides on float fuzz.
+    """
+    return sum(play_with(seed, policy, choice).survivors for seed in seeds)
+
+
 class TestAllocationIsADecision(unittest.TestCase):
     def test_reading_the_seasons_beats_not_reading_them(self):
         # Phase 0's whole question. If a policy that understands winter does no better than
         # one that ignores it, the loop is a slider and not a game.
-        seeds = range(60)
-        naive = sum(1 for s in seeds if play(s).outcome is Outcome.ENDURED)
-        canny = sum(
-            1
-            for s in seeds
-            if play_with(s, winter_scout_orders).outcome is Outcome.ENDURED
+        #
+        # Both sides scout identically; winter allocation is the only difference between
+        # them. This used to compare two policies that also scouted at different rates, which
+        # was harmless while exploring paid nothing and became a lie the moment it did: the
+        # "naive" policy scouted more, so it won, and the test read that as winter not
+        # mattering.
+        self.assertGreater(
+            people_left(season_aware_orders), people_left(explorer_orders)
         )
-        self.assertGreater(canny, naive)
+
+
+class TestPayingToLookPullsYouForward(unittest.TestCase):
+    """Sub-project 1's kill switch, as an assertion rather than a note in the roadmap.
+
+    `roadmap.md` says: if the fog does not pull here, the central premise is wrong, and no
+    amount of council drama or combat depth retrofits a reason to explore. Stop.
+
+    Before slice 2 this could not have been written down. `FORAGE_YIELD` was keyed on season
+    alone, so a revealed tile fed nothing but the event table and a scout was a hand thrown
+    away. The two policies differ in exactly one thing: whether they ever pay to look.
+
+    If this fails, do not tune until it passes. It is the question, and a no is an answer.
+    """
+
+    def test_a_clan_that_scouts_outlives_one_that_stays_home(self):
+        explorer, homebody = endured(explorer_orders), endured(homebody_orders)
+        self.assertGreater(
+            explorer,
+            homebody,
+            f"scouting endured {explorer}/60 against {homebody}/60 for staying home; "
+            "paying to look does not pay, which is the premise failing",
+        )
+
+    def test_a_clan_that_scouts_is_a_clan_and_not_a_remnant(self):
+        # The sharper form of the same question. Staying home does not usually wipe you out,
+        # it grinds you down to two or three people on one tile, which the win condition is
+        # generous enough to call surviving. What scouting buys is a clan worth the name.
+        explorer, homebody = people_left(explorer_orders), people_left(homebody_orders)
+        self.assertGreater(explorer, homebody * 2)
+
+    def test_scouting_actually_raises_the_food_ceiling(self):
+        # The mechanism behind the outcome, asserted separately so a pass above cannot be
+        # coming from somewhere else (a lucky event spread, say).
+        for seed in range(12):
+            with self.subTest(seed=seed):
+                self.assertGreater(
+                    play_with(seed, explorer_orders).tiles_known,
+                    play_with(seed, homebody_orders).tiles_known,
+                )
 
 
 if __name__ == "__main__":

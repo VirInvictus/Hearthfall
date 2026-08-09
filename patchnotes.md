@@ -1,5 +1,37 @@
 # Patch notes
 
+## v0.2.0 (2026-08-09)
+
+Ground you have walked is ground you can work.
+
+- **Exploring finally pays.** Every known tile now carries a per-terrain yield and a forager
+  capacity, and hands beyond the capacity of revealed ground bring back nothing. Before this,
+  a forager was worth the same whether the clan had walked the ground or not, so the fog was
+  scenery and scouting was a hand thrown away.
+- **Measured over 200 seeds:** a clan that never scouts ends with 1.4 people, one that scouts
+  while the map is the binding constraint ends with 6.5, one that also reads winter ends with
+  7.8. Sub-project 1's kill-switch question ("does paying to look pull the player forward?")
+  answers yes, and a test now asserts it rather than a roadmap note claiming it.
+- **Terrain multiplies the season rather than adding to it**, so winter's zero stays zero on
+  every terrain with no special case. An additive bonus would have made good ground foragable
+  in winter and quietly deleted that season's whole allocation puzzle.
+- **Water is dead ground**, yielding nothing and supporting nobody, which keeps a reveal a
+  gamble instead of a ratchet.
+- **The engine places foragers, best ground first.** Orders stay scalar and the map stays a
+  knowledge surface rather than becoming a placement surface (`spec.md` §9.9). The season
+  report names where they worked.
+- **The allocation shows its ceiling before you commit to it.** "Ground known holds 4 · 2
+  idle" sits above the food ledger. A mechanic the player cannot see is not a decision.
+- Foraging reads terrain from the fact ledger and never from the world, so the clan works the
+  ground it *believes* is there. The two agree today; slice 5 exists to make them disagree.
+- `snapshot()` gains `forage_capacity` and `hands_without_ground`, so content can fire on a
+  clan with more hands than ground. The condition evaluator is unchanged, as always.
+- Suite 169 to 189 tests.
+
+**Known, recorded, not yet fixed.** A playtest of a full run says the game plateaus: from year
+two onward the allocation is identical every season, and exploration switches itself off once
+capacity exceeds the hands available. `roadmap.md` carries the detail under the standing gate.
+
 ## v0.1.2 (2026-08-09)
 
 No gameplay change. The language question got asked properly and the answer got enforced.

@@ -178,5 +178,41 @@ class TestTheReportedTilesAddUp(unittest.TestCase):
         self.assertEqual(len(coords), len(set(coords)))
 
 
+class TestTheCachedCapacityNeverLies(unittest.TestCase):
+    """`GameState.forage_capacity` is a cache, and a cache is a second source of truth.
+
+    It exists only because `snapshot()` lives in `state.py`, computing capacity needs the
+    per-terrain tables, and `balance` imports `state`, so `state` importing `balance` would
+    close the import loop. That is a real constraint, but the cost is that the number can go
+    stale, silently, and content keyed on `forage_capacity` would quietly stop matching.
+
+    So it gets checked against a live count at every step of a real run rather than trusted.
+    """
+
+    def test_it_agrees_with_a_live_count_at_every_step_of_a_run(self):
+        from hearthfall.engine.rng import Rng
+        from hearthfall.engine.state import Orders
+
+        state = turn.new_game(seed=3)
+        rng = Rng(3)
+        while not state.is_over:
+            live = turn.forage_take(
+                state.ledger, foragers=0, season=state.season
+            ).capacity
+            self.assertEqual(
+                state.forage_capacity,
+                live,
+                f"cache disagreed with a live count on turn {state.turn}",
+            )
+            self.assertEqual(state.snapshot()["forage_capacity"], live)
+            # Scouting whenever the clan can spare two, so the ledger actually grows and the
+            # cache is asked to move rather than sitting on its starting value all run.
+            adults = state.population.adults
+            explore = 2 if adults >= 3 else 0
+            turn.resolve(state, Orders(forage=adults - explore, explore=explore), rng)
+            if state.pending is not None:
+                turn.apply_choice(state, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

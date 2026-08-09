@@ -40,6 +40,11 @@ class TurnReport:
     turn: int
     season: Season
     produced: int = 0
+    # How many foragers the known ground supports, and how many had nowhere to go. Reported
+    # rather than derived, because a hand that brought back nothing is the season's most
+    # important fact and the frontend is not allowed to work it out for itself.
+    forage_capacity: int = 0
+    foragers_idle: int = 0
     consumed: int = 0
     shortfall: int = 0
     starved: int = 0
@@ -121,6 +126,17 @@ def forage_take(ledger: Ledger, foragers: int, season: Season) -> ForageTake:
     )
 
 
+def _refresh_ground(state: GameState) -> None:
+    """Re-count what the known ground supports, after the ledger has changed.
+
+    Called from `new_game` and after a reveal, which are the only two moments the answer can
+    move. Season is irrelevant to capacity, so any season gives the same count.
+    """
+    state.forage_capacity = forage_take(
+        state.ledger, foragers=0, season=state.season
+    ).capacity
+
+
 def _per_forager(base: int, terrain: Terrain) -> int:
     """One forager's take on one tile, in whole food.
 
@@ -156,6 +172,11 @@ class Forecast:
 
     season: Season
     produced: int
+    # The ceiling the known ground puts on foraging, and the hands this allocation wastes
+    # against it. This is the number slice 2 exists to put in front of the player before the
+    # season is committed: it is what makes scouting legible as an investment.
+    forage_capacity: int
+    foragers_idle: int
     demand: int
     eaten: int
     shortfall: int
@@ -186,9 +207,9 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
     season = state.season
     population = state.population
 
-    produced = orders.forage * balance.FORAGE_YIELD[season]
+    take = forage_take(state.ledger, orders.forage, season)
     opening = state.stores.food
-    after_produce = opening + produced
+    after_produce = opening + take.food
 
     winter_extra = balance.WINTER_EXTRA_FOOD if season is Season.WINTER else 0
     demand = population.adults * (
@@ -214,7 +235,9 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
 
     return Forecast(
         season=season,
-        produced=produced,
+        produced=take.food,
+        forage_capacity=take.capacity,
+        foragers_idle=take.idle,
         demand=demand,
         eaten=eaten,
         shortfall=shortfall,
@@ -239,7 +262,7 @@ def new_game(seed: int) -> GameState:
     # about the clan, which is why it happens here and not inside World.generate.
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
-    return GameState(
+    state = GameState(
         seed=seed,
         world=world,
         ledger=ledger,
@@ -250,6 +273,8 @@ def new_game(seed: int) -> GameState:
         ),
         stores=Stores(food=balance.STARTING_FOOD),
     )
+    _refresh_ground(state)
+    return state
 
 
 def resolve(
@@ -326,13 +351,25 @@ def apply_effect(state: GameState, effect: Effect) -> None:
 def _produce(
     state: GameState, orders: Orders, season: Season, report: TurnReport
 ) -> None:
-    produced = orders.forage * balance.FORAGE_YIELD[season]
-    state.stores.food += produced
-    report.produced = produced
-    if produced:
-        report.note(f"Foragers brought in {produced} food.")
+    take = forage_take(state.ledger, orders.forage, season)
+    state.stores.food += take.food
+    report.produced = take.food
+    report.forage_capacity = take.capacity
+    report.foragers_idle = take.idle
+
+    if take.food:
+        report.note(
+            f"Foragers brought in {take.food} food from {_ground_phrase(state, take)}."
+        )
     elif orders.forage:
         report.note("The foragers came back with nothing.")
+
+    # Named separately from the yield, because idle hands are not a smaller harvest, they are
+    # the game telling the player that the map is now the constraint.
+    if take.idle:
+        report.note(
+            f"{take.idle} had no ground to work. The clan knows nowhere else to forage."
+        )
 
 
 def _consume(state: GameState, report: TurnReport) -> None:
@@ -407,6 +444,7 @@ def _explore(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> 
     # Learned this turn, before _advance ticks the clock, so the fact is stamped with the
     # season the scouts actually walked it.
     state.ledger.reveal(state.world, target, state.turn)
+    _refresh_ground(state)
     tile = state.world.tile(target)
     state.last_revealed = tile.terrain
     report.revealed = target
@@ -520,6 +558,29 @@ def _take_a_child(population: Population) -> None:
 
 def _clamp_morale(value: int) -> int:
     return max(balance.MORALE_MIN, min(balance.MORALE_MAX, value))
+
+
+def _ground_phrase(state: GameState, take: ForageTake) -> str:
+    """Name the ground a season's foraging was actually done on.
+
+    Two forms only. Listing five tiles would bury the number the line exists to carry, and
+    naming the best one is what the player needs in order to think about where to scout next.
+    """
+    if not take.worked:
+        return "nowhere"
+
+    coord, terrain, _ = take.worked[0]
+    best = _place(state, coord, terrain)
+    others = len(take.worked) - 1
+    if not others:
+        return best
+    return f"{best} and {others} place{'s' if others > 1 else ''} besides"
+
+
+def _place(state: GameState, coord: Coord, terrain: Terrain) -> str:
+    if coord == state.world.home:
+        return f"the {terrain} at the hearth"
+    return f"the {terrain} to the {_bearing(state, coord)}"
 
 
 def _bearing(state: GameState, target: Coord) -> str:
