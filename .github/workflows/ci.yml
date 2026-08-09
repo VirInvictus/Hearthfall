@@ -9,8 +9,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      # Both on their latest moving major tag, and both node24. v4/v5 targeted node20, which
+      # the runner force-upgraded while printing a deprecation annotation on every run.
+      # setup-uv publishes moving major tags only up to v7; v8 and v9 exist as exact versions
+      # only, so v7 is the newest tag that still tracks patches.
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.14"
           enable-cache: true
