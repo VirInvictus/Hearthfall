@@ -153,11 +153,16 @@ Built in slices, each green before the next starts.
 - [ ] **Slice 4: reports.** Scouts return the facts they learned, rendered as prose.
 - [ ] **Slice 5: staleness that bites.** `PRESENCE` facts age visibly and an old fact should
       be able to mislead. Adds the first staleness keys to `snapshot()`.
-- [ ] **Slice 6: corpus toward 80**, terrain-keyed.
+- [ ] **Slice 6: corpus toward 80**, terrain-keyed. **More urgent than it looks.** At 34
+      events every run in a sixty-seed sample replayed one verbatim; a draw cooldown took that
+      to nine, but a cooldown is a stopgap for a corpus too small to avoid repeating itself.
+      Lower `EVENT_COOLDOWN` as this lands.
 
-Deferred within this sub-project, deliberately: a larger map. It is a balance change on top
-of a balance change, and slice 2 already moves every food constant. Do it once slice 2's
-numbers have settled, not alongside them.
+**A larger map: deferred, and the reason has changed.** It was parked as a balance change on
+top of a balance change, to be revisited once slice 2's numbers settled. They have settled, and
+the answer is now *no* rather than *not yet*: measured, the clan already stops needing new
+ground around four tiles, so a bigger map adds ground nobody walks to. Revisit only after
+sub-projects 6 to 8 give hands a second thing to do. See `spec.md` §7.
 
 > **The finding that reframes this sub-project (2026-08-08).** Exploring is currently almost
 > mechanically pointless. `FORAGE_YIELD` is keyed on season alone, so a known tile feeds
@@ -258,9 +263,6 @@ writes reports in the scouts' voice.
 Note the constraint from `spec.md` §5: the pool comes first and names are a layer over it.
 This sub-project ships **no named people**. It ships the thing they will later be drawn from.
 
-Note the constraint from `spec.md` §5: the pool comes first and names are a layer over it.
-This slice ships **no named people**. It ships the thing they will later be drawn from.
-
 ## Sub-project 3: the chronicle (planned)
 
 *Question: can the game run three years unattended and still feel like yours?*
@@ -300,6 +302,18 @@ commitment should show its arithmetic before you make it.
 - [ ] Council decisions rendered inline in the chronicle
 - [ ] Corpus entries gated on ring composition and household standing
 
+> **Sub-projects 6 to 8 are the plateau fix, not garnish on a working economy.**
+>
+> Measured after sub-project 2 shipped: the game stops having decisions partway through
+> because exploration switches itself off, and the cause is that **foraging is the clan's only
+> sink for labour**. Four tiles already support more foragers than a clan of ten can staff, so
+> ground stays permanently ahead of hands and scouting has nothing left to buy.
+>
+> A war-band is a second thing worth spending people on, and that is what makes new ground
+> worth taking again. Two things follow, both load-bearing: a **bigger map does not help**, and
+> **more growth does not help either**. Both were tried and measured; see `spec.md` §7 and the
+> note on `STARTING_FOOD` in `balance.py`. Do not reach for either lever again.
+
 ## Sub-project 6: violence (planned)
 
 *Question: is losing people to a fight you misread painful in the right way?*
@@ -338,6 +352,8 @@ Parked so they stop asking.
 - A maneuvering map with fronts and army movement (`spec.md` §9.8; this one is not deferred,
   it is refused)
 
+- *A larger map.* Now refused on measurement rather than sequencing; see sub-project 1.
+
 **No longer deferred, and why:**
 
 - *Named individual characters.* Un-parked for sub-project 5. The condition that justified
@@ -345,3 +361,30 @@ Parked so they stop asking.
   households are the join, names are drawn from households and never the foundation.
 - *Save/load beyond a seed and a turn log.* Un-parked for sub-project 3. Correct to defer for
   a 30-minute run; a campaign that reaches tier 4 outlives a sitting.
+
+---
+
+## Raised, not yet designed
+
+Brandon's asks from 2026-08-09 that have a home but no plan. Recorded so they are not lost and
+not quietly built either.
+
+- **More than two decisions in a season.** The most direct answer to an allocation that writes
+  itself, and the one proposal on the table that creates a second thing to *decide* rather than
+  a second thing to compute. It reopens `spec.md` §4 and every slice so far sits on the
+  one-order-per-season shape, so it needs a design conversation first. **Currently the most
+  promising unbuilt idea.**
+- **An attraction web: compatibility meters and characteristics deciding which households
+  pair.** Lands in sub-project 2 slice 3. Belongs at the household layer rather than the named
+  cast, because `spec.md` §5 says a household is what marries.
+- **Events that are rare *and* game-altering.** Half-answered: rarity-by-condition is in and
+  demonstrated by the elder chain. What is missing is an effect vocabulary big enough for
+  "game-altering" (revealing ground, granting capacity, a modifier that lasts the run). That is
+  a real engine question and should be designed against `spec.md` §6's warning, not around it.
+
+**Settled without code, for the record:** everything already randomises per new game, including
+the map, terrain, and event order. `main()` and the new-run action both draw a fresh seed.
+
+**Still unsettled:** `Orders.explore` versus `Orders.scout`. Every design conversation says
+scout; the code says explore. Settle it before sub-project 1 slice 4 writes reports in the
+scouts' voice.

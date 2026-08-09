@@ -135,6 +135,22 @@ how many seasons resolve before the game stops and asks you something.
 - **Later:** you set standing orders and the game runs until the director interrupts. Three
   quiet years cost three lines in the chronicle, not twelve screens of clicking.
 
+**A season holds two decisions, not one.** Labour is the first: hands split between foraging,
+scouting, and tending, against a forage ceiling that only new ground can raise. **Rationing is
+the second, and it only exists when the store is short.** Equal shares, the workers first, or
+the children first. It is deliberately absent in a good season, because a question with no
+stakes asked every turn teaches the player to stop reading.
+
+There is no dominant answer, and that is enforced by two invariants in the code: no policy may
+waste food, and a full store must make the policy irrelevant. Measured, an even split is
+*worse* for survival, because spreading a shortfall pushes every hearth into the starvation
+threshold at once. What it buys is that nobody was wronged. Concentrating food saves people and
+makes a household that was fed last and knows it.
+
+A standing question, raised 2026-08-09 and **not yet designed**: whether a season should hold
+*more* steps than these two. It is the most direct answer to an allocation that writes itself,
+and it would reopen this section, so it gets a design conversation rather than an insertion.
+
 This is what "under glass" means concretely. The food system does not vanish when you stop
 allocating foragers by hand; it keeps running, and it can still kill you. It just stops
 asking for your attention until it has something to say.
@@ -159,6 +175,28 @@ The original spec forbade named individuals and the roadmap parked them under *D
 deliberately*. That is knowingly overruled. The condition it was protecting still holds: the
 pool comes first and names are a layer over it, never the foundation. A famine is resolved
 against households, and *then* a rival emerges, because the household it starved has a name.
+
+**The pool is derived, not stored.** `Population.adults`, `child_count`, `total`, and `morale`
+are all computed from the households, so the aggregate can never drift from the kin groups it
+is made of. `morale` is the average of the *living* households, which is what let households
+arrive without touching a single shipped event. It is no longer the whole story though: a clan
+averaging five with one hearth at zero is a different clan from one where everyone is at five,
+and `worst_household_mood` is what tells them apart.
+
+**Growth is a schedule a household earns, not a roll.** A hearth with two adults, a decent
+mood, and a fed season builds a silent meter; when it comes due, a child. A hungry season sets
+it back, so a famine costs years of growth rather than a turn of it. Hearths that outgrow
+themselves split, which is how three kin groups head toward the ten to forty above.
+
+It is deterministic on purpose, and this is the one place the seeded RNG is deliberately *not*
+used. The RNG exists so runs reproduce, not so every mechanic must be a lottery, and a lottery
+here would sever the connection between how you rationed and whether the clan grew. That
+connection is the point: **the hearth you feed last is the hearth that stops growing.**
+
+Two things Brandon asked for that live here and are **not yet designed**: a compatibility or
+attraction meter deciding *which* households pair, and characteristics for it to read. Both
+belong at this layer, not at the named-cast layer, because §5's own ordering says a household
+is what marries. Names are drawn from these later; they are never the foundation.
 
 ### Intel: the fact ledger
 
@@ -229,6 +267,37 @@ of this document and it should be read as such.
   this rule ("Adding a condition key means adding it here and nowhere else"); it is now the
   thing that holds the whole content layer up.
 - **Effects are structured tables, not expression strings.** `food = -5` needs no parser.
+- **Tallies are how the corpus remembers.** A tally is one integer that persists for the run,
+  written by an effect and read by a condition as `tally_<name>`:
+
+  ```toml
+  [event.choice.effect.tally]
+  elder_resentment = 3
+  ```
+  ```toml
+  when = ["tally_elder_resentment > 5", "year > 2"]
+  ```
+
+  Because the write hangs off a **choice**, a later event can require not merely that something
+  happened but that you answered it a particular way. That single addition buys silent progress
+  meters, chains needing several prior events, and payoffs earned across years, and **the
+  evaluator did not grow by one line** to get them. It is the rule above being cashed: a new
+  concept cost one snapshot key.
+
+  Every tally is declared in `data/tallies.toml`, and declaring it is what makes it exist.
+  Effects validate names against the same reference snapshot conditions use, so a misspelled
+  tally fails at load rather than incrementing a counter no condition will ever read.
+
+  **Actors can be roles rather than people.** "The elder" is two integers to the engine and a
+  man with a memory to the player. This is how King of Dragon Pass gets most of its depth, and
+  it means the corpus does not have to wait for the named cast in sub-project 5.
+- **Rarity comes from conditions, never from a weight lottery.** A powerful event should be
+  rare because it is hard to reach. Earned reads as consequence; rolled reads as noise.
+- **A repeatable event is repeatable across a run, not across consecutive seasons.** Measured
+  at v0.5.0, every run in a sixty-seed sample replayed an event verbatim and the worst came
+  round an extra forty-nine times. A cooldown in the draw fixed it without touching the TOML.
+  That is a rule about *drawing*, not an enrichment of the format, and it is a stopgap: the
+  real answer to a thin corpus is more of it. Lower the cooldown as the corpus grows.
 
 > **DIRECT WARNING TO THE AUTHOR.** You built a query grammar for Atrium. You built a taxonomy
 > DSL for your library. You will want to build the perfect event language before you write a
@@ -256,6 +325,36 @@ used to be a map feature scheduled after a content phase. Under this design they
 foundation, so the question that can cancel the project gets asked first and cheapest: *does
 paying to look pull the player forward?* If the answer is no, the premise is wrong and no
 amount of council drama or combat depth retrofits a reason to explore. Stop there.
+
+**It answered yes** (2026-08-09, sub-project 1 slice 2). Over 200 seeds a clan that never
+scouts ends with 1.4 people, one that scouts ends with 6.5, one that also reads winter ends
+with 7.8. The premise holds and the project continues.
+
+### What the build order is now actually solving
+
+Three sub-projects in, the game's real defect has been measured rather than guessed at, and it
+changes what the later sub-projects are *for*.
+
+**The game plateaus.** Partway through a run the allocation stops changing, because exploration
+switches itself off. Two plausible causes were chased and both were wrong:
+
+1. *Not starting food.* The game is too harsh in year one and too safe from year two, and one
+   scalar cannot move those in opposite directions.
+2. *Not population growth.* Growth shipped and works, and tiles known moved 3.8 → 4.0. A sweep
+   closed both levers: faster growth pushes endurance to 98%, and halving what ground yields
+   collapses survival to 62%.
+
+**The cause is that foraging is the clan's only sink for labour, and one sink saturates.**
+About four tiles already support more foragers than a clan of ten can staff, so ground stays
+permanently ahead of hands and scouting has nothing left to buy.
+
+So **sub-projects 6 to 8 are not garnish on a working economy; they are the fix for it.** A
+war-band is a second thing worth spending people on, and that is what makes ground worth taking
+again. Two corollaries follow, and both are load-bearing:
+
+- **A bigger map does not help** and stays deferred. More ground nobody needs is not a game.
+- **More growth does not help either.** Do not reach for either lever again; the measurements
+  are recorded in `balance.py` and `roadmap.md`.
 
 ## 8. Tech decisions and their trade-offs
 
