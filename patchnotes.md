@@ -1,5 +1,35 @@
 # Patch notes
 
+## v0.7.0 (2026-08-09)
+
+**The scouts came back with something to say.** `spec.md` §1 says a report is rendered facts,
+and until now the two sentences a party produced were f-strings buried inside the steps that
+moved the state. They are a module, `engine/reports.py`, and the party speaks once, at the end,
+in one voice.
+
+- **The walk names where and what:** "The scouts walked north into marsh."
+- **And what it is worth, when that is worth saying.** The best ground the clan has found says
+  so; so does ground poorer than anything it already holds, and water that will feed nobody. A
+  middling tile among middling tiles gets no verdict at all, because a line that fires every
+  season is a line the player stops reading. Measured across sixty runs: 6.4 walks a run and
+  2.2 verdicts.
+- **The survey reads as one visit or two,** depending on whether the party stopped where it
+  walked or gave its proper look to ground the clan already knew. That second case used to
+  read as a non sequitur.
+- Numbers in prose are words. "Three can work it" is a sentence; "3 can work it" is a readout
+  that happens to be in a paragraph.
+
+**A family of lines counting the ways still open into the dark was written, measured, and
+deleted.** A clan walks six to ten tiles of twenty-five, so the frontier never narrows and
+every one of those sentences fired exactly zero times in sixty runs. What survives is the one
+case that can happen: a party sent out to a closed frontier says so, rather than costing hands
+and reporting silence.
+
+`TurnReport.learned` now carries the facts themselves alongside the prose, so a second frontend
+can render its own sentences, and `Ledger.learn` returns what it stored. No mechanic changed:
+the same 200 seeds end with the same survivors, which is the point of a slice that is about
+voice. Suite 255 to 278 tests.
+
 ## v0.6.0 (2026-08-09)
 
 **Scouts became a gradient.** How many you send now decides what they come back with, instead

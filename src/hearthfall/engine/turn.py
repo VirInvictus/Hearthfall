@@ -12,10 +12,10 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from hearthfall.engine import balance
+from hearthfall.engine import balance, reports
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event, load_tallies
-from hearthfall.engine.intel import FactKind, Ledger
+from hearthfall.engine.intel import Fact, FactKind, Ledger
 from hearthfall.engine.people import Household, Rationing, share_out
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
@@ -63,6 +63,10 @@ class TurnReport:
     # `revealed` because they are two different things the same party can bring home, and
     # usually but not always the same tile.
     surveyed: Coord | None = None
+    # What the party actually came home with, typed. The prose in `log` is these facts
+    # rendered (`spec.md` §1), and carrying both means a frontend can read the sentences or
+    # write its own without the engine having to guess which it wanted.
+    learned: tuple[Fact, ...] = ()
     event_id: str | None = None
     log: list[str] = field(default_factory=list[str])
     pending: PendingChoice | None = None
@@ -440,7 +444,8 @@ def _produce(
 
     if take.food:
         report.note(
-            f"Foragers brought in {take.food} food from {_ground_phrase(state, take)}."
+            f"Foragers brought in {take.food} food from "
+            f"{reports.ground_worked(state.world, take.worked)}."
         )
     elif orders.forage:
         report.note("The foragers came back with nothing.")
@@ -546,16 +551,29 @@ def _scout(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> No
             report.note("Too few went out to find anything worth the walk.")
         return
 
-    _walk(state, orders, rng, report)
-    if orders.scout >= balance.SCOUTS_TO_SURVEY:
-        _survey(state, report)
+    learned = _walk(state, orders, rng, report)
+    looked = orders.scout >= balance.SCOUTS_TO_SURVEY
+    if looked:
+        learned += _survey(state, report)
+
+    # The party speaks once, at the end, and every sentence is rendered from a fact it brought
+    # home (`spec.md` §1). The steps above are silent on purpose: prose written from inside
+    # three separate steps arrives in whatever order the steps run in, which is how a season
+    # ends up telling the player it found nothing before telling them what it found.
+    report.learned = learned
+    report.log.extend(
+        reports.scout_report(
+            state.world, state.ledger, report.revealed, report.surveyed, looked
+        )
+    )
 
 
-def _walk(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> None:
+def _walk(
+    state: GameState, orders: Orders, rng: Rng, report: TurnReport
+) -> tuple[Fact, ...]:
     frontier = state.ledger.frontier(state.world)
     if not frontier:
-        report.note("There is nothing left within reach to walk into.")
-        return
+        return ()
 
     target = orders.scout_target
     if target is None:
@@ -565,15 +583,13 @@ def _walk(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> Non
 
     # Learned this turn, before _advance ticks the clock, so the fact is stamped with the
     # season the scouts actually walked it.
-    state.ledger.reveal(state.world, target, state.turn)
+    fact = state.ledger.reveal(state.world, target, state.turn)
     _refresh_ground(state)
     tile = state.world.tile(target)
     state.last_revealed = tile.terrain
     report.revealed = target
     report.revealed_terrain = tile.terrain
-    report.note(
-        f"The scouts came back knowing {tile.terrain} to the {_bearing(state, target)}."
-    )
+    return (fact,)
 
 
 @dataclass(frozen=True, slots=True)
@@ -621,34 +637,30 @@ def survey_plan(state: GameState) -> SurveyPlan | None:
     return best
 
 
-def _survey(state: GameState, report: TurnReport) -> None:
+def _survey(state: GameState, report: TurnReport) -> tuple[Fact, ...]:
     """Carry out the plan.
 
     What the survey *learns* comes from the world even though the plan was made on belief,
     because looking is how a belief gets corrected.
 
     A survey that would raise nothing is not made. The scouts are not going to walk out to a
-    marsh to confirm it is still a marsh, and saying so is more honest than logging a survey
+    marsh to confirm it is still a marsh, and the report says so rather than logging a survey
     that moved no number.
     """
     ledger = state.ledger
     plan = survey_plan(state)
     if plan is None:
-        report.note("The party found nothing else worth a closer look.")
-        return
+        return ()
 
     coord = plan.coord
     terrain = state.world.tile(coord).terrain
     # A survey re-learns the ground as well as measuring it: the party is standing on the
     # tile, so this is the moment a wrong belief about it gets corrected.
-    ledger.reveal(state.world, coord, state.turn)
-    ledger.survey(coord, balance.TERRAIN_CAPACITY[terrain], state.turn)
+    ground = ledger.reveal(state.world, coord, state.turn)
+    worth = ledger.survey(coord, balance.TERRAIN_CAPACITY[terrain], state.turn)
     _refresh_ground(state)
     report.surveyed = coord
-    report.note(
-        f"They worked out what {_place(state, coord, terrain)} will feed: "
-        f"{balance.TERRAIN_CAPACITY[terrain]} can work it now."
-    )
+    return (ground, worth)
 
 
 def _draw_event(
@@ -775,33 +787,5 @@ def _clamp_morale(value: int) -> int:
     return max(balance.MORALE_MIN, min(balance.MORALE_MAX, value))
 
 
-def _ground_phrase(state: GameState, take: ForageTake) -> str:
-    """Name the ground a season's foraging was actually done on.
-
-    Two forms only. Listing five tiles would bury the number the line exists to carry, and
-    naming the best one is what the player needs in order to think about where to scout next.
-    """
-    if not take.worked:
-        return "nowhere"
-
-    coord, terrain, _ = take.worked[0]
-    best = _place(state, coord, terrain)
-    others = len(take.worked) - 1
-    if not others:
-        return best
-    return f"{best} and {others} place{'s' if others > 1 else ''} besides"
-
-
-def _place(state: GameState, coord: Coord, terrain: Terrain) -> str:
-    if coord == state.world.home:
-        return f"the {terrain} at the hearth"
-    return f"the {terrain} to the {_bearing(state, coord)}"
-
-
-def _bearing(state: GameState, target: Coord) -> str:
-    """A rough compass word for a revealed tile, relative to the hearth."""
-    home_x, home_y = state.world.home
-    x, y = target
-    vertical = "north" if y < home_y else "south" if y > home_y else ""
-    horizontal = "west" if x < home_x else "east" if x > home_x else ""
-    return f"{vertical}{horizontal}" or "edge of the clearing"
+# Naming places, counting in words, and everything else the clan says out loud now lives in
+# `reports.py`. The rules move the state; how the season reads is one module's job.

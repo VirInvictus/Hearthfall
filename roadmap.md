@@ -190,7 +190,38 @@ Built in slices, each green before the next starts.
       *The presence rung is deliberately not built.* Two scouts walk and three survey; a fourth
       learning what lives on a tile waits for sub-project 4, because nothing lives on the map
       yet and a tier that costs four adults to write a fact nobody reads is a trap.
-- [ ] **Slice 4: reports.** Scouts return the facts they learned, rendered as prose.
+- [x] **Slice 4: reports (2026-08-09).** `engine/reports.py`: the party's account of the season,
+      rendered from the facts it brought home, said once and in one voice. The steps that move
+      the state are silent now, because prose written from inside three separate steps arrives
+      in whatever order the steps run in, and a season could tell the player it found nothing
+      before telling them what it found.
+
+      The walk names where and what ("The scouts walked north into marsh") and, when it is
+      worth saying, what the ground is worth: the best the clan has found, poorer than
+      anything it holds, or water that will feed nobody. **A middling tile gets no verdict at
+      all.** Measured over sixty runs that is 6.4 walks and 2.2 verdicts a run, which is the
+      rate a line has to fire at to still be read. The survey reads as one visit or two
+      depending on whether the party stopped where it walked, which fixes a sentence that read
+      as a non sequitur whenever it surveyed ground the clan already knew.
+
+      **A whole family of lines was written, measured, and deleted.** "Two ways still lead into
+      the dark" and its variants fired zero times in sixty runs, because a clan walks six to
+      ten tiles of twenty-five and the frontier never narrows. What survives is the one case
+      that can happen: a party sent to a closed frontier says so rather than costing hands and
+      reporting silence. Prose that cannot fire is worse than no prose, because it reads as
+      covered.
+
+      `TurnReport.learned` carries the typed facts beside the sentences, which is what
+      sub-project 3's chronicle will read instead of re-parsing strings.
+
+      **Gate verdict: ships, and the gate is not the right instrument for it.** No mechanic
+      changed and the numbers prove it: the same 200 seeds end with the same survivors
+      (3.1 / 4.8 / 7.6 for walking, surveying and season-aware policies). So questions 1 and 2
+      are answered "unchanged" by construction, and only question 3 is live: *is anything worth
+      telling someone about?* Reading a year, yes, and for the first time in the fog: a party
+      that walks into marsh, finds it poorer than anything the clan holds, and comes home with
+      nothing else worth a closer look is a season that happened, where before it was two
+      sentences of bookkeeping. Suite 255 → 278.
 - [ ] **Slice 5: staleness that bites.** `PRESENCE` facts age visibly and an old fact should
       be able to mislead. Adds the first staleness keys to `snapshot()`.
 - [ ] **Slice 6: corpus toward 80**, terrain-keyed. **More urgent than it looks.** At 34

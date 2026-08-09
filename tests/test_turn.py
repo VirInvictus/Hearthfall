@@ -326,6 +326,55 @@ class TestScoutingIsAGradient(unittest.TestCase):
         self.assertGreater(state.forage_capacity, before)
 
 
+class TestTheScoutsReport(unittest.TestCase):
+    """Slice 4: the party's account is rendered from the facts it brought home.
+
+    The steps that move the state say nothing themselves, which is what keeps the account in
+    one voice and in one order. When prose was written from inside each step, a season could
+    tell the player the party found nothing before telling them what it found.
+    """
+
+    def test_the_facts_the_party_learned_are_carried_typed(self):
+        state = a_state()
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_SURVEY), Rng(1))
+        kinds = {fact.kind for fact in report.learned}
+        self.assertIn(FactKind.TERRAIN, kinds)
+        self.assertIn(FactKind.FORAGE, kinds)
+        for fact in report.learned:
+            self.assertEqual(fact.learned_turn, report.turn)
+
+    def test_a_party_that_learned_nothing_carries_nothing(self):
+        state = a_state()
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_WALK - 1), Rng(1))
+        self.assertEqual(report.learned, ())
+
+    def test_the_account_is_told_in_order(self):
+        state = a_state()
+        report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_SURVEY), Rng(1))
+        walked = next(i for i, line in enumerate(report.log) if "walked" in line)
+        surveyed = next(i for i, line in enumerate(report.log) if "work it" in line)
+        self.assertLess(walked, surveyed, report.log)
+
+    def test_every_sentence_the_party_speaks_is_something_the_ledger_holds(self):
+        # The renderer may not narrate ground nobody stood on. Walking is what learns terrain,
+        # so any terrain word in the account must belong to a tile the clan knows.
+        state = a_state(seed=4)
+        rng = Rng(4)
+        known_words = {"plain", "forest", "hills", "marsh", "water"}
+        while not state.is_over:
+            party = min(balance.SCOUTS_TO_SURVEY, state.population.adults)
+            report = turn.resolve(state, Orders(scout=party), rng)
+            believed = {
+                str(state.ledger.value(FactKind.TERRAIN, coord))
+                for coord in state.ledger.revealed()
+            }
+            for line in report.log:
+                for word in known_words & set(line.split()):
+                    self.assertIn(word.strip(".:"), believed, line)
+            if state.pending is not None:
+                turn.apply_choice(state, 0)
+
+
 class TestPopulationGrowth(unittest.TestCase):
     def test_children_age_toward_maturity(self):
         state = a_state(children=[4, 3])

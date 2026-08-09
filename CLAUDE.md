@@ -28,7 +28,8 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 
 ## Layout
 
-- `src/hearthfall/engine/`: pure logic (state, turn, world, pops, combat, events, rng).
+- `src/hearthfall/engine/`: pure logic (state, turn, world, intel, people, events, rng,
+  balance, reports).
 - `src/hearthfall/tui/`: the Textual skin. Throwaway-able by design.
 - `src/hearthfall/data/`: TOML content. Events, terrain, units, peoples. No logic.
 - `tests/`: engine tests. The skin is not tested.

@@ -76,11 +76,15 @@ class Ledger:
 
     def learn(
         self, kind: FactKind, subject: Subject, value: int | str, turn: int
-    ) -> None:
-        """Record what we saw. Looking again overwrites, and resets the clock."""
-        self.facts[_key(kind, subject)] = Fact(
-            kind=kind, subject=subject, value=value, learned_turn=turn
-        )
+    ) -> Fact:
+        """Record what we saw. Looking again overwrites, and resets the clock.
+
+        Returns the fact it stored, so a caller can hand what was learned straight to a report
+        without going back to the ledger to ask what it just put there.
+        """
+        fact = Fact(kind=kind, subject=subject, value=value, learned_turn=turn)
+        self.facts[_key(kind, subject)] = fact
+        return fact
 
     def fact(self, kind: FactKind, subject: Subject) -> Fact | None:
         return self.facts.get(_key(kind, subject))
@@ -121,11 +125,11 @@ class Ledger:
 
     # --- The map, as the ledger's first client -------------------------------------------
 
-    def reveal(self, world: World, coord: Coord, turn: int) -> None:
+    def reveal(self, world: World, coord: Coord, turn: int) -> Fact:
         """Walk onto a tile and learn what the ground is."""
-        self.learn(FactKind.TERRAIN, coord, world.tile(coord).terrain, turn)
+        return self.learn(FactKind.TERRAIN, coord, world.tile(coord).terrain, turn)
 
-    def survey(self, coord: Coord, capacity: int, turn: int) -> None:
+    def survey(self, coord: Coord, capacity: int, turn: int) -> Fact:
         """Stop on a tile and work out how much of it the clan can actually work.
 
         The second rung of slice 3's gradient. Walking a tile answers *what* it is; surveying
@@ -136,7 +140,7 @@ class Ledger:
         Surveying the same ground again is legal and resets the clock, which is what makes it
         a standing cost rather than a box to tick once a FORAGE fact can go stale.
         """
-        self.learn(FactKind.FORAGE, coord, capacity, turn)
+        return self.learn(FactKind.FORAGE, coord, capacity, turn)
 
     def revealed(self) -> list[Coord]:
         """Tiles whose terrain we have learned, sorted for determinism.
