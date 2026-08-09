@@ -1,0 +1,109 @@
+# The elder: the corpus's first chain, and the first thing the clan remembers.
+#
+# This exists to be read as a worked example as much as to be played. Four events, gated on
+# tallies rather than on ids, so what matters is not that an earlier event *happened* but how
+# it was *answered*. Overrule him and the chain runs toward a man who stops arguing and starts
+# arranging; defer to him and it runs somewhere else entirely.
+#
+# Rarity here comes from conditions, not from a weight lottery. `elder.the_reckoning` is the
+# powerful one, and it is rare because reaching resentment above six takes a run's worth of
+# choices, not because a die came up short. A payoff you earned reads as a consequence; a
+# payoff you rolled reads as noise.
+
+[[event]]
+id = "elder.the_overruling"
+weight = 6
+once = true
+when = ["year < 3", "adults > 3"]
+title = "The Elder Objects"
+body = """
+He is old enough to remember two hard winters and he will tell you about both. What he wants
+is for the far ground to be left alone until the thaw, and he wants to be asked. The hands are
+already standing in the cold, waiting to be told something.
+"""
+
+[[event.choice]]
+text = "Overrule him. There is no time to hold a council over every field."
+[event.choice.effect]
+morale = 1
+[event.choice.effect.tally]
+elder_resentment = 3
+
+[[event.choice]]
+text = "Let him speak, and lose the argument in front of everyone."
+[event.choice.effect]
+morale = -1
+[event.choice.effect.tally]
+elder_standing = 2
+
+[[event]]
+id = "elder.the_muttering"
+weight = 8
+once = true
+# A year at least, so a slight has time to sour into something. The whole point of a tally
+# is that it is slow; a chain that resolves inside four seasons is a scripted scene.
+when = ["tally_elder_resentment > 2", "year > 1"]
+title = "Something Said Quietly"
+body = """
+It stops when you come near the fire, which is how you know. Nobody will say what was said.
+The elder looks at you the way you look at weather.
+"""
+
+[[event.choice]]
+text = "Leave it. A grudge left alone goes cold."
+[event.choice.effect]
+[event.choice.effect.tally]
+elder_resentment = 3
+
+[[event.choice]]
+text = "Sit with him until it is said out loud. It costs you the evening and some standing."
+[event.choice.effect]
+morale = -1
+[event.choice.effect.tally]
+elder_resentment = -4
+
+[[event]]
+id = "elder.the_reckoning"
+weight = 10
+once = true
+when = ["tally_elder_resentment > 5", "year > 2"]
+title = "He Has Stopped Arguing"
+body = """
+He does not object any more. He has not objected in a season, and you took that for peace.
+This morning a third of the stores are gone and so are two of the hands who agreed with him
+about the far ground, and nobody in this camp will meet your eye.
+"""
+
+[[event.choice]]
+text = "Go after them. Whatever they took, the clan cannot spare it."
+[event.choice.effect]
+food = -12
+adults = -1
+morale = -2
+[event.choice.effect.tally]
+elder_resentment = -3
+
+[[event.choice]]
+text = "Let them go. Say nothing. Feed the ones who stayed."
+[event.choice.effect]
+food = -18
+morale = -1
+[event.choice.effect.tally]
+elder_resentment = -6
+
+[[event]]
+id = "elder.the_word"
+weight = 6
+once = true
+when = ["tally_elder_standing > 1", "year > 2"]
+title = "The Elder Speaks For You"
+body = """
+There is an argument at the fire that you are not in and do not need to be. He settles it in
+your favour before it reaches you, and lets everyone see him do it. Deference bought this, one
+cold evening a year ago, and you paid for it then.
+"""
+
+[event.effect]
+morale = 2
+[event.effect.tally]
+elder_standing = 1

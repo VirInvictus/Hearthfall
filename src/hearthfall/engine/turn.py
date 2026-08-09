@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 
 from hearthfall.engine import balance
 from hearthfall.engine.events import table
-from hearthfall.engine.events.loader import Event
+from hearthfall.engine.events.loader import Event, load_tallies
 from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
@@ -249,8 +249,14 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
     )
 
 
-def new_game(seed: int) -> GameState:
-    """A fresh run. Everything downstream of this is a function of the seed."""
+def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
+    """A fresh run. Everything downstream of this is a function of the seed.
+
+    Every declared tally starts at zero and is present from the first turn, so `snapshot()`
+    has a stable key set and the loader can validate both conditions and effects against it.
+    The registry is read from `data/tallies.toml` unless a caller injects one, which is how a
+    test builds a state without depending on shipped content.
+    """
     rng = Rng(seed)
     world = World.generate(
         width=balance.MAP_WIDTH,
@@ -272,6 +278,9 @@ def new_game(seed: int) -> GameState:
             morale=balance.STARTING_MORALE,
         ),
         stores=Stores(food=balance.STARTING_FOOD),
+        tallies={
+            name: 0 for name in (load_tallies() if tallies is None else tuple(tallies))
+        },
     )
     _refresh_ground(state)
     return state
@@ -343,6 +352,12 @@ def apply_effect(state: GameState, effect: Effect) -> None:
         state.population.children.append(balance.CHILD_MATURES_AFTER)
     for _ in range(-effect.children):
         _take_a_child(state.population)
+
+    # Tallies are unclamped and unbounded on purpose. A grudge does not saturate at ten, and
+    # the corpus, not the engine, decides what counts as "enough". They never go below zero
+    # though: a negative resentment is not forgiveness, it is a bug in an event.
+    for name, delta in effect.tally:
+        state.tallies[name] = max(0, state.tallies.get(name, 0) + delta)
 
 
 # --- Steps, in resolution order ---------------------------------------------------------

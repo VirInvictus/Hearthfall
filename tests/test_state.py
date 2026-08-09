@@ -34,7 +34,25 @@ SNAPSHOT_KEYS = {
 
 class TestSnapshot(unittest.TestCase):
     def test_the_key_set_is_exactly_what_content_may_test(self):
-        self.assertEqual(set(turn.new_game(1).snapshot()), SNAPSHOT_KEYS)
+        # Two halves, pinned separately. The simulation's own keys are a fixed contract and
+        # are listed above; the `tally_` keys are declared by content in `data/tallies.toml`
+        # and would make this list a second place to maintain the registry. What must hold is
+        # that nothing else sneaks in, because an unlisted key is one no event author knows
+        # exists and one no test is defending.
+        keys = set(turn.new_game(1).snapshot())
+        self.assertEqual({k for k in keys if not k.startswith("tally_")}, SNAPSHOT_KEYS)
+
+    def test_every_declared_tally_is_present_from_the_first_turn(self):
+        # If a tally only appeared once written, a condition naming it would fail to load
+        # until some other event had already fired, which is a load order dependency nobody
+        # would ever debug. They all start at zero and they are all always there.
+        from hearthfall.engine.events.loader import load_tallies
+
+        snapshot = turn.new_game(1).snapshot()
+        for name in load_tallies():
+            self.assertEqual(
+                snapshot[f"tally_{name}"], 0, f"tally_{name} missing or set"
+            )
 
     def test_values_are_primitives_the_evaluator_can_compare(self):
         for key, value in turn.new_game(1).snapshot().items():

@@ -46,10 +46,18 @@ class Effect:
     morale: int = 0
     adults: int = 0
     children: int = 0
+    # Deltas to the run's persistent counters, as (name, delta) pairs sorted by name. A tuple
+    # rather than a dict so the effect stays genuinely immutable and two effects built from
+    # the same table compare equal. This is what gives the corpus a memory: a tally written by
+    # a *choice* lets a later event require not just that something happened but that you
+    # answered it a particular way.
+    tally: tuple[tuple[str, int], ...] = ()
 
     @property
     def is_empty(self) -> bool:
-        return not (self.food or self.morale or self.adults or self.children)
+        return not (
+            self.food or self.morale or self.adults or self.children or self.tally
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,6 +146,10 @@ class GameState:
     forage_capacity: int = 0
     # Ids of events that have fired, so `once = true` entries do not come round again.
     fired_events: list[str] = field(default_factory=list[str])
+    # What the clan remembers. Every declared tally is present from the first turn at zero, so
+    # `snapshot()` has a stable key set and a condition naming a tally that does not exist
+    # fails when the corpus loads rather than silently never matching. See `data/tallies.toml`.
+    tallies: dict[str, int] = field(default_factory=dict[str, int])
 
     @property
     def season(self) -> Season:
@@ -178,4 +190,8 @@ class GameState:
             "terrain_revealed": str(self.last_revealed)
             if self.last_revealed
             else "none",
+            # Namespaced so a tally can never collide with a real state key, and so a reader
+            # of an event condition can see at a glance that `tally_elder_resentment` is
+            # something the corpus wrote rather than something the simulation computed.
+            **{f"tally_{name}": value for name, value in self.tallies.items()},
         }

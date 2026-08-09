@@ -1,0 +1,52 @@
+# The tallies: what the clan remembers.
+#
+# A tally is one integer that persists for the whole run, written by event effects and read
+# by event conditions as `tally_<name>`. That is the entire mechanism, and it is what lets a
+# corpus have a memory: a slight in year one can be the condition on a scheme in year four,
+# and a chain can require not merely that an earlier event fired but that it was answered a
+# particular way, because the tally is written by the *choice*.
+#
+# Every tally is declared here, and declaring it is what makes it exist. Nothing creates one
+# on the fly. That is deliberate and it is the same discipline the rest of the loader has:
+# an effect writing `tally.elder_resentmnt` should fail loudly when the corpus loads, not
+# quietly increment a counter nobody ever reads. Content that looks authored but does nothing
+# is indistinguishable from content that needs rewriting, and this is a game whose corpus is
+# heading for hundreds of entries.
+#
+# They start at zero and are never shown to the player. A meter you can watch is a meter you
+# can game; the point is that the clan remembers and you are not certain how much.
+
+[[tally]]
+name = "elder_resentment"
+about = """
+How badly the elder has been slighted, and how long he has been holding it. Rises when he is
+overruled in public and falls when he is deferred to. High enough for long enough and he stops
+arguing, which is worse.
+"""
+
+[[tally]]
+name = "elder_standing"
+about = """
+What the clan thinks of the elder, as distinct from what you think. A resented elder with high
+standing is dangerous; a resented elder nobody listens to is merely unpleasant.
+"""
+
+[[tally]]
+name = "debts_owed_to_you"
+about = """
+Times the hearth has been generous at its own cost. Generosity is an investment the corpus is
+allowed to pay back, occasionally, and it should not always.
+"""
+
+[[tally]]
+name = "hungry_winters"
+about = """
+Winters the clan went short. Memory of hunger changes how people answer, long after the
+stores recover.
+"""
+
+[[tally]]
+name = "ground_lost_to_fear"
+about = """
+Times the clan refused ground it had found. Cowardice is cheap in the moment and compounds.
+"""

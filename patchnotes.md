@@ -1,5 +1,37 @@
 # Patch notes
 
+## v0.3.0 (2026-08-09)
+
+The clan remembers what you did.
+
+- **Tallies.** One integer, persisting for the whole run, written by an event effect and read
+  by an event condition as `tally_<name>`. It is a small addition and it is what turns a
+  corpus into something with a memory: a slight in year one can be the condition on a
+  reckoning in year four.
+- **Chains gate on the answer, not on the event.** Because a tally is written by a *choice*,
+  a later event can require not merely that something happened but that you handled it a
+  particular way. A chain gated on which events had fired could only ever ask the first
+  question.
+- **The condition evaluator did not grow by a single line.** It is still `key op value`,
+  AND-ed, exactly as `spec.md` §6 insists. Every new question a tally makes askable is
+  precomputed into `snapshot()` instead, which is the rule that lets a fifty-line evaluator
+  survive households and neighbours later.
+- **Every tally is declared in `data/tallies.toml`, and declaring it is what makes it exist.**
+  Effects validate names against the same reference snapshot conditions already use, so an
+  effect writing `tally.elder_resentmnt` fails when the corpus loads rather than incrementing
+  a counter nothing will ever read. Content that looks authored but does nothing is
+  indistinguishable from content that needs rewriting, and this corpus is heading for
+  hundreds of entries.
+- **The elder chain ships as the worked example.** Four events over several years. Overrule
+  him early and it runs toward a man who stops arguing and starts arranging; defer, at a cost
+  you pay that evening, and it runs somewhere else entirely.
+- **Rarity comes from conditions, not from a weight lottery.** The powerful entry in that
+  chain is rare because reaching resentment above five takes a run's worth of choices. A
+  payoff you earned reads as a consequence; a payoff you rolled reads as noise.
+- Tallies never fall below zero. A negative grudge is not forgiveness, it is an event with the
+  sign wrong.
+- Suite 190 to 205 tests.
+
 ## v0.2.0 (2026-08-09)
 
 Ground you have walked is ground you can work.

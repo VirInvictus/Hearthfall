@@ -122,6 +122,31 @@ Built in slices, each green before the next starts.
       `STARTING_FOOD` was the obvious lever and it does not work; see the note on it in
       `balance.py`. The game is too harsh in year one and too safe from year two, and one
       scalar cannot move those in opposite directions.
+- [x] **Slice 2.5: the corpus grows a memory (2026-08-09).** Inserted ahead of slice 3 after a
+      real playtest: the allocation writes itself, so the decisions have to live in the events,
+      and events that forget everything cannot carry them.
+
+      A **tally** is one integer that persists for the run, written by event effects as a
+      structured table and read by conditions as `tally_<name>`. That single addition buys
+      silent progress meters, chains gated on *specific answers* rather than on an event
+      having fired, chains needing several prior events, and payoffs earned across years. The
+      condition evaluator does not grow by one line, which is decision 5 holding exactly:
+      `snapshot()` grows, the evaluator never does.
+
+      Every tally is declared in `data/tallies.toml`, and effects validate names against the
+      same reference snapshot conditions already use, so there is exactly one definition of
+      which tallies exist. `tally.elder_resentmnt = 1` fails at load instead of incrementing a
+      counter no condition will ever read.
+
+      `data/events/elder.toml` is the worked example: overrule him in year one and it runs
+      toward a man who stops arguing and starts arranging; defer and it runs somewhere else.
+      **Rarity comes from conditions, not a weight lottery.** The powerful entry is rare
+      because reaching resentment above five takes a run's worth of choices. A payoff you
+      earned reads as a consequence; a payoff you rolled reads as noise. Suite 190 → 205.
+
+      *Still open, and the reason this is not the plateau fix:* the labour allocation itself is
+      unchanged, so gate question 1 is answered by events rather than solved.
+
 - [ ] **Slice 3: scouts as a gradient.** Replace the `EXPLORERS_PER_REVEAL` cliff. Two learn
       the terrain, three also learn what can be foraged there, four also learn what lives
       there. Turns a threshold into a slope.

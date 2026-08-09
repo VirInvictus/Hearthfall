@@ -64,6 +64,19 @@ is "improve events", the answer is almost always "write more events", not "impro
 event system". Treat requests to enrich the event format with suspicion and point at
 `spec.md` §6.
 
+**Tallies are how the corpus remembers.** A tally is one integer that persists for the run,
+written by an effect (`[event.choice.effect.tally]`) and read by a condition as
+`tally_<name>`. Because the write hangs off a *choice*, a later event can require that you
+answered a particular way, not merely that something happened. Every tally is declared in
+`data/tallies.toml`; declaring it is what makes it exist, and an undeclared name fails at
+load. Reach for a tally before reaching for a new engine feature: chains, silent resentment
+meters, and earned payoffs are all already expressible. `data/events/elder.toml` is the
+worked example.
+
+**Rarity comes from conditions, not from weight.** A powerful event should be rare because
+it is hard to reach, not because a die came up short. Earned reads as consequence; rolled
+reads as noise.
+
 ## Comments
 
 Sparingly. Explain the non-obvious where it lives: why the RNG is injected, why a modifier

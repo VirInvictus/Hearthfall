@@ -25,10 +25,15 @@ EVENT_KEYS = frozenset(
     {"id", "weight", "once", "when", "title", "body", "effect", "choice"}
 )
 CHOICE_KEYS = frozenset({"text", "effect"})
-EFFECT_KEYS = frozenset({"food", "morale", "adults", "children"})
+EFFECT_KEYS = frozenset({"food", "morale", "adults", "children", "tally"})
+# The scalar deltas. `tally` is the one effect key holding a table rather than a number.
+EFFECT_SCALARS = EFFECT_KEYS - {"tally"}
 
 DATA_PACKAGE = "hearthfall.data"
 EVENTS_DIRECTORY = "events"
+TALLIES_FILE = "tallies.toml"
+TALLY_KEYS = frozenset({"name", "about"})
+TALLY_PREFIX = "tally_"
 
 
 class EventError(ValueError):
@@ -76,6 +81,52 @@ def load_corpus(reference: Snapshot) -> list[Event]:
         if entry.name.endswith(".toml")
     }
     return parse_corpus(documents, reference)
+
+
+def load_tallies() -> tuple[str, ...]:
+    """Read the declared tally names. The other function in the engine that touches storage."""
+    text = (
+        resources.files(DATA_PACKAGE).joinpath(TALLIES_FILE).read_text(encoding="utf-8")
+    )
+    return parse_tallies(text, TALLIES_FILE)
+
+
+def parse_tallies(text: str, source: str) -> tuple[str, ...]:
+    """Parse the tally registry, rejecting duplicates and anything malformed.
+
+    Declaring a tally is what makes it exist. Nothing creates one on the fly, so an effect
+    writing a misspelled name fails at load instead of incrementing a counter no condition
+    will ever read.
+    """
+    try:
+        document: dict[str, object] = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as error:
+        raise EventError(f"{source}: not valid TOML: {error}") from error
+
+    unknown = set(document) - {"tally"}
+    if unknown:
+        raise EventError(f"{source}: unknown top-level key(s) {sorted(unknown)}")
+
+    entries = _as_array(document.get("tally", []))
+    if entries is None:
+        raise EventError(f"{source}: [[tally]] must be an array of tables")
+
+    names: list[str] = []
+    for index, entry in enumerate(entries):
+        table = _as_table(entry)
+        if table is None:
+            raise EventError(f"{source}: tally {index} is not a table")
+        unknown = set(table) - TALLY_KEYS
+        if unknown:
+            raise EventError(
+                f"{source}: tally {index} has unknown key(s) {sorted(unknown)}"
+            )
+        name = _require_text(table, "name", f"{source}: tally {index}")
+        if name in names:
+            raise EventError(f"{source}: tally {name!r} is declared twice")
+        names.append(name)
+
+    return tuple(names)
 
 
 def parse_corpus(documents: Mapping[str, str], reference: Snapshot) -> list[Event]:
@@ -169,7 +220,7 @@ def _parse_event(raw: object, source: str, reference: Snapshot) -> Event:
             weight=weight,
             once=once,
             when=conditions,
-            options=_parse_choices(table["choice"], where),
+            options=_parse_choices(table["choice"], where, reference),
         )
 
     return Event(
@@ -179,11 +230,13 @@ def _parse_event(raw: object, source: str, reference: Snapshot) -> Event:
         weight=weight,
         once=once,
         when=conditions,
-        effect=_parse_effect(table.get("effect", {}), where),
+        effect=_parse_effect(table.get("effect", {}), where, reference),
     )
 
 
-def _parse_choices(raw: object, where: str) -> tuple[ChoiceOption, ...]:
+def _parse_choices(
+    raw: object, where: str, reference: Snapshot
+) -> tuple[ChoiceOption, ...]:
     array = _as_array(raw)
     if array is None or not array:
         raise EventError(f"{where} has an empty or malformed [[event.choice]] array")
@@ -202,14 +255,14 @@ def _parse_choices(raw: object, where: str) -> tuple[ChoiceOption, ...]:
         options.append(
             ChoiceOption(
                 text=_require_text(choice, "text", label),
-                effect=_parse_effect(choice.get("effect", {}), label),
+                effect=_parse_effect(choice.get("effect", {}), label, reference),
             )
         )
 
     return tuple(options)
 
 
-def _parse_effect(raw: object, where: str) -> Effect:
+def _parse_effect(raw: object, where: str, reference: Snapshot) -> Effect:
     table = _as_table(raw)
     if table is None:
         raise EventError(f"{where} has an effect that is not a table")
@@ -226,13 +279,55 @@ def _parse_effect(raw: object, where: str) -> Effect:
     # be a content error rather than a silent 1.
     deltas: dict[str, int] = {}
     for key, value in table.items():
+        if key == "tally":
+            continue
         if not isinstance(value, int) or isinstance(value, bool):
             raise EventError(
                 f"{where} has effect {key} = {value!r}; it must be an integer"
             )
         deltas[key] = value
 
-    return Effect(**deltas)
+    return Effect(
+        tally=_parse_tally_deltas(table.get("tally"), where, reference), **deltas
+    )
+
+
+def _parse_tally_deltas(
+    raw: object, where: str, reference: Snapshot
+) -> tuple[tuple[str, int], ...]:
+    """Read an `[effect.tally]` table into sorted (name, delta) pairs.
+
+    Names are checked against the reference snapshot, which already carries every declared
+    tally at zero. That reuse is the point: conditions and effects then agree on exactly one
+    definition of which tallies exist, so `tally.elder_resentmnt = 1` cannot quietly write to
+    a counter no condition will ever read. Sorted so an effect is a deterministic value.
+    """
+    if raw is None:
+        return ()
+
+    table = _as_table(raw)
+    if table is None:
+        raise EventError(f"{where} has an effect tally that is not a table")
+
+    deltas: list[tuple[str, int]] = []
+    for name, value in table.items():
+        if f"{TALLY_PREFIX}{name}" not in reference:
+            known = sorted(
+                key.removeprefix(TALLY_PREFIX)
+                for key in reference
+                if key.startswith(TALLY_PREFIX)
+            )
+            raise EventError(
+                f"{where} writes undeclared tally {name!r}; "
+                f"declare it in {TALLIES_FILE}. known: {', '.join(known)}"
+            )
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise EventError(
+                f"{where} has tally {name} = {value!r}; it must be an integer"
+            )
+        deltas.append((name, value))
+
+    return tuple(sorted(deltas))
 
 
 def _require_text(raw: dict[str, object], key: str, where: str) -> str:
