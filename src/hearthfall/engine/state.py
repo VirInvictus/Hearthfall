@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from hearthfall.engine.intel import Ledger
+from hearthfall.engine.people import Household, Rationing
 from hearthfall.engine.world import Coord, Terrain, World
 
 
@@ -83,18 +84,120 @@ class PendingChoice:
 
 @dataclass(slots=True)
 class Population:
-    adults: int
-    # One entry per child, holding the turns remaining until they can be assigned work.
-    children: list[int] = field(default_factory=list[int])
-    morale: int = 5
+    """The pool, held as households.
+
+    Every aggregate here is derived rather than stored, so households are the single source of
+    truth and the clan-wide numbers cannot drift from the kin groups they are made of. The
+    read API (`adults`, `child_count`, `total`, `morale`) is unchanged from when this held flat
+    counts, which is what let households arrive without touching the frontend or the corpus.
+
+    Mutation is the part that had to change. A clan does not lose "an adult", a *household*
+    does, and which household it is turns out to be the whole game.
+    """
+
+    households: list[Household] = field(default_factory=list[Household])
+
+    @classmethod
+    def of(
+        cls, adults: int, children: list[int] | None = None, morale: int = 5
+    ) -> Population:
+        """Build a single-household population. The old flat shape, for fixtures and tests."""
+        return cls(
+            households=[
+                Household(adults=adults, children=list(children or []), mood=morale)
+            ]
+        )
+
+    @property
+    def adults(self) -> int:
+        return sum(h.adults for h in self.households)
+
+    @property
+    def children(self) -> list[int]:
+        return [age for h in self.households for age in h.children]
 
     @property
     def child_count(self) -> int:
-        return len(self.children)
+        return sum(h.child_count for h in self.households)
 
     @property
     def total(self) -> int:
         return self.adults + self.child_count
+
+    @property
+    def morale(self) -> int:
+        """The clan-wide number, as the average of the households that still exist.
+
+        Kept because roughly thirty shipped events read `morale`, and because "how is the clan"
+        is still a real question. What it no longer is, is the only question: a clan averaging
+        five with one household at zero is a different clan from one where everybody is at
+        five, and `worst_household_mood` is what tells them apart.
+        """
+        living = [h for h in self.households if not h.is_empty]
+        return sum(h.mood for h in living) // len(living) if living else 0
+
+    @property
+    def worst_mood(self) -> int:
+        living = [h.mood for h in self.households if not h.is_empty]
+        return min(living) if living else 0
+
+    def resentful(self, threshold: int) -> int:
+        return sum(
+            1 for h in self.households if not h.is_empty and h.resentment >= threshold
+        )
+
+    @property
+    def living_households(self) -> int:
+        return sum(1 for h in self.households if not h.is_empty)
+
+    # --- Mutation, which now has to choose a household ---------------------------------
+
+    def shift_mood(self, delta: int, low: int, high: int) -> None:
+        for household in self.households:
+            household.mood = max(low, min(high, household.mood + delta))
+
+    def add_adults(self, count: int) -> None:
+        """New hands join the smallest household, which is how a kin group recovers."""
+        for _ in range(count):
+            if not self.households:
+                self.households.append(Household(adults=0))
+            smallest = min(self.households, key=lambda h: (h.size, id(h)))
+            smallest.adults += 1
+
+    def add_child(self, matures_after: int) -> None:
+        for household in sorted(self.households, key=lambda h: (h.size, id(h))):
+            if household.adults:
+                household.children.append(matures_after)
+                return
+
+    def take_people(self, count: int) -> int:
+        """Lose `count` people, worst-off household first. Returns how many actually went.
+
+        Worst-off means lowest mood, because a household already at the end of its rope is
+        where a death lands hardest and where the resentment it produces will matter most.
+        """
+        taken = 0
+        for _ in range(count):
+            candidates = [h for h in self.households if not h.is_empty]
+            if not candidates:
+                break
+            if min(candidates, key=lambda h: (h.mood, -h.size, id(h))).take_a_person():
+                taken += 1
+        return taken
+
+    def mature(self) -> int:
+        """Age every child by one season and count those who became hands."""
+        matured = 0
+        for household in self.households:
+            remaining: list[int] = []
+            for turns_left in household.children:
+                if turns_left <= 1:
+                    matured += 1
+                    household.adults += 1
+                else:
+                    remaining.append(turns_left - 1)
+            household.children = remaining
+        return matured
 
 
 @dataclass(slots=True)
@@ -110,6 +213,9 @@ class Orders:
     explore: int = 0
     tend: int = 0
     explore_target: Coord | None = None
+    # How a short store gets divided. Only bites when there is not enough to go round, which
+    # is what keeps it a decision about scarcity rather than a setting.
+    rationing: Rationing = Rationing.EQUAL
 
     @property
     def assigned(self) -> int:
@@ -144,6 +250,10 @@ class GameState:
     # `state` that imported `balance` would close the loop. `turn._refresh_ground` owns it and
     # a test asserts the cache never disagrees with a live count.
     forage_capacity: int = 0
+    # How much resentment makes a household count as resentful when content asks. Carried here
+    # for the same reason `forage_capacity` is: `snapshot()` needs it, and `balance` imports
+    # `state`, so reading it directly would close the import loop. `new_game` sets it.
+    resentful_at: int = 3
     # Ids of events that have fired, so `once = true` entries do not come round again.
     fired_events: list[str] = field(default_factory=list[str])
     # What the clan remembers. Every declared tally is present from the first turn at zero, so
@@ -178,6 +288,12 @@ class GameState:
             "people": self.population.total,
             "food": self.stores.food,
             "morale": self.population.morale,
+            # The household layer, as the flat scalars the evaluator can compare. Decision 5
+            # of the replan: every any/count/worst question is precomputed here so the
+            # fifty-line evaluator never has to learn how to ask one.
+            "households": self.population.living_households,
+            "worst_household_mood": self.population.worst_mood,
+            "households_resentful": self.population.resentful(self.resentful_at),
             "tiles_known": self.ledger.known_count,
             "tiles_unknown": self.ledger.unknown_count(self.world),
             # Lets content fire on a clan with more hands than ground, which is the pressure

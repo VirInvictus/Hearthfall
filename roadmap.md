@@ -185,16 +185,51 @@ and every design conversation say "scout"; the code says "explore". Left alone d
 to avoid churn in a commit that was already touching ten files. Worth settling before slice 4
 writes reports in the scouts' voice.
 
-## Sub-project 2: households (planned)
+## Sub-project 2: households (in progress)
 
 *Question: does a famine that creates a rival hurt more than a famine that creates a number?*
 
-- [ ] `engine/people.py`: pool, households, and the kin arithmetic that binds them
-- [ ] Famine and scarcity resolved against households, not against a flat count
-- [ ] Household mood and resentment with real consequences
-- [ ] Aggregate keys in `snapshot()` (`households_resentful`, `worst_household_mood`)
-- [ ] Corpus entries keyed on household state
-- [ ] Morale becomes a household-level pressure rather than one global display number
+- [x] **Slice 1: the famine lands on somebody (2026-08-09).** `engine/people.py` with
+      `Household`, `Rationing`, and `share_out`. The pool moved rather than gained a
+      neighbour: `Population` still answers `adults`, `child_count`, `total`, and `morale`,
+      but derives all four from households, so there is one source of truth and the corpus
+      and frontend needed no changes at all. Morale is the average of the *living* households,
+      which is what kept roughly thirty shipped events working unchanged.
+
+      **Rationing is the new decision.** When the store cannot cover demand you choose how to
+      divide it, and there is no dominant answer. Measured over 120 seeds: an even split is
+      *worse* for survival (a clan that never scouts endures 51 against 67) because spreading
+      a shortfall pushes every hearth into the starvation threshold at once, but it breeds
+      exactly zero resentment. Concentrating food saves people and makes a household that
+      remembers being fed last. Being wronged is deliberately not the same as being hungry.
+
+      Households also made the game less safe, which the plateau needed: a scouting policy
+      fell from 99% to 93%. Famine now concentrates instead of averaging.
+
+      **Gate verdict: mechanically sound, dormant in good play.** Reading a run: the store
+      swings 30 → 2 → 36 across a year, which is a real rhythm, and the elder chain gives the
+      seasons something to be about. But the rationing prompt never appeared in eight seasons
+      of competent play, because a competent player is rarely short, and the three households
+      stayed identical (`m6 m6 m6`) for the same reason. **Both the new decision and the new
+      structure are invisible unless things are already going wrong.** That is the honest
+      result and it is what slices 2 to 4 are for: households need reasons to diverge that are
+      not famine.
+
+      Also measured: `WORKERS` and `CHILDREN` produce nearly identical outcomes, because the
+      clan is capacity-bound rather than labour-bound, so protecting the workers buys nothing.
+      Same root cause as the plateau. Suite 205 → 231.
+
+- [ ] **Slice 2: growth.** Households pair and bear, replacing the global
+      `BIRTH_FOOD_THRESHOLD`/`BIRTH_MORALE_THRESHOLD` gate that almost never opens. **This is
+      the plateau fix**: population growth is what keeps ground worth taking, which keeps
+      exploration paying, which keeps the spine turning. It should also separate `WORKERS`
+      from `CHILDREN`, since a clan that can grow has a reason to protect the young.
+- [ ] **Slice 3: traits and compatibility.** The quiet meter behind who pairs with whom.
+- [ ] **Slice 4: resentment with teeth.** The starved household becomes a rival. Corpus
+      entries keyed on household state, using the tallies from slice 2.5.
+
+Note the constraint from `spec.md` §5: the pool comes first and names are a layer over it.
+This sub-project ships **no named people**. It ships the thing they will later be drawn from.
 
 Note the constraint from `spec.md` §5: the pool comes first and names are a layer over it.
 This slice ships **no named people**. It ships the thing they will later be drawn from.

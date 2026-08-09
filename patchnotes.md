@@ -1,5 +1,40 @@
 # Patch notes
 
+## v0.4.0 (2026-08-09)
+
+A famine now lands on somebody.
+
+- **Households.** The clan is dealt into kin groups, and a kin group is what starves, what
+  resents, and later what marries and feuds. A clan of eight going three short used to lose
+  one person and a point of morale, which is a number moving. The same shortfall now takes a
+  child *from a hearth*, and that hearth remembers.
+- **The pool moved rather than gained a neighbour.** `adults`, `child_count`, `total` and
+  `morale` all still answer, and all four are now derived from the households, so there is one
+  source of truth and nothing can drift. Morale is the average of the living households, which
+  is why the shipped corpus needed no changes at all.
+- **Rationing is a decision you make when the store is short.** Equal shares, the workers
+  first, or the children first. There is deliberately no right answer. Measured over 120
+  seeds, an even split is *worse* for survival, because spreading a shortfall pushes every
+  hearth into the starvation threshold at once, but it wrongs nobody. Concentrating the food
+  saves people and creates a household that was fed last and knows it.
+- **Being wronged is not the same as being hungry.** Everyone going short together breeds no
+  resentment. Watching another hearth eat does. That distinction is what keeps equal shares a
+  real option rather than the safe one.
+- The forecast accounts for rationing, so the projected deaths change as you choose. A
+  forecast that averaged it away would be silent about the one thing being decided.
+- `snapshot()` gains `households`, `worst_household_mood` and `households_resentful`. Two
+  clans averaging five morale are not the same clan if one of them has a hearth at zero.
+- The game is less safe: a scouting policy fell from 99% of seeds survived to 93%, because
+  famine now concentrates instead of averaging.
+- Suite 205 to 231 tests.
+
+**Known, and recorded rather than papered over.** In competent play none of this shows up. The
+rationing prompt never appeared across eight seasons of a well-played run, because a good
+player is rarely short, and the three households stayed identical for the same reason. Both
+the new decision and the new structure are currently invisible unless things are already going
+wrong. Households need reasons to diverge that are not famine, which is what the next slices
+are for.
+
 ## v0.3.0 (2026-08-09)
 
 The clan remembers what you did.

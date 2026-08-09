@@ -48,9 +48,7 @@ def a_state(
         seed=seed,
         world=world,
         ledger=ledger,
-        population=Population(
-            adults=adults, children=list(children or []), morale=morale
-        ),
+        population=Population.of(adults, list(children or []), morale),
         stores=Stores(food=food),
         turn=turn_number,
     )
@@ -279,7 +277,11 @@ class TestMoraleDrift(unittest.TestCase):
         self.assertEqual(state.population.morale, 2)
 
     def test_high_morale_settles_toward_the_middle(self):
-        state = a_state(morale=balance.MORALE_MAX, food=0, adults=0, children=[])
+        # One fed adult, and a store deliberately under BIRTH_FOOD_THRESHOLD, so neither
+        # starvation nor a birth moves anything and the drift is the only thing acting. This
+        # used to use a clan of nobody; since morale became the average of the *living*
+        # households, an empty clan reports 0 rather than whatever it felt before it died.
+        state = a_state(morale=balance.MORALE_MAX, food=39, adults=1, children=[])
         turn.resolve(state, Orders(), Rng(1))
         self.assertEqual(state.population.morale, balance.MORALE_MAX - 1)
 

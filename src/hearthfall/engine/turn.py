@@ -16,6 +16,7 @@ from hearthfall.engine import balance
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event, load_tallies
 from hearthfall.engine.intel import FactKind, Ledger
+from hearthfall.engine.people import Household, Rationing, share_out
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     Effect,
@@ -51,6 +52,10 @@ class TurnReport:
     spoiled: int = 0
     matured: int = 0
     born: int = 0
+    # How the season's food was divided, and how many hearths went without while others ate.
+    # Wronged is not the same as hungry: everyone going equally short wrongs nobody.
+    rationing: Rationing = Rationing.EQUAL
+    households_wronged: int = 0
     revealed: Coord | None = None
     revealed_terrain: Terrain | None = None
     event_id: str | None = None
@@ -211,20 +216,28 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
     opening = state.stores.food
     after_produce = opening + take.food
 
-    winter_extra = balance.WINTER_EXTRA_FOOD if season is Season.WINTER else 0
-    demand = population.adults * (
-        balance.FOOD_PER_ADULT + winter_extra
-    ) + population.child_count * (balance.FOOD_PER_CHILD + winter_extra)
+    per_adult, per_child = rations(season)
+    households = [h for h in population.households if not h.is_empty]
+    demand = sum(h.demand(per_adult, per_child) for h in households)
     eaten = min(demand, after_produce)
     shortfall = demand - eaten
-    would_starve = (
-        min(
-            math.ceil(shortfall / balance.FOOD_PER_STARVATION_DEATH),
-            population.total,
-        )
-        if shortfall
-        else 0
-    )
+
+    # Deaths are counted per household, exactly as `_consume` counts them, because the
+    # rationing choice changes who goes without and therefore how many die. Feeding three
+    # households evenly can kill nobody where feeding one of them fully kills two, off the
+    # same shortfall. A forecast that averaged that away would be hiding the consequence of
+    # the very decision it exists to inform.
+    would_starve = 0
+    for household, share in zip(
+        households,
+        share_out(households, eaten, orders.rationing, per_adult, per_child),
+        strict=True,
+    ):
+        short = household.demand(per_adult, per_child) - share
+        if short > 0:
+            would_starve += min(
+                math.ceil(short / balance.FOOD_PER_STARVATION_DEATH), household.size
+            )
 
     after_eat = after_produce - eaten
     rate = max(
@@ -272,11 +285,8 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
         seed=seed,
         world=world,
         ledger=ledger,
-        population=Population(
-            adults=balance.STARTING_ADULTS,
-            children=[balance.CHILD_MATURES_AFTER] * balance.STARTING_CHILDREN,
-            morale=balance.STARTING_MORALE,
-        ),
+        population=_founding_households(),
+        resentful_at=balance.RESENTFUL_AT,
         stores=Stores(food=balance.STARTING_FOOD),
         tallies={
             name: 0 for name in (load_tallies() if tallies is None else tuple(tallies))
@@ -284,6 +294,24 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
     )
     _refresh_ground(state)
     return state
+
+
+def _founding_households() -> Population:
+    """Deal the starting clan into kin groups, as evenly as the numbers allow.
+
+    Deterministic and seed-independent: who is in which household at turn zero is not
+    something a run should differ on, and making it random would add variance to the opening
+    without adding a decision.
+    """
+    count = balance.STARTING_HOUSEHOLDS
+    households = [
+        Household(adults=0, mood=balance.STARTING_MORALE) for _ in range(count)
+    ]
+    for index in range(balance.STARTING_ADULTS):
+        households[index % count].adults += 1
+    for index in range(balance.STARTING_CHILDREN):
+        households[index % count].children.append(balance.CHILD_MATURES_AFTER)
+    return Population(households=households)
 
 
 def resolve(
@@ -309,8 +337,7 @@ def resolve(
     report = TurnReport(turn=state.turn, season=season)
 
     _produce(state, orders, season, report)
-    _consume(state, report)
-    _starve(state, report)
+    _consume(state, orders, report)
     _spoil(state, orders, season, report)
     _explore(state, orders, rng, report)
     _draw_event(state, rng, report, events)
@@ -345,13 +372,14 @@ def apply_choice(state: GameState, index: int) -> Effect:
 def apply_effect(state: GameState, effect: Effect) -> None:
     """Apply a bundle of deltas, clamped so the state stays legal."""
     state.stores.food = max(0, state.stores.food + effect.food)
-    state.population.morale = _clamp_morale(state.population.morale + effect.morale)
-    state.population.adults = max(0, state.population.adults + effect.adults)
+    state.population.shift_mood(effect.morale, balance.MORALE_MIN, balance.MORALE_MAX)
+    state.population.add_adults(max(0, effect.adults))
+    state.population.take_people(max(0, -effect.adults))
 
     for _ in range(effect.children):
-        state.population.children.append(balance.CHILD_MATURES_AFTER)
+        state.population.add_child(balance.CHILD_MATURES_AFTER)
     for _ in range(-effect.children):
-        _take_a_child(state.population)
+        state.population.take_people(1)
 
     # Tallies are unclamped and unbounded on purpose. A grudge does not saturate at ten, and
     # the corpus, not the engine, decides what counts as "enough". They never go below zero
@@ -387,42 +415,68 @@ def _produce(
         )
 
 
-def _consume(state: GameState, report: TurnReport) -> None:
+def rations(season: Season) -> tuple[int, int]:
+    """What one adult and one child need this season. Winter costs everyone extra."""
+    extra = balance.WINTER_EXTRA_FOOD if season is Season.WINTER else 0
+    return balance.FOOD_PER_ADULT + extra, balance.FOOD_PER_CHILD + extra
+
+
+def _consume(state: GameState, orders: Orders, report: TurnReport) -> None:
+    """Feed the households, by the rationing the player chose.
+
+    Eating and starving are one step now rather than two, because who starves depends on who
+    ate, and that depended on a decision. The clan-wide totals in the report are unchanged, so
+    everything reading them keeps working; what is new is that the same shortfall now lands on
+    named ground instead of on an average.
+    """
     population = state.population
-    winter_extra = balance.WINTER_EXTRA_FOOD if state.season is Season.WINTER else 0
-    demand = population.adults * (
-        balance.FOOD_PER_ADULT + winter_extra
-    ) + population.child_count * (balance.FOOD_PER_CHILD + winter_extra)
+    per_adult, per_child = rations(state.season)
+    households = [h for h in population.households if not h.is_empty]
+
+    demand = sum(h.demand(per_adult, per_child) for h in households)
     eaten = min(demand, state.stores.food)
     state.stores.food -= eaten
     report.consumed = eaten
     report.shortfall = demand - eaten
+    report.rationing = orders.rationing
     report.note(f"{population.total} mouths ate {eaten} food.")
 
+    shares = share_out(households, eaten, orders.rationing, per_adult, per_child)
+    # What each household would have got under an even split, which is the yardstick for
+    # whether it was *wronged* as opposed to merely hungry. Everyone going equally short
+    # breeds far less resentment than one household watching another eat.
+    fair = share_out(households, eaten, Rationing.EQUAL, per_adult, per_child)
 
-def _starve(state: GameState, report: TurnReport) -> None:
-    if not report.shortfall:
-        return
+    starved = 0
+    wronged = 0
+    for household, share, even in zip(households, shares, fair, strict=True):
+        short = household.demand(per_adult, per_child) - share
+        if short > 0:
+            deaths = min(
+                math.ceil(short / balance.FOOD_PER_STARVATION_DEATH), household.size
+            )
+            for _ in range(deaths):
+                household.take_a_person()
+            starved += deaths
+            household.mood = _clamp_morale(
+                household.mood
+                - balance.MORALE_LOSS_PER_STARVATION
+                - deaths * balance.MORALE_LOSS_PER_DEATH
+            )
+        if share < even:
+            household.resentment += balance.RESENTMENT_PER_SHORT_SHARE
+            wronged += 1
 
-    population = state.population
-    deaths = math.ceil(report.shortfall / balance.FOOD_PER_STARVATION_DEATH)
-    deaths = min(deaths, population.total)
-
-    for _ in range(deaths):
-        if population.children:
-            _take_a_child(population)
-        else:
-            population.adults -= 1
-
-    report.starved = deaths
-    population.morale = _clamp_morale(
-        population.morale
-        - balance.MORALE_LOSS_PER_STARVATION
-        - deaths * balance.MORALE_LOSS_PER_DEATH
-    )
-    report.note(
-        f"The stores ran {report.shortfall} short. {deaths} did not survive it."
-    )
+    report.starved = starved
+    report.households_wronged = wronged
+    if report.shortfall:
+        report.note(
+            f"The stores ran {report.shortfall} short. {starved} did not survive it."
+        )
+    if wronged:
+        report.note(
+            f"{wronged} of the hearths went without while others ate. They know it."
+        )
 
 
 def _spoil(
@@ -502,15 +556,7 @@ def _draw_event(
 def _grow(state: GameState, rng: Rng, report: TurnReport) -> None:
     population = state.population
 
-    remaining: list[int] = []
-    matured = 0
-    for turns_left in population.children:
-        if turns_left <= 1:
-            matured += 1
-        else:
-            remaining.append(turns_left - 1)
-    population.children = remaining
-    population.adults += matured
+    matured = population.mature()
     report.matured = matured
     if matured:
         report.note(f"{matured} came of age.")
@@ -520,17 +566,18 @@ def _grow(state: GameState, rng: Rng, report: TurnReport) -> None:
         and population.morale >= balance.BIRTH_MORALE_THRESHOLD
         and rng.chance(balance.BIRTH_CHANCE)
     ):
-        population.children.append(balance.CHILD_MATURES_AFTER)
+        population.add_child(balance.CHILD_MATURES_AFTER)
         report.born = 1
         report.note("A child was born to the hearth.")
 
     # Morale drifts back toward the middle when nothing pushes it, so one bad winter does
     # not flatten the clan for the rest of the run and leave every later event landing on
     # the floor.
-    if population.morale < balance.MORALE_DRIFT_TARGET:
-        population.morale += 1
-    elif population.morale > balance.MORALE_DRIFT_TARGET:
-        population.morale -= 1
+    for household in population.households:
+        if household.mood < balance.MORALE_DRIFT_TARGET:
+            household.mood += 1
+        elif household.mood > balance.MORALE_DRIFT_TARGET:
+            household.mood -= 1
 
 
 def _advance(state: GameState, report: TurnReport) -> None:
@@ -558,17 +605,6 @@ def _judge(state: GameState) -> None:
         state.outcome = Outcome.BURIED
     elif state.outcome is None and state.turn >= balance.TURNS_PER_RUN:
         state.outcome = Outcome.ENDURED
-
-
-def _take_a_child(population: Population) -> None:
-    """Remove the child furthest from maturity.
-
-    Deterministic, and it leaves the clan the ones closest to being hands. That is the
-    kinder outcome mechanically and the colder one to read, which is about right.
-    """
-    if not population.children:
-        return
-    population.children.remove(max(population.children))
 
 
 def _clamp_morale(value: int) -> int:

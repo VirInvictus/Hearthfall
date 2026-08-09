@@ -27,6 +27,7 @@ from hearthfall import VERSION
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
 from hearthfall.engine.intel import FactKind
+from hearthfall.engine.people import Rationing
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     GameState,
@@ -55,6 +56,12 @@ COLOURS: dict[Terrain, str] = {
     Terrain.HILLS: "#c0a36e",
     Terrain.MARSH: "#8992a7",
     Terrain.WATER: "#8ba4b0",
+}
+
+RATION_WORDS: dict[Rationing, str] = {
+    Rationing.EQUAL: "equal shares",
+    Rationing.WORKERS: "the workers first",
+    Rationing.CHILDREN: "the children first",
 }
 
 JOBS = [
@@ -185,6 +192,7 @@ class Hearthfall(App[None]):
         ("t", "assign('tend', 1)", "Tend"),
         ("T", "assign('tend', -1)", ""),
         ("w", "cycle_target", "Where to scout"),
+        ("r", "cycle_rationing", "How to ration"),
         ("space", "commit", "Resolve the season"),
         ("n", "new_run", "New run"),
         ("q", "quit", "Quit"),
@@ -199,6 +207,7 @@ class Hearthfall(App[None]):
         self.state = turn.new_game(seed)
         self.rng = Rng(seed)
         self.counts = {"forage": 0, "explore": 0, "tend": 0}
+        self.rationing = Rationing.EQUAL
         self.target_index = 0
 
     # --- Layout ---------------------------------------------------------------------
@@ -300,6 +309,7 @@ class Hearthfall(App[None]):
                 forage=self.counts["forage"],
                 explore=self.counts["explore"],
                 tend=self.counts["tend"],
+                rationing=self.rationing,
             ),
         )
 
@@ -332,6 +342,13 @@ class Hearthfall(App[None]):
         ledger.append(" → ", "#625e5a")
         ledger.append(f"{f.closing_food}", "bold")
         ledger.append(f"  ({f.net:+})\n", "#8a9a7b" if f.net >= 0 else "#c4746e")
+
+        # Rationing only appears when it bites. Offering the choice in a good season would
+        # train the player to ignore it, and it is meant to be the hardest call they make.
+        if f.shortfall:
+            ledger.append("\n  Not enough. Ration by ", "#625e5a")
+            ledger.append(f"{RATION_WORDS[self.rationing]}", "bold #c0a36e")
+            ledger.append("  (r)\n", "#625e5a")
 
         if f.would_starve:
             ledger.append(f"\n  {f.would_starve} would starve.\n", "bold #c4746e")
@@ -389,6 +406,11 @@ class Hearthfall(App[None]):
         self.counts[job] = max(0, self.counts[job] + delta)
         self.refresh_view()
 
+    def action_cycle_rationing(self) -> None:
+        order = list(Rationing)
+        self.rationing = order[(order.index(self.rationing) + 1) % len(order)]
+        self.refresh_view()
+
     def action_cycle_target(self) -> None:
         self.target_index += 1
         self.refresh_view()
@@ -412,6 +434,7 @@ class Hearthfall(App[None]):
             forage=self.counts["forage"],
             explore=self.counts["explore"],
             tend=self.counts["tend"],
+            rationing=self.rationing,
             explore_target=self.explore_target()
             if self.counts["explore"] >= balance.EXPLORERS_PER_REVEAL
             else None,

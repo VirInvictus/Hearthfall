@@ -36,6 +36,24 @@ STARTING_MORALE = 6
 MORALE_MIN = 0
 MORALE_MAX = 10
 
+# --- Households --------------------------------------------------------------------------
+
+# Kin groups the starting clan is dealt into. Three is the smallest number that makes
+# rationing a real decision: with two, "feed the workers" is a coin toss between them, and
+# with one there is nobody to feed instead. `spec.md` §5 sizes the mature game at ten to
+# forty, which arrives with growth.
+STARTING_HOUSEHOLDS = 3
+
+# Resentment added to a household that got less than an even split would have given it. It
+# accrues per season and never decays on its own, because being fed last is not something a
+# kin group forgets when the stores recover. Being merely hungry costs nothing here: everyone
+# going short together wrongs no one, and that is what makes EQUAL a real option rather than
+# the safe one.
+RESENTMENT_PER_SHORT_SHARE = 1
+
+# What counts as a resentful household when content asks. Three seasons of being passed over.
+RESENTFUL_AT = 3
+
 # --- Food ------------------------------------------------------------------------------
 
 # Food a single forager brings in per turn, by season. Winter is not merely lean: there is

@@ -27,6 +27,9 @@ SNAPSHOT_KEYS = {
     "tiles_unknown",
     "forage_capacity",
     "hands_without_ground",
+    "households",
+    "worst_household_mood",
+    "households_resentful",
     "terrain_home",
     "terrain_revealed",
 }
@@ -110,7 +113,7 @@ class TestTheCalendar(unittest.TestCase):
 
 class TestPopulation(unittest.TestCase):
     def test_totals(self):
-        population = Population(adults=4, children=[1, 2, 3])
+        population = Population.of(4, [1, 2, 3])
         self.assertEqual(population.child_count, 3)
         self.assertEqual(population.total, 7)
 
