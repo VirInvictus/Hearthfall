@@ -185,6 +185,68 @@ class Population:
                 taken += 1
         return taken
 
+    def grow(
+        self,
+        target: int,
+        mood_floor: int,
+        needs_adults: int,
+        lost: int,
+        matures_after: int,
+    ) -> int:
+        """Advance every household's bond and bear a child wherever it has come due.
+
+        Returns how many were born. Deterministic: a fed, content hearth with two adults in it
+        grows on a schedule, and a hungry one loses ground. That is what ties growth to how the
+        player rationed, which the old global food-and-morale gate could not do because it
+        asked about the clan as a whole and therefore about nobody.
+        """
+        born = 0
+        for household in self.households:
+            if household.is_empty:
+                continue
+            settled = (
+                household.adults >= needs_adults
+                and household.mood >= mood_floor
+                and not household.went_short
+            )
+            if settled:
+                household.bond += 1
+                if household.bond >= target:
+                    household.bond = 0
+                    household.children.append(matures_after)
+                    born += 1
+            else:
+                household.bond = max(0, household.bond - lost)
+        return born
+
+    def split_crowded(self, limit: int) -> int:
+        """Break up any hearth that has outgrown itself. Returns how many split off.
+
+        A household holds kin, not a barracks. Splitting is what takes three groups toward the
+        ten to forty `spec.md` §5 wants, and every new hearth is somewhere a grievance can live
+        that was not there before.
+        """
+        made = 0
+        for household in list(self.households):
+            if household.size < limit or household.adults < 2:
+                continue
+            # Half the adults and half the children leave, taking the mood with them but not
+            # the grudge: resentment belongs to the people who were fed last, and the ones who
+            # walked out to found a new hearth are starting something rather than nursing it.
+            moving = household.adults // 2
+            household.adults -= moving
+            taken = household.children[moving:]
+            household.children = household.children[:moving]
+            self.households.append(
+                Household(adults=moving, children=taken, mood=household.mood)
+            )
+            made += 1
+        return made
+
+    def clear_hunger(self) -> None:
+        for household in self.households:
+            household.went_short = 0
+
     def mature(self) -> int:
         """Age every child by one season and count those who became hands."""
         matured = 0

@@ -42,6 +42,14 @@ class Household:
     # Silent, unbounded, never shown. What they hold against the hearth for being fed last.
     # Read by content through aggregate snapshot keys, never as a number on screen.
     resentment: int = 0
+    # The other silent meter, and the kinder one: how settled and provided-for this household
+    # is, building toward a child. Fed and content seasons raise it, hungry ones set it back.
+    # Never shown either, so growth arrives as an event in the chronicle rather than as a
+    # progress bar the player optimises against.
+    bond: int = 0
+    # Seasons this household went short. Read by `_grow`, so hunger costs growth as well as
+    # people, and by content that wants to know who has been carrying the lean years.
+    went_short: int = 0
 
     @property
     def child_count(self) -> int:
@@ -121,14 +129,19 @@ def share_out(
         return shares
 
     if policy is Rationing.WORKERS:
+        # Most hands first, and fewest dependents as the tiebreak: feeding the workers means
+        # putting food where it buys the most labour, so a hearth of two adults outranks one
+        # of two adults and a child. Without that second key the founding clan, which starts
+        # with the same number of adults in every household, ordered identically under this
+        # policy and under CHILDREN, and the two were the same function wearing two names.
         order = sorted(
             range(len(households)),
-            key=lambda i: (-households[i].adults, i),
+            key=lambda i: (-households[i].adults, households[i].child_count, i),
         )
     else:
         order = sorted(
             range(len(households)),
-            key=lambda i: (-households[i].child_count, i),
+            key=lambda i: (-households[i].child_count, households[i].adults, i),
         )
 
     shares = [0] * len(households)

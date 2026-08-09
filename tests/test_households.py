@@ -72,6 +72,24 @@ class TestSharingOut(unittest.TestCase):
             shares, [5, 0], "the household full of children should eat first"
         )
 
+    def test_the_three_policies_are_three_different_functions(self):
+        # A regression guard for a real bug. The founding clan starts with the same number of
+        # adults in every household, so WORKERS ordered by `-adults` tied everywhere and fell
+        # back to index order, which is exactly what CHILDREN produced. Measured over 150
+        # seeds the two were indistinguishable, and they were indistinguishable because they
+        # were the same function wearing two names. Each now carries a dependent-count
+        # tiebreak, so "feed the workers" means where food buys the most labour.
+        households = [hh(2, 1), hh(2, 1), hh(2)]
+        shares = {
+            policy: tuple(share_out(households, 7, policy, PER_ADULT, PER_CHILD))
+            for policy in Rationing
+        }
+        self.assertEqual(
+            len(set(shares.values())),
+            len(Rationing),
+            f"two policies divide a short store identically: {shares}",
+        )
+
     def test_an_empty_clan_divides_nothing(self):
         self.assertEqual(share_out([], 10, Rationing.EQUAL, PER_ADULT, PER_CHILD), [])
 

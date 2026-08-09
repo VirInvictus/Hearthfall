@@ -1,5 +1,34 @@
 # Patch notes
 
+## v0.5.0 (2026-08-09)
+
+The clan can grow, and how you fed it decides whether it does.
+
+- **Households bear children on a schedule they earn.** A hearth with two adults, a decent
+  mood, and a fed season builds a silent meter; when it comes due, a child is born. A hungry
+  season knocks the meter back, so a famine costs years of growth rather than a turn of it.
+- **No dice.** The old rule gave the clan forty food and decent morale and then rolled. It
+  asked about the clan as a whole, which is a question about nobody, and it came back yes so
+  rarely that across a full run the clan never grew at all. A schedule instead of a lottery is
+  what ties growth to the rationing decision: the hearth you feed last is the hearth that
+  stops growing.
+- **Hearths that outgrow themselves split**, which is how three kin groups start heading
+  toward the ten to forty the design wants, and every new hearth is somewhere a grievance can
+  live that was not there before.
+- **Fixed: "feed the workers" and "feed the children" were the same function.** The founding
+  clan gives every household the same number of adults, so ordering by adults tied everywhere
+  and fell back to list order, which is exactly what ordering by children produced. Measured
+  across 150 seeds the two were indistinguishable. Each now breaks ties on dependents, and
+  under real scarcity they diverge properly (89 runs survived against 73).
+- Suite 231 to 233 tests.
+
+**The plateau is not fixed, and the diagnosis has moved.** Clans now grow (65 runs in 120 rise
+above their starting eight), but exploration still switches itself off, because four tiles
+already support more foragers than a clan of ten can staff. A sweep says neither obvious lever
+closes it: faster growth pushes survival to 98%, and halving what ground yields collapses it to
+62%. The real cause is that foraging is the only thing worth spending hands on, and one sink
+saturates. What is needed is another use for people, not more people.
+
 ## v0.4.0 (2026-08-09)
 
 A famine now lands on somebody.

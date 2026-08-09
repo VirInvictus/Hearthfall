@@ -219,11 +219,38 @@ writes reports in the scouts' voice.
       clan is capacity-bound rather than labour-bound, so protecting the workers buys nothing.
       Same root cause as the plateau. Suite 205 → 231.
 
-- [ ] **Slice 2: growth.** Households pair and bear, replacing the global
-      `BIRTH_FOOD_THRESHOLD`/`BIRTH_MORALE_THRESHOLD` gate that almost never opens. **This is
-      the plateau fix**: population growth is what keeps ground worth taking, which keeps
-      exploration paying, which keeps the spine turning. It should also separate `WORKERS`
-      from `CHILDREN`, since a clan that can grow has a reason to protect the young.
+- [x] **Slice 2: growth (2026-08-09).** A household with two adults, a decent mood, and a fed
+      season builds a silent `bond`; at `BOND_TO_BEAR` it bears a child and the meter resets. A
+      hungry season knocks it back, so famine costs years of growth rather than a turn of it.
+      Hearths that outgrow `HOUSEHOLD_SPLITS_AT` split, which is how three kin groups head
+      toward the ten to forty `spec.md` §5 wants.
+
+      **Deterministic, with no roll at all.** The old gate gave the clan forty food and decent
+      morale and then rolled dice; it asked about the clan as a whole, which is a question
+      about nobody, and it came back yes so rarely that the clan simply never grew. Making
+      growth a schedule ties it to *how the player rationed*: the hearth you feed last is the
+      hearth that stops growing. That connection is what a lottery would have severed.
+
+      **It works, and it does not fix the plateau.** The clan can now grow (65 runs in 120
+      rise above their starting eight, average peak 9.7), but tiles known moved only 3.8 → 4.0
+      and exploration still switches off. Measured cause: about four tiles already yield ~9
+      capacity, and a clan peaking near ten people has ~7 adults to staff it, so the ground
+      stays ahead of the hands. A sweep confirms neither lever closes it. Faster growth
+      (`BOND_TO_BEAR` 6 → 3) buys 0.4 tiles and pushes endurance to 98%, which is worse.
+      Halving terrain capacity buys 1.4 tiles and collapses survival from 94% to 62%.
+
+      **So the diagnosis moves.** Foraging is the clan's only sink for labour, and one sink
+      saturates. The fix is another thing worth spending hands on, which is sub-projects 6 to
+      8 (violence, composition, the long game), not more growth and not a bigger map. The
+      deferred larger map should stay deferred: more ground nobody needs helps nothing.
+
+      **A real bug fell out of the measurement.** `WORKERS` and `CHILDREN` had been producing
+      identical outcomes (93/93, 142/142 across 150 seeds) because the founding clan gives
+      every household the same number of adults, so `-adults` tied everywhere and fell back to
+      index order, which is exactly what `-child_count` produced. They were one function with
+      two names. Each now carries a dependent-count tiebreak, and they diverge properly under
+      real scarcity (89 against 73). `test_the_three_policies_are_three_different_functions`
+      guards it. Suite 231 → 233.
 - [ ] **Slice 3: traits and compatibility.** The quiet meter behind who pairs with whom.
 - [ ] **Slice 4: resentment with teeth.** The starved household becomes a rival. Corpus
       entries keyed on household state, using the tallies from slice 2.5.

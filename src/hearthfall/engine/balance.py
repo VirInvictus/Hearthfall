@@ -136,9 +136,30 @@ CHILD_MATURES_AFTER = 4  # turns, so a child born in spring works the following 
 
 # A birth needs surplus in the store and morale above the line. Both gates matter: a
 # well-fed miserable clan does not grow, and neither does a happy starving one.
-BIRTH_FOOD_THRESHOLD = 40
-BIRTH_MORALE_THRESHOLD = 6
-BIRTH_CHANCE = 0.35
+# A household that is fed, settled, and has two adults in it builds toward a child. The meter
+# is silent, slow, and deterministic: no roll, so growth is something the clan *earns* rather
+# than something that either fires or does not. A player who keeps a hearth fed can watch it
+# come, without ever being shown the number.
+#
+# Deterministic on purpose. The seeded RNG exists so runs reproduce, not so every mechanic has
+# to be a lottery, and a lottery here would sever the connection between how you rationed and
+# whether the clan grew. That connection is the whole point: the hearth you feed last is the
+# hearth that stops growing, which is what finally makes "feed the children" different from
+# "feed the workers".
+BOND_TO_BEAR = 6  # seasons of being fed and content
+BOND_MOOD_THRESHOLD = 5
+BOND_NEEDS_ADULTS = 2
+# A hungry season does not merely pause a household, it sets it back, so famine costs years of
+# growth rather than a turn of it.
+BOND_LOST_TO_HUNGER = 2
+
+# A hearth this size stops being one household. Splitting is how three kin groups become the
+# ten to forty `spec.md` §5 describes, and it gives resentment more places to live.
+HOUSEHOLD_SPLITS_AT = 6
+
+BIRTH_FOOD_THRESHOLD = (
+    40  # retained: content reads `food` against it, and it reads well
+)
 
 # --- Morale ----------------------------------------------------------------------------
 

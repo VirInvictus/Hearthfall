@@ -56,6 +56,7 @@ class TurnReport:
     # Wronged is not the same as hungry: everyone going equally short wrongs nobody.
     rationing: Rationing = Rationing.EQUAL
     households_wronged: int = 0
+    households_split: int = 0
     revealed: Coord | None = None
     revealed_terrain: Terrain | None = None
     event_id: str | None = None
@@ -463,6 +464,8 @@ def _consume(state: GameState, orders: Orders, report: TurnReport) -> None:
                 - balance.MORALE_LOSS_PER_STARVATION
                 - deaths * balance.MORALE_LOSS_PER_DEATH
             )
+        if short > 0:
+            household.went_short += 1
         if share < even:
             household.resentment += balance.RESENTMENT_PER_SHORT_SHARE
             wronged += 1
@@ -561,14 +564,38 @@ def _grow(state: GameState, rng: Rng, report: TurnReport) -> None:
     if matured:
         report.note(f"{matured} came of age.")
 
-    if (
-        state.stores.food >= balance.BIRTH_FOOD_THRESHOLD
-        and population.morale >= balance.BIRTH_MORALE_THRESHOLD
-        and rng.chance(balance.BIRTH_CHANCE)
-    ):
-        population.add_child(balance.CHILD_MATURES_AFTER)
-        report.born = 1
-        report.note("A child was born to the hearth.")
+    # Growth is per household and deterministic. The old gate asked whether the *clan* had
+    # forty food and decent morale, which is a question about nobody, and it almost never came
+    # back yes: measured across a full run the clan simply never grew, labour stayed capped at
+    # the six it started with, and ground past what six hands could work was worthless. That
+    # is the plateau, and this is the fix for it.
+    born = population.grow(
+        target=balance.BOND_TO_BEAR,
+        mood_floor=balance.BOND_MOOD_THRESHOLD,
+        needs_adults=balance.BOND_NEEDS_ADULTS,
+        lost=balance.BOND_LOST_TO_HUNGER,
+        matures_after=balance.CHILD_MATURES_AFTER,
+    )
+    report.born = born
+    if born:
+        report.note(
+            f"{born} child was born to the hearth."
+            if born == 1
+            else f"{born} children were born to the clan."
+        )
+
+    split = population.split_crowded(balance.HOUSEHOLD_SPLITS_AT)
+    report.households_split = split
+    if split:
+        report.note(
+            f"{split} hearth outgrew itself and set up its own fire."
+            if split == 1
+            else f"{split} hearths outgrew themselves and set up their own fires."
+        )
+
+    # Hunger is remembered for exactly one season by the growth rules; the lasting record of
+    # it is the bond that was knocked back and the resentment that was not.
+    population.clear_hunger()
 
     # Morale drifts back toward the middle when nothing pushes it, so one bad winter does
     # not flatten the clan for the rest of the run and leave every later event landing on

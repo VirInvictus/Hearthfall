@@ -258,16 +258,32 @@ class TestPopulationGrowth(unittest.TestCase):
     def test_a_miserable_clan_never_births(self):
         for seed in range(20):
             state = a_state(
-                food=1000, morale=balance.BIRTH_MORALE_THRESHOLD - 1, seed=seed
+                food=1000, morale=balance.BOND_MOOD_THRESHOLD - 1, seed=seed
             )
             self.assertEqual(turn.resolve(state, Orders(), Rng(seed)).born, 0)
 
-    def test_a_fed_and_willing_clan_sometimes_births(self):
+    def test_a_fed_and_willing_household_bears_on_a_schedule(self):
+        # Growth is deterministic now, and the schedule is the point: a hearth kept fed and
+        # content bears after BOND_TO_BEAR seasons, every time. The old gate rolled dice
+        # against clan-wide food and morale, which is a question about nobody, and it came
+        # back yes so rarely that the clan simply never grew.
+        state = a_state(food=1000, morale=balance.MORALE_MAX)
         births = 0
-        for seed in range(20):
-            state = a_state(food=1000, morale=balance.MORALE_MAX, seed=seed)
-            births += turn.resolve(state, Orders(), Rng(seed)).born
-        self.assertGreater(births, 0)
+        for _ in range(balance.BOND_TO_BEAR):
+            births += turn.resolve(state, Orders(), Rng(1)).born
+        self.assertGreater(births, 0, "a fed, content clan never grew")
+
+    def test_a_hungry_season_sets_a_household_back(self):
+        # Famine costs years of growth, not a turn of it, which is what makes rationing a
+        # decision with a tail rather than a decision about this season only.
+        state = a_state(food=1000, morale=balance.MORALE_MAX)
+        turn.resolve(state, Orders(), Rng(1))
+        earned = state.population.households[0].bond
+        self.assertGreater(earned, 0)
+
+        state.stores.food = 0
+        turn.resolve(state, Orders(), Rng(1))
+        self.assertLess(state.population.households[0].bond, earned)
 
 
 class TestMoraleDrift(unittest.TestCase):
