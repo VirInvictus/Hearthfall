@@ -393,6 +393,18 @@ class Hearthfall(App[None]):
         ledger.append(f"{f.closing_food}", "bold")
         ledger.append(f"  ({f.net:+})\n", "#8a9a7b" if f.net >= 0 else "#c4746e")
 
+        # The one warning the forecast itself cannot give, because the forecast is built from
+        # exactly the numbers that have gone out of date. Everything above this line is what
+        # the clan *expects*; this says how much of that expectation is a memory.
+        stale = self.state.ledger.stale_count(FactKind.FORAGE, self.state.turn)
+        if stale:
+            ledger.append(f"\n  {stale}", "bold #c4746e")
+            ledger.append(
+                " of the places you work have not been\n  looked at in years."
+                " The numbers above may be old.\n",
+                "#c4746e",
+            )
+
         if f.season is Season.WINTER and not f.shortfall:
             ledger.append("\n  Nothing grows in winter.\n", "#8992a7")
         return ledger
@@ -412,6 +424,10 @@ class Hearthfall(App[None]):
                 elif ledger.knows(FactKind.TERRAIN, coord):
                     # Dim means walked but never surveyed: the clan knows what is there and
                     # not what it is worth, which is the difference slice 3 exists to draw.
+                    # Staleness is *not* drawn here. It wants a third state on a glyph that is
+                    # deliberately ASCII, and every candidate mark (a combining bar, a box
+                    # character) is a bet on the player's font. It is said in words instead,
+                    # under the season ledger, where there is room to say what it costs.
                     style = COLOURS[tile.terrain]
                     if not ledger.knows(FactKind.FORAGE, coord):
                         style = f"dim {style}"

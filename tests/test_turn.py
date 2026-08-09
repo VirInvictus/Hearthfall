@@ -44,9 +44,7 @@ def a_state(
     # default keeps the half-lives explicit in the fixture.
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
-    ledger.survey(
-        world.home, balance.TERRAIN_CAPACITY[world.tile(world.home).terrain], turn=0
-    )
+    ledger.survey(world.home, turn.true_yield(world.tile(world.home)), turn=0)
     return GameState(
         seed=seed,
         world=world,
@@ -301,9 +299,7 @@ class TestScoutingIsAGradient(unittest.TestCase):
         state = a_state()
         for coord in list(state.world.tiles):
             state.ledger.reveal(state.world, coord, state.turn)
-            state.ledger.survey(
-                coord, balance.TERRAIN_CAPACITY[state.world.tile(coord).terrain], turn=0
-            )
+            state.ledger.survey(coord, turn.true_yield(state.world.tile(coord)), turn=0)
         report = turn.resolve(state, Orders(scout=balance.SCOUTS_TO_SURVEY), Rng(1))
         self.assertIsNone(report.revealed)
         self.assertIsNone(report.surveyed)
@@ -324,6 +320,73 @@ class TestScoutingIsAGradient(unittest.TestCase):
         self.assertIsNone(report.revealed)
         self.assertIsNotNone(report.surveyed)
         self.assertGreater(state.forage_capacity, before)
+
+
+class TestStalenessBites(unittest.TestCase):
+    """Slice 5: a number nobody has checked is a number the clan plans on anyway."""
+
+    def test_a_party_out_keeps_the_clan_honest_about_its_own_ground(self):
+        # The rule that turns this from a tax into a decision. Measured without it, a clan
+        # scouting every season was disappointed by its ground 6.7 times a run and one that
+        # never scouted 7.0: a party can look at one tile while the clan works five, so intel
+        # could not keep up whatever the player did.
+        state = a_state(turn_number=6)
+        worn = state.world.home
+        state.world.tile(worn).wear = balance.WEAR_PER_TENTH_LOST * 2
+
+        turn.resolve(state, Orders(scout=balance.SCOUTS_TO_SURVEY), Rng(1))
+        self.assertEqual(
+            state.ledger.value(FactKind.FORAGE, worn),
+            turn.true_yield(state.world.tile(worn)),
+        )
+
+    def test_staying_home_leaves_the_number_where_it_was(self):
+        state = a_state()
+        remembered = state.ledger.value(FactKind.FORAGE, state.world.home)
+        state.world.tile(state.world.home).wear = balance.WEAR_PER_TENTH_LOST * 2
+
+        turn.resolve(state, Orders(forage=2), Rng(1))
+        self.assertEqual(
+            state.ledger.value(FactKind.FORAGE, state.world.home), remembered
+        )
+
+    def test_the_report_says_the_ground_was_not_what_it_should_have_been(self):
+        state = a_state()
+        state.world.tile(state.world.home).wear = balance.WEAR_PER_TENTH_LOST * 4
+        report = turn.resolve(state, Orders(forage=2), Rng(1))
+        self.assertLess(report.produced, report.expected)
+        self.assertTrue(
+            any("not the ground the clan remembers" in line for line in report.log),
+            report.log,
+        )
+
+    def test_a_party_goes_back_to_the_oldest_thing_it_thinks_it_knows(self):
+        # Once every tile is surveyed there is no first look left to make, and a party that
+        # would otherwise come home with nothing refreshes the stalest number instead.
+        state = a_state(turn_number=20)
+        for coord in list(state.world.tiles):
+            state.ledger.reveal(state.world, coord, state.turn)
+            state.ledger.survey(coord, turn.true_yield(state.world.tile(coord)), turn=0)
+
+        plan = turn.survey_plan(state)
+        self.assertIsNotNone(plan)
+        self.assertTrue(not_none(plan).refresh)
+
+    def test_a_fresh_picture_is_not_worth_walking_out_to_recheck(self):
+        state = a_state()
+        for coord in list(state.world.tiles):
+            state.ledger.reveal(state.world, coord, state.turn)
+            state.ledger.survey(
+                coord, turn.true_yield(state.world.tile(coord)), state.turn
+            )
+        self.assertIsNone(turn.survey_plan(state))
+
+    def test_content_can_ask_how_stale_the_clan_s_picture_is(self):
+        state = a_state()
+        self.assertEqual(state.snapshot()["stale_surveys"], 0)
+        state.turn = balance.FACT_HALFLIFE[FactKind.FORAGE] or 0
+        state.turn += 1
+        self.assertEqual(state.snapshot()["stale_surveys"], 1)
 
 
 class TestTheScoutsReport(unittest.TestCase):

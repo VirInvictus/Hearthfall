@@ -26,6 +26,7 @@ SNAPSHOT_KEYS = {
     "tiles_known",
     "tiles_unknown",
     "tiles_surveyed",
+    "stale_surveys",
     "forage_capacity",
     "hands_without_ground",
     "households",

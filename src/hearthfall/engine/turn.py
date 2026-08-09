@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from hearthfall.engine import balance, reports
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event, load_tallies
-from hearthfall.engine.intel import Fact, FactKind, Ledger
+from hearthfall.engine.intel import Fact, FactKind, Ledger, Staleness
 from hearthfall.engine.people import Household, Rationing, share_out
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
@@ -28,7 +28,7 @@ from hearthfall.engine.state import (
     Season,
     Stores,
 )
-from hearthfall.engine.world import Coord, Terrain, World
+from hearthfall.engine.world import Coord, Terrain, Tile, World
 
 
 @dataclass(slots=True)
@@ -46,6 +46,10 @@ class TurnReport:
     # important fact and the frontend is not allowed to work it out for itself.
     forage_capacity: int = 0
     foragers_idle: int = 0
+    # What the clan expected to bring in, against `produced`, which is what it did. The two
+    # differ exactly when a survey the clan is still planning on has gone out of date, and the
+    # gap is the price of not having sent anyone back to look.
+    expected: int = 0
     consumed: int = 0
     shortfall: int = 0
     starved: int = 0
@@ -77,8 +81,28 @@ class TurnReport:
 
 
 @dataclass(frozen=True, slots=True)
+class Worked:
+    """One tile, the hands sent to it, and what came back from it.
+
+    `hands` is what the clan *sent*, which is not always what the tile could hold. On a plan
+    the two are the same by construction; on a real season, a belief the clan never refreshed
+    is what puts hands on ground that can no longer use them.
+    """
+
+    coord: Coord
+    terrain: Terrain
+    hands: int
+    food: int
+
+
+@dataclass(frozen=True, slots=True)
 class ForageTake:
-    """What the ground the clan knows gives to a number of foragers.
+    """What the ground gives to a number of foragers.
+
+    Built twice a season and meaning two different things. `forage_take` builds the clan's
+    *expectation* from the ledger, which is what the forecast shows and what the placement is
+    decided on. `work_ground` then puts those same hands on the real ground and builds what
+    actually came back. Before slice 5 there was no difference between the two.
 
     `capacity` and `idle` are carried rather than left for the caller to derive, because the
     frontend computes nothing and "two of your hands had nowhere to go" is the entire point
@@ -91,23 +115,26 @@ class ForageTake:
     idle: int
     # Where they worked and what each tile gave, best ground first. Prose, not arithmetic:
     # the report reads it back so a season's foraging names real places.
-    worked: tuple[tuple[Coord, Terrain, int], ...]
+    worked: tuple[Worked, ...]
+    # Tiles that gave less than the clan expected, and by how much. Empty on an expectation
+    # by construction: only the real ground can disappoint.
+    short: tuple[tuple[Coord, Terrain, int], ...] = ()
 
 
 def forage_take(ledger: Ledger, foragers: int, season: Season) -> ForageTake:
-    """Work the known ground with `foragers` hands. Pure; touches no state.
+    """What the clan *expects* from working the ground it knows. Pure; touches no state.
 
-    Called by both `_produce` and `forecast`. Those two go on duplicating the *order* of the
-    tick deliberately, because one mutates and one must not, but the per-tile arithmetic is
-    written once: a greedy fill written twice is a real bug surface, and slices 3 and 5 both
-    change it again.
+    Read as a plan rather than as a result: it decides which hands go where, and says what
+    that would bring in if every survey the clan holds were still true. `work_ground` is what
+    happens when they are not.
 
-    Note the signature takes a ledger and no world. That is the point of slice 2: the clan
-    forages the ground it *believes* is there.
+    Note the signature takes a ledger and no world. That is the point of slice 2, and slice 5
+    is what makes it bite: the clan forages the ground it *believes* is there, and a belief it
+    has not refreshed in years is still the belief it plans on.
     """
     base = balance.FORAGE_YIELD[season]
 
-    ground: list[tuple[Coord, Terrain, int]] = []
+    ground: list[tuple[Coord, Terrain, int, int]] = []
     capacity = 0
     for coord in ledger.revealed():
         terrain = _believed_terrain(ledger, coord)
@@ -115,30 +142,89 @@ def forage_take(ledger: Ledger, foragers: int, season: Season) -> ForageTake:
             continue
         tile_capacity = _believed_capacity(ledger, coord, terrain)
         capacity += tile_capacity
-        ground.append((coord, terrain, tile_capacity))
+        ground.append(
+            (coord, terrain, tile_capacity, _believed_yield(ledger, coord, terrain))
+        )
 
-    # Richest ground first. Greedy is optimal here, not merely convenient: a tile's yield per
-    # forager does not depend on how many work it, so there is never a reason to pass over
-    # better ground. Coordinate order breaks ties so two forests always fill in one sequence.
-    ground.sort(key=lambda entry: (-_per_forager(base, entry[1]), entry[0]))
+    # Richest ground first, by what the clan believes is richest. Greedy is optimal here, not
+    # merely convenient: a tile's yield per forager does not depend on how many work it, so
+    # there is never a reason to pass over better ground. Coordinate order breaks ties so two
+    # forests always fill in one sequence.
+    ground.sort(key=lambda entry: (-_per_forager(base, entry[3]), entry[0]))
 
     remaining = max(0, foragers)
     food = 0
-    worked: list[tuple[Coord, Terrain, int]] = []
-    for coord, terrain, tile_capacity in ground:
+    worked: list[Worked] = []
+    for coord, terrain, tile_capacity, tenths in ground:
         if remaining <= 0:
             break
         hands = min(remaining, tile_capacity)
         if not hands:
             continue  # dead ground: it must not swallow a hand better ground could use
         remaining -= hands
-        taken = hands * _per_forager(base, terrain)
+        taken = hands * _per_forager(base, tenths)
         food += taken
-        worked.append((coord, terrain, taken))
+        worked.append(Worked(coord=coord, terrain=terrain, hands=hands, food=taken))
 
     return ForageTake(
         food=food, capacity=capacity, idle=remaining, worked=tuple(worked)
     )
+
+
+def work_ground(world: World, plan: ForageTake, season: Season) -> ForageTake:
+    """Send the planned hands to the real ground, and see what they bring back.
+
+    The placement is not revisited. The clan committed those hands on what it believed, and
+    finding out that a tile is thinner than remembered does not hand the foragers a second
+    season to go somewhere else. That is the whole shape of the spine: read the unknown at
+    cost, then commit resources you cannot take back.
+
+    Hands past what a tile really supports come back with nothing, and the tile is named in
+    `short` so the season's report can say the ground gave less than it should have. Nothing
+    here writes to the ledger: working a tile does not survey it, which is what keeps a wrong
+    belief wrong until somebody pays to go and look.
+    """
+    base = balance.FORAGE_YIELD[season]
+    food = 0
+    worked: list[Worked] = []
+    short: list[tuple[Coord, Terrain, int]] = []
+    for entry in plan.worked:
+        taken = entry.hands * _per_forager(base, true_yield(world.tile(entry.coord)))
+        food += taken
+        worked.append(
+            Worked(
+                coord=entry.coord, terrain=entry.terrain, hands=entry.hands, food=taken
+            )
+        )
+        if taken < entry.food:
+            short.append((entry.coord, entry.terrain, entry.food - taken))
+
+    return ForageTake(
+        food=food,
+        capacity=plan.capacity,
+        idle=plan.idle,
+        worked=tuple(worked),
+        short=tuple(short),
+    )
+
+
+def true_yield(tile: Tile) -> int:
+    """What one forager really takes from a tile today, in tenths of the season's base.
+
+    Wear costs the ground its richness rather than its room. That is not a cosmetic choice
+    between two ways of writing the same penalty: measured, this clan is *hands-limited*, not
+    ground-limited (`roadmap.md`, the plateau), so taking hands off a tile nobody had the
+    people to fill costs exactly nothing, while taking food off every forager standing on it
+    is felt the same season.
+
+    Never falls below `WORN_GROUND_FLOOR_TENTHS` on ground that grew anything to begin with.
+    Water is exempt for the reason it is exempt from everything: there is nothing to protect.
+    """
+    base = balance.TERRAIN_FORAGE[tile.terrain]
+    if not base:
+        return 0
+    lost = tile.wear // balance.WEAR_PER_TENTH_LOST
+    return max(balance.WORN_GROUND_FLOOR_TENTHS, base - lost)
 
 
 def _refresh_ground(state: GameState) -> None:
@@ -152,13 +238,13 @@ def _refresh_ground(state: GameState) -> None:
     ).capacity
 
 
-def _per_forager(base: int, terrain: Terrain) -> int:
+def _per_forager(base: int, tenths: int) -> int:
     """One forager's take on one tile, in whole food.
 
-    Tenths, multiplied then floored, so winter's zero base stays zero on every terrain
-    without a special case anywhere.
+    Tenths, multiplied then floored, so winter's zero base stays zero however rich the ground
+    is, with no special case anywhere.
     """
-    return base * balance.TERRAIN_FORAGE[terrain] // 10
+    return base * tenths // 10
 
 
 def _believed_capacity(ledger: Ledger, coord: Coord, terrain: Terrain) -> int:
@@ -169,14 +255,31 @@ def _believed_capacity(ledger: Ledger, coord: Coord, terrain: Terrain) -> int:
     from making water workable, and it means a marsh survey buys nothing, with no special case
     for either.
 
-    A surveyed capacity is read back out of the ledger rather than recomputed from the terrain
-    table, because the fact is what the clan believes and slice 5 exists to let that fact age
-    out from under the ground it describes.
+    How *many* can work a tile is a fact about the ground's shape, so it does not go stale.
+    What they each bring back does, and that is `_believed_yield`.
     """
-    surveyed = ledger.value(FactKind.FORAGE, coord)
-    if isinstance(surveyed, int):
-        return max(0, surveyed)
+    if ledger.knows(FactKind.FORAGE, coord):
+        return balance.TERRAIN_CAPACITY[terrain]
     return min(balance.WALKED_CAPACITY, balance.TERRAIN_CAPACITY[terrain])
+
+
+def _believed_yield(ledger: Ledger, coord: Coord, terrain: Terrain) -> int:
+    """How rich the clan thinks a tile is, in tenths, and the thing slice 5 lets rot.
+
+    A survey records what a forager was taking there *the season it was made*. The ground goes
+    on being worked afterwards and the number does not follow it, so a clan that has been
+    living off a wood for four years and never sent anyone back is planning its season on how
+    good that wood used to be.
+
+    Ground only walked past has no number at all, and the clan assumes the best of it: the
+    terrain's own richness, untouched. Optimism is the right default here because untouched is
+    what unworked ground usually is, and because a pessimistic guess would make walking pay
+    less than it does.
+    """
+    remembered = ledger.value(FactKind.FORAGE, coord)
+    if isinstance(remembered, int):
+        return max(0, remembered)
+    return balance.TERRAIN_FORAGE[terrain]
 
 
 def _believed_terrain(ledger: Ledger, coord: Coord) -> Terrain | None:
@@ -311,9 +414,7 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
     # own ground will feed.
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
-    ledger.survey(
-        world.home, balance.TERRAIN_CAPACITY[world.tile(world.home).terrain], turn=0
-    )
+    ledger.survey(world.home, true_yield(world.tile(world.home)), turn=0)
     state = GameState(
         seed=seed,
         world=world,
@@ -436,19 +537,26 @@ def apply_effect(state: GameState, effect: Effect) -> None:
 def _produce(
     state: GameState, orders: Orders, season: Season, report: TurnReport
 ) -> None:
-    take = forage_take(state.ledger, orders.forage, season)
+    # Two steps, and the gap between them is the game. The clan decides where its hands go on
+    # what it believes; the ground answers with what is actually there.
+    plan = forage_take(state.ledger, orders.forage, season)
+    take = work_ground(state.world, plan, season)
+
     state.stores.food += take.food
     report.produced = take.food
     report.forage_capacity = take.capacity
     report.foragers_idle = take.idle
+    report.expected = plan.food
 
     if take.food:
         report.note(
             f"Foragers brought in {take.food} food from "
-            f"{reports.ground_worked(state.world, take.worked)}."
+            f"{reports.ground_worked(state.world, _places(take))}."
         )
     elif orders.forage:
         report.note("The foragers came back with nothing.")
+
+    report.log.extend(reports.shortfall_lines(state.world, take.short))
 
     # Named separately from the yield, because idle hands are not a smaller harvest, they are
     # the game telling the player that the map is now the constraint.
@@ -456,6 +564,42 @@ def _produce(
         report.note(
             f"{take.idle} had no ground to work. The clan knows nowhere else to forage."
         )
+
+    _wear_ground(state.world, take)
+
+
+def _places(take: ForageTake) -> list[tuple[Coord, Terrain, int]]:
+    """The take as places and amounts, which is the only shape `reports` accepts."""
+    return [(entry.coord, entry.terrain, entry.food) for entry in take.worked]
+
+
+def _wear_ground(world: World, take: ForageTake) -> None:
+    """Tire the ground that was worked and rest everything else.
+
+    Wear is charged on the hands that actually worked, not on the hands that were sent: a
+    forager standing on a tile that could not hold them wore nothing out, and charging for it
+    would mean a stale belief cost the clan twice for the same mistake.
+
+    Every other tile recovers, including ground nobody has ever walked, which costs nothing
+    because untouched ground is already at zero. The clan is not told any of this. Wear is a
+    property of the world, and the only way to learn it is to go and look.
+    """
+    hands = {entry.coord: entry.hands for entry in take.worked}
+    for coord, tile in world.tiles.items():
+        worked = hands.get(coord, 0)
+        # Every tile heals, worked or not, and that is what gives each one a level of work it
+        # can carry forever: all but its last hand. Below that the ground keeps up, at it the
+        # clan is borrowing against next year. Healing only the tiles nobody touched has no
+        # equilibrium at all, and measured, the clan's best forest fell to the floor inside a
+        # year.
+        tile.wear = (
+            max(0, tile.wear - _sustainable(tile)) + worked * balance.WEAR_PER_HAND
+        )
+
+
+def _sustainable(tile: Tile) -> int:
+    """Hands the ground carries season after season without giving anything up."""
+    return max(1, balance.TERRAIN_CAPACITY[tile.terrain] - balance.SUSTAINABLE_MARGIN)
 
 
 def rations(season: Season) -> tuple[int, int]:
@@ -604,15 +748,24 @@ class SurveyPlan:
     coord: Coord
     terrain: Terrain  # believed, not true: it is what the clan is deciding on
     gain: int  # hands the survey would add to the forage ceiling
+    # A second look at ground already surveyed, where the clan's number is old rather than
+    # missing. It cannot say what it will find, which is the difference: a first survey has a
+    # knowable price and a knowable payoff, and going back has only a knowable price.
+    refresh: bool = False
 
 
 def survey_plan(state: GameState) -> SurveyPlan | None:
-    """The best ground the clan knows of but has never worked out. None if there is none.
+    """Where a party would stop and look. None when nothing is worth the stop.
 
     Which tile that is, is the engine's call rather than an order, exactly as the placement of
     foragers is: orders stay scalar and the map stays a knowledge surface (`spec.md` §9.9).
     Candidates are ranked on what the clan *believes* is out there, because a decision to go
     and look can only be made on belief.
+
+    Ground it has never worked out comes first, because that payoff is certain. Only when
+    there is none does the party go back to the oldest thing it thinks it knows, which is what
+    slice 5 makes worth doing: the ground moves, and a number nobody has checked in four years
+    is a number the clan is still planning its season around.
     """
     ledger = state.ledger
     best: SurveyPlan | None = None
@@ -634,7 +787,36 @@ def survey_plan(state: GameState) -> SurveyPlan | None:
             coord,
         ) < (-best.gain, -balance.TERRAIN_FORAGE[best.terrain], best.coord):
             best = SurveyPlan(coord=coord, terrain=believed, gain=gain)
-    return best
+    return best or _oldest_worth_rechecking(state)
+
+
+def _oldest_worth_rechecking(state: GameState) -> SurveyPlan | None:
+    """The stalest survey the clan holds, once it is old enough to doubt.
+
+    Nothing here reads the world. The clan cannot know a tile has thinned; it can only know
+    that nobody has looked in a long time, and that is exactly the decision the staleness
+    bands exist to support (`spec.md`: the warning *is* the decision).
+    """
+    ledger = state.ledger
+    oldest: tuple[int, SurveyPlan] | None = None
+    for coord in ledger.surveyed():
+        terrain = _believed_terrain(ledger, coord)
+        age = ledger.age(FactKind.FORAGE, coord, state.turn)
+        if terrain is None or age is None:
+            continue
+        if ledger.staleness(FactKind.FORAGE, coord, state.turn) is Staleness.FRESH:
+            continue
+        rank = (-age, -balance.TERRAIN_FORAGE[terrain], coord)
+        if oldest is None or rank < (
+            -oldest[0],
+            -balance.TERRAIN_FORAGE[oldest[1].terrain],
+            oldest[1].coord,
+        ):
+            oldest = (
+                age,
+                SurveyPlan(coord=coord, terrain=terrain, gain=0, refresh=True),
+            )
+    return oldest[1] if oldest else None
 
 
 def _survey(state: GameState, report: TurnReport) -> tuple[Fact, ...]:
@@ -648,19 +830,39 @@ def _survey(state: GameState, report: TurnReport) -> tuple[Fact, ...]:
     that moved no number.
     """
     ledger = state.ledger
+    learned = _walk_the_estate(state)
+
     plan = survey_plan(state)
     if plan is None:
-        return ()
+        return learned
 
     coord = plan.coord
-    terrain = state.world.tile(coord).terrain
     # A survey re-learns the ground as well as measuring it: the party is standing on the
     # tile, so this is the moment a wrong belief about it gets corrected.
     ground = ledger.reveal(state.world, coord, state.turn)
-    worth = ledger.survey(coord, balance.TERRAIN_CAPACITY[terrain], state.turn)
+    worth = ledger.survey(coord, true_yield(state.world.tile(coord)), state.turn)
     _refresh_ground(state)
     report.surveyed = coord
-    return (ground, worth)
+    return learned + (ground, worth)
+
+
+def _walk_the_estate(state: GameState) -> tuple[Fact, ...]:
+    """A party out this season also looks over the ground the clan already works.
+
+    This is what makes staleness a decision rather than a tax. Measured without it, a clan
+    that scouted every single season was disappointed by its own ground 6.7 times in a run and
+    one that never scouted 7.0, because a party can look at one tile while the clan works
+    five: intel could not keep up with the ground whatever the player did, so the mechanic
+    punished everybody equally and taught nobody anything.
+
+    Walking the clan's own few tiles is cheap in fiction and decisive in play: a party out is a
+    clan that knows what its ground is worth, and a clan that keeps everyone home is one whose
+    numbers quietly go out of date.
+    """
+    return tuple(
+        state.ledger.survey(coord, true_yield(state.world.tile(coord)), state.turn)
+        for coord in state.ledger.surveyed()
+    )
 
 
 def _draw_event(

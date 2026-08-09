@@ -124,6 +124,38 @@ def season_aware_orders(state) -> Orders:
     return Orders(forage=0, scout=scout, tend=adults - scout)
 
 
+def watchful_orders(state) -> Orders:
+    """`surveying_orders`, plus a party out every winter, when foraging is worthless anyway.
+
+    One insight above surveying: a picture of the ground does not stay true, so a hand that
+    has nothing better to do in winter should go and look. The comparison against
+    `surveying_orders` measures exactly that and nothing else.
+
+    It has to be winter that separates them, because a surveying policy stops sending parties
+    of its own accord once the ground outruns the hands, and a "settles down after year two"
+    policy therefore turns out to be the same function with a different name. That mistake
+    already cost this project a version once, with WORKERS and CHILDREN rationing.
+    """
+    if state.season is not Season.WINTER:
+        return surveying_orders(state)
+    adults = state.population.adults
+    scout = balance.SCOUTS_TO_SURVEY if adults > balance.SCOUTS_TO_SURVEY else 0
+    return Orders(forage=0, scout=scout, tend=adults - scout)
+
+
+def _food_lost_to_stale_intel(seed: int, policy) -> int:
+    """How much food a run expected and did not get, because its numbers were out of date."""
+    state = turn.new_game(seed)
+    rng = Rng(seed)
+    lost = 0
+    while not state.is_over:
+        report = turn.resolve(state, policy(state), rng, CORPUS)
+        lost += max(0, report.expected - report.produced)
+        if state.pending is not None:
+            turn.apply_choice(state, 0)
+    return lost
+
+
 @dataclass
 class Transcript:
     outcome: Outcome | None
@@ -400,6 +432,30 @@ class TestPayingToLookPullsYouForward(unittest.TestCase):
                 surveying = play_with(seed, surveying_orders)
                 walking = play_with(seed, scouting_orders)
                 self.assertGreater(surveying.tiles_surveyed, walking.tiles_surveyed)
+
+    def test_a_clan_that_stops_looking_stops_knowing_what_its_ground_is_worth(self):
+        """Slice 5's own question, and the reason wear takes richness rather than room.
+
+        Measured across these thirty seeds: a clan that keeps a party out in winter loses 161
+        food to numbers gone out of date, and one that stops sending parties the moment its
+        ground outruns its hands loses 403. Over 120 seeds that is 2.2 disappointing seasons a
+        run against 4.7.
+
+        When wear took *capacity* rather than richness, the same two policies measured 1.2
+        against 1.0 and the mechanic taught nothing. This clan is hands-limited (`roadmap.md`,
+        the plateau), so a tile losing a forager it never had the people to send costs it
+        exactly nothing.
+        """
+        watchful, settled = 0, 0
+        for seed in range(30):
+            watchful += _food_lost_to_stale_intel(seed, watchful_orders)
+            settled += _food_lost_to_stale_intel(seed, surveying_orders)
+        self.assertGreater(
+            settled,
+            watchful,
+            f"settling lost {settled} food to stale intel against {watchful} for keeping a "
+            "party out; letting the picture rot costs nothing and the slice does not bite",
+        )
 
     def test_scouting_actually_raises_the_food_ceiling(self):
         # The mechanism behind the outcome, asserted separately so a pass above cannot be

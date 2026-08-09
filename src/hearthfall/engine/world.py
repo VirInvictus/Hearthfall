@@ -30,6 +30,13 @@ class Terrain(StrEnum):
 @dataclass(slots=True)
 class Tile:
     terrain: Terrain
+    # How hard the ground has been leaned on. Working a tile wears it; leaving it alone lets
+    # it come back. This is the first thing about the world that *changes*, and it is why the
+    # ledger can now be wrong rather than merely old: a survey records what was true the
+    # season it was made, and the ground does not hold still afterwards.
+    #
+    # It lives here, in what is true, and nothing about the clan's belief lives here with it.
+    wear: int = 0
 
 
 @dataclass(slots=True)

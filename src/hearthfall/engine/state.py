@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from hearthfall.engine.intel import Ledger
+from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.people import Household, Rationing
 from hearthfall.engine.world import Coord, Terrain, World
 
@@ -362,6 +362,9 @@ class GameState:
             # can tell a clan that has seen a lot of ground from one that understands any of
             # it. Never larger than tiles_known: a survey re-walks the tile it looks at.
             "tiles_surveyed": len(self.ledger.surveyed()),
+            # The first staleness key content can read (slice 5). Not "how wrong are we",
+            # which the clan cannot know, but "how long since anybody checked", which it can.
+            "stale_surveys": self.ledger.stale_count(FactKind.FORAGE, self.turn),
             # Lets content fire on a clan with more hands than ground, which is the pressure
             # slice 2 introduced and the reason a season starts to feel cramped.
             "forage_capacity": self.forage_capacity,

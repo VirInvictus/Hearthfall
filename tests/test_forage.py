@@ -17,11 +17,20 @@ import unittest
 from hearthfall.engine import balance, turn
 from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.state import Season
-from hearthfall.engine.world import Terrain
+from hearthfall.engine.world import Terrain, Tile, World
 
 AUTUMN = (
     Season.AUTUMN
 )  # base yield 5, the season with the most room to show a difference
+
+
+def a_world(*terrains: Terrain) -> World:
+    """A strip of world matching what `a_ledger` believes, so belief and truth can diverge."""
+    tiles = {
+        (x, 0): Tile(terrain=terrain)
+        for x, terrain in enumerate(terrains or (Terrain.FOREST,))
+    }
+    return World(width=len(tiles), height=1, home=(0, 0), tiles=tiles)
 
 
 def a_ledger(*terrains: Terrain, surveyed: bool = True) -> Ledger:
@@ -36,7 +45,7 @@ def a_ledger(*terrains: Terrain, surveyed: bool = True) -> Ledger:
     for x, terrain in enumerate(terrains):
         ledger.learn(FactKind.TERRAIN, (x, 0), terrain, turn=0)
         if surveyed:
-            ledger.survey((x, 0), balance.TERRAIN_CAPACITY[terrain], turn=0)
+            ledger.survey((x, 0), balance.TERRAIN_FORAGE[terrain], turn=0)
     return ledger
 
 
@@ -122,6 +131,117 @@ class TestSurveyedGroundSupportsMore(unittest.TestCase):
         self.assertEqual(walked.capacity, surveyed.capacity)
 
 
+class TestGroundWearsAndRecovers(unittest.TestCase):
+    """Slice 5. The ground does not hold still, which is what lets a survey go out of date.
+
+    Wear takes richness rather than room, and that is the whole reason the mechanic is felt.
+    Measured, this clan is hands-limited: a tile losing a forager it never had the people to
+    send costs nothing at all, and a clan that stopped scouting entirely ended a run half a
+    person behind one that never stopped. Taking food off every hand standing on a tile lands
+    the same season.
+    """
+
+    def test_a_worked_tile_gives_less_than_an_untouched_one(self):
+        tile = Tile(terrain=Terrain.FOREST)
+        fresh = turn.true_yield(tile)
+        tile.wear = balance.WEAR_PER_TENTH_LOST * 3
+        self.assertEqual(turn.true_yield(tile), fresh - 3)
+
+    def test_ground_worked_to_death_still_grows_something(self):
+        tile = Tile(terrain=Terrain.FOREST, wear=1_000)
+        self.assertEqual(turn.true_yield(tile), balance.WORN_GROUND_FLOOR_TENTHS)
+
+    def test_water_is_not_rescued_by_the_floor(self):
+        self.assertEqual(turn.true_yield(Tile(terrain=Terrain.WATER)), 0)
+
+    def test_a_tile_carries_all_but_its_last_hand_forever(self):
+        # The allowance scales with the tile, and that is load-bearing rather than tidy: a flat
+        # one-hand allowance is exactly what a clan that only walks ground puts on a tile, so
+        # wear became a tax on surveying alone and slice 3's gradient flattened.
+        world = a_world()
+        sustainable = (
+            balance.TERRAIN_CAPACITY[Terrain.FOREST] - balance.SUSTAINABLE_MARGIN
+        )
+        take = turn.ForageTake(
+            food=0,
+            capacity=0,
+            idle=0,
+            worked=(
+                turn.Worked(
+                    coord=(0, 0), terrain=Terrain.FOREST, hands=sustainable, food=0
+                ),
+            ),
+        )
+        for _ in range(10):
+            turn._wear_ground(world, take)
+        # Wear settles at a low, harmless number rather than at zero, and what matters is that
+        # it never crosses the threshold where the ground starts giving less.
+        self.assertEqual(
+            turn.true_yield(world.tile((0, 0))), balance.TERRAIN_FORAGE[Terrain.FOREST]
+        )
+
+    def test_leaning_on_a_tile_costs_it(self):
+        world = a_world()
+        take = turn.ForageTake(
+            food=0,
+            capacity=0,
+            idle=0,
+            worked=(
+                turn.Worked(
+                    coord=(0, 0),
+                    terrain=Terrain.FOREST,
+                    hands=balance.TERRAIN_CAPACITY[Terrain.FOREST],
+                    food=0,
+                ),
+            ),
+        )
+        for _ in range(10):
+            turn._wear_ground(world, take)
+        self.assertGreater(world.tile((0, 0)).wear, 0)
+
+    def test_rested_ground_comes_back(self):
+        world = a_world()
+        world.tile((0, 0)).wear = 6
+        turn._wear_ground(world, turn.ForageTake(food=0, capacity=0, idle=0, worked=()))
+        self.assertLess(world.tile((0, 0)).wear, 6)
+
+
+class TestTheGroundCanDisappoint(unittest.TestCase):
+    """The clan plans on what it remembers and gets what is actually there.
+
+    This is the gap slice 2 built the ledger for and slice 5 finally opens: `forage_take` is
+    an expectation read off the ledger, `work_ground` is the season that actually happened.
+    """
+
+    def test_a_stale_survey_promises_more_than_the_ground_has(self):
+        ledger = a_ledger(Terrain.FOREST)
+        world = a_world(Terrain.FOREST)
+        world.tile((0, 0)).wear = balance.WEAR_PER_TENTH_LOST * 5
+
+        plan = turn.forage_take(ledger, foragers=3, season=AUTUMN)
+        actual = turn.work_ground(world, plan, AUTUMN)
+        self.assertLess(actual.food, plan.food)
+        self.assertEqual(len(actual.short), 1)
+
+    def test_a_fresh_survey_promises_exactly_what_arrives(self):
+        world = a_world(Terrain.FOREST)
+        ledger = Ledger(halflives=balance.FACT_HALFLIFE)
+        ledger.reveal(world, (0, 0), turn=0)
+        ledger.survey((0, 0), turn.true_yield(world.tile((0, 0))), turn=0)
+
+        plan = turn.forage_take(ledger, foragers=3, season=AUTUMN)
+        actual = turn.work_ground(world, plan, AUTUMN)
+        self.assertEqual(actual.food, plan.food)
+        self.assertEqual(actual.short, ())
+
+    def test_walked_ground_is_assumed_untouched(self):
+        # Optimism is the right default: unworked ground usually is untouched, and a
+        # pessimistic guess would make walking pay less than it really does.
+        ledger = a_ledger(Terrain.FOREST, surveyed=False)
+        plan = turn.forage_take(ledger, foragers=1, season=AUTUMN)
+        self.assertEqual(plan.food, per_forager(AUTUMN, Terrain.FOREST))
+
+
 class TestTheBestGroundIsWorkedFirst(unittest.TestCase):
     def test_foragers_fill_the_richest_tile_before_the_poorest(self):
         # Forest out-yields marsh, so the first three hands belong in the forest whatever
@@ -129,7 +249,7 @@ class TestTheBestGroundIsWorkedFirst(unittest.TestCase):
         take = turn.forage_take(
             a_ledger(Terrain.MARSH, Terrain.FOREST), foragers=3, season=AUTUMN
         )
-        self.assertEqual([terrain for _, terrain, _ in take.worked], [Terrain.FOREST])
+        self.assertEqual([entry.terrain for entry in take.worked], [Terrain.FOREST])
         self.assertEqual(take.food, 3 * per_forager(AUTUMN, Terrain.FOREST))
 
     def test_overflow_spills_onto_the_next_best_ground(self):
@@ -137,7 +257,7 @@ class TestTheBestGroundIsWorkedFirst(unittest.TestCase):
             a_ledger(Terrain.MARSH, Terrain.FOREST), foragers=4, season=AUTUMN
         )
         self.assertEqual(
-            [terrain for _, terrain, _ in take.worked],
+            [entry.terrain for entry in take.worked],
             [Terrain.FOREST, Terrain.MARSH],
         )
         self.assertEqual(
@@ -203,7 +323,7 @@ class TestItReadsBeliefRatherThanTruth(unittest.TestCase):
     def test_a_tile_the_ledger_believes_is_forest_is_foraged_as_forest(self):
         ledger = Ledger(halflives=balance.FACT_HALFLIFE)
         ledger.learn(FactKind.TERRAIN, (0, 0), Terrain.FOREST, turn=0)
-        ledger.survey((0, 0), balance.TERRAIN_CAPACITY[Terrain.FOREST], turn=0)
+        ledger.survey((0, 0), balance.TERRAIN_FORAGE[Terrain.FOREST], turn=0)
         take = turn.forage_take(ledger, foragers=3, season=AUTUMN)
         self.assertEqual(take.food, 3 * per_forager(AUTUMN, Terrain.FOREST))
 
@@ -223,7 +343,7 @@ class TestTheReportedTilesAddUp(unittest.TestCase):
             foragers=5,
             season=AUTUMN,
         )
-        self.assertEqual(sum(food for _, _, food in take.worked), take.food)
+        self.assertEqual(sum(entry.food for entry in take.worked), take.food)
 
     def test_worked_tiles_are_distinct(self):
         take = turn.forage_take(
@@ -231,7 +351,7 @@ class TestTheReportedTilesAddUp(unittest.TestCase):
             foragers=8,
             season=AUTUMN,
         )
-        coords = [coord for coord, _, _ in take.worked]
+        coords = [entry.coord for entry in take.worked]
         self.assertEqual(len(coords), len(set(coords)))
 
 

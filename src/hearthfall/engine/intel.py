@@ -176,6 +176,19 @@ class Ledger:
         }
         return sorted(edge)
 
+    def stale_count(self, kind: FactKind, now: int) -> int:
+        """Facts of one kind that nobody has refreshed inside their half-life.
+
+        Counts what the clan can actually tell: not how wrong a number is, which would need
+        the world, but how long it has been since anyone checked it.
+        """
+        return sum(
+            1
+            for fact in self.facts.values()
+            if fact.kind is kind
+            and self.staleness(kind, fact.subject, now) is not Staleness.FRESH
+        )
+
     @property
     def known_count(self) -> int:
         return len(self.revealed())

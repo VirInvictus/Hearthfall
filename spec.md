@@ -49,9 +49,17 @@ five. `world.py` currently knows which tiles are revealed. That is fog over terr
 is a special case.
 
 Generalise it: **every knowable thing is a fact with a value, a staleness, and a price to
-refresh.** Terrain never goes stale. A neighbour's grain store goes stale in a season. Their
-intent goes stale faster. You are always acting on a picture that is partly out of date, and
-the game is choosing which part of it you can afford to be wrong about.
+refresh.** Terrain never goes stale, because ground does not move. How rich that ground is does,
+because the clan is eating it. A neighbour's grain store goes stale in a season. Their intent
+goes stale faster. You are always acting on a picture that is partly out of date, and the game
+is choosing which part of it you can afford to be wrong about.
+
+**A staleness mechanic only bites where the thing it degrades is scarce.** Measured in
+sub-project 1 slice 5: a stale fact that lowered how many hands a tile could hold changed
+nothing, because this clan is short of people rather than of ground, so a ceiling nobody
+reaches can drop for free. The same fact expressed as *how much each hand brings back* was felt
+the season it was wrong. Before making any fact rot, check that what it costs is something the
+clan is actually short of.
 
 ### The honesty guarantee
 

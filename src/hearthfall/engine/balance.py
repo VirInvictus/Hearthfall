@@ -113,6 +113,47 @@ TERRAIN_CAPACITY: dict[Terrain, int] = {
 # correct: there is not much in a marsh to find.
 WALKED_CAPACITY = 1
 
+# --- What working the ground costs it -----------------------------------------------------
+#
+# Ground is not a number that holds still. A tile worked season after season thins out, and a
+# tile left alone comes back. This is what gives a survey a shelf life: it records what was
+# true when the party made it, and the clan goes on believing that number until somebody walks
+# out and looks again.
+#
+# Wear accrues by the hand: one forager for one season is one unit of it.
+WEAR_PER_HAND = 1
+
+# Units of wear that cost the ground one tenth of its richness.
+#
+# Wear takes *yield*, not room, and that was a measured correction rather than a preference.
+# Room was tried first and it does nothing: this clan is hands-limited (`roadmap.md`, the
+# plateau), so a tile losing a forager it never had the people to send costs nothing, and a
+# clan that stopped scouting altogether ended a run 0.5 people behind one that never did.
+# Richness is felt by every hand standing on the tile, the same season.
+WEAR_PER_TENTH_LOST = 6
+
+# Hands a tile carries forever: all but this many of what it supports. Every tile heals by that
+# sustainable number each season whether or not anyone worked it, so ground worked lightly
+# keeps, and the last hand on a tile is borrowed against next year.
+#
+# Scaling the allowance with the tile rather than fixing it flat is load-bearing and it was
+# measured twice. Flat, the allowance is one hand, which is exactly what a clan that only ever
+# walks ground puts on a tile: depletion became a tax on surveying specifically, and slice 3's
+# gradient flattened from 4.8-against-3.1 survivors to 2.5-against-2.4. Scaled, both a token
+# crew and a full one sit near their own tile's sustainable level, and the gradient survives
+# at 2.6 against 1.9.
+SUSTAINABLE_MARGIN = 1
+
+# Ground worked to death still grows something. A tile that could fall to nothing would turn
+# one hard stretch into an unrecoverable one, and a tile the clan can never use again is a
+# tile the map might as well not have.
+WORN_GROUND_FLOOR_TENTHS = 4
+
+# Worked-out ground still feeds somebody. Ground that could fall to zero would turn one bad
+# stretch into an unrecoverable one, and a tile the clan can never use again is a tile the map
+# might as well not have. Water is not covered by this: it was never workable.
+WORN_GROUND_FLOOR = 1
+
 # Extra food every mouth needs in winter. Cold is a cost, not just a lack of yield, and this
 # is what turns winter from a lean season into the one that decides the run.
 WINTER_EXTRA_FOOD = 1

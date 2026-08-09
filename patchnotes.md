@@ -1,5 +1,41 @@
 # Patch notes
 
+## v0.8.0 (2026-08-09)
+
+**The ground stopped holding still, and the clan's picture of it can now be wrong.** Until now
+the fact ledger could only be *out of date* in principle: nothing in the world ever moved, so
+belief and truth always agreed and the whole spine was a promise rather than a mechanic.
+
+- **Ground the clan leans on thins out, and ground it rests comes back.** A tile carries all
+  but its last hand forever; the last one is borrowed against next year.
+- **A survey records how rich a place was the season it was made.** The ground goes on being
+  worked afterwards and that number does not follow it, so a clan living off a wood for four
+  years without sending anyone back is planning its seasons on how good that wood used to be.
+- **The season ledger is now the clan's expectation rather than a guarantee**, and the gap
+  shows up as prose: "The forest to the west gave 3 less than it should have. It is not the
+  ground the clan remembers."
+- **A party out looks over the clan's own ground as well as the dark.** That single rule is
+  what makes this a decision instead of a tax, and it was measured: without it a clan that
+  scouted every season was disappointed 6.7 times a run and one that never scouted 7.0, because
+  a party can look at one tile while the clan works five. With it, keeping a party out in
+  winter costs 161 food to stale numbers across thirty seeds against 403 for letting the
+  picture rot.
+
+**Two designs were built, measured, and thrown away before this one.** Wear first took a tile's
+*capacity*, which does nothing at all: this clan is hands-limited, so a tile losing a forager it
+never had the people to send is free, and a clan that stopped scouting ended a run half a person
+behind one that never stopped. Wear also first healed only tiles nobody touched, which has no
+equilibrium: anything worked every season accrues forever, and the clan's best forest fell to
+the floor inside a year. The healing allowance also has to scale with the tile, because a flat
+one-hand allowance is exactly what a clan that only walks ground puts on a tile, and depletion
+became a tax on surveying alone that flattened v0.6.0's gradient from 4.8-against-3.1 survivors
+to 2.5-against-2.4.
+
+`stale_surveys` is the first staleness key content can read, the allocation panel warns when the
+numbers above it are memories, and `FACT_HALFLIFE[FORAGE]` finally means something. The economy
+is about 20% tighter than v0.7.0 (a season-reading policy ends with 7.1 people against 7.6, and
+endures 110 runs in 120), which is the price of ground that can be spent. Suite 278 to 294 tests.
+
 ## v0.7.0 (2026-08-09)
 
 **The scouts came back with something to say.** `spec.md` §1 says a report is rendered facts,

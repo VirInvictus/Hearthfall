@@ -222,8 +222,51 @@ Built in slices, each green before the next starts.
       that walks into marsh, finds it poorer than anything the clan holds, and comes home with
       nothing else worth a closer look is a season that happened, where before it was two
       sentences of bookkeeping. Suite 255 → 278.
-- [ ] **Slice 5: staleness that bites.** `PRESENCE` facts age visibly and an old fact should
-      be able to mislead. Adds the first staleness keys to `snapshot()`.
+- [x] **Slice 5: staleness that bites (2026-08-09).** The ground stopped holding still. A tile
+      the clan leans on thins out and one it rests comes back; a survey records how rich a
+      place was *the season it was made*; and the number does not follow the ground afterwards.
+      So the fact ledger can now be wrong rather than merely old, which is what slice 2 shaped
+      `forage_take` around and what the whole spine promised.
+
+      `forage_take` is the clan's expectation and `work_ground` is the season that happened.
+      The season ledger became a forecast rather than a guarantee, and the gap is prose: *the
+      forest to the west gave 3 less than it should have. It is not the ground the clan
+      remembers.* `stale_surveys` is the first staleness key in `snapshot()`.
+
+      **A party out looks over the clan's own ground as well as the dark, and that one rule is
+      the slice.** Without it a clan scouting every season was disappointed 6.7 times a run and
+      one that never scouted 7.0: a party can look at one tile while the clan works five, so
+      intel could never keep up whatever the player did, and the mechanic punished everyone
+      equally and taught nobody anything. With it, keeping a party out in winter costs 161 food
+      to stale numbers across thirty seeds against 403 for letting the picture rot.
+
+      **Two designs were built, measured, and thrown away first, and both failures are worth
+      keeping.** (1) Wear took a tile's *capacity*. It does nothing, because this clan is
+      hands-limited: a tile losing a forager it never had the people to send is free, and a
+      clan that stopped scouting entirely ended a run half a person behind one that never
+      stopped. Anything that lowers a ceiling nobody reaches is invisible here, and that rules
+      out a whole family of future ideas. (2) Wear healed only tiles nobody touched, which has
+      no equilibrium at all: anything worked every season accrues forever, and the clan's best
+      forest fell to the floor inside a year. The healing allowance also has to scale with the
+      tile, or depletion is a tax on surveying alone: a flat one-hand allowance is exactly what
+      a clan that only walks ground puts on a tile, and it flattened slice 3's gradient from
+      4.8-against-3.1 survivors to 2.5-against-2.4.
+
+      **`PRESENCE` staleness is not in this slice.** The roadmap's original line named it, but
+      nothing lives on the map until sub-project 4, so it has no client to bite. It moves there
+      with the presence scouting rung deferred out of slice 3.
+
+      **Gate verdict: ships, with the cost named.** Read across two runs, one watchful and one
+      that settles down.
+      1. *A real decision every season?* **Improved, and in the half of the run that needed
+         it.** Keeping a party out is now worth something after the map is walked, which is the
+         first time late-game scouting has had a reason at all. The allocation still writes
+         itself when capacity outruns hands; that is the plateau and still sub-projects 6 to 8.
+      2. *Slack to decide with?* **Tighter, deliberately.** A season-reading policy ends with
+         7.1 people against 7.6 and endures 110 runs in 120 against 116. Ground that can be
+         spent is worth less than ground that cannot, and that is the trade this slice makes.
+      3. *Anything worth telling someone about?* **Yes, and it is the best line in the game so
+         far**, because it is the only one that tells the player something they got wrong.
 - [ ] **Slice 6: corpus toward 80**, terrain-keyed. **More urgent than it looks.** At 34
       events every run in a sixty-seed sample replayed one verbatim; a draw cooldown took that
       to nine, but a cooldown is a stopgap for a corpus too small to avoid repeating itself.

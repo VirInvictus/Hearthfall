@@ -51,7 +51,10 @@ not scouted yet. Each season you split a finite clan three ways:
   work it thinly. A third means the party can stop and survey somewhere, which is what lifts a
   tile to the whole crew its terrain will carry. Scouting is the only thing that raises the
   ceiling on how much labour can be spent on food at all. The party comes home with an
-  account of where it went, what is there, and whether it was worth the walk.
+  account of where it went, what is there, and whether it was worth the walk. **Ground the
+  clan leans on thins out and ground it rests comes back, and a survey only records what was
+  true the season it was made**, so a clan that stops looking is soon planning its seasons
+  around a wood that is not what it remembers.
 - **Tend** slows the rot in the store, and can never quite stop it.
 
 Then the season resolves, the world asks you something with no clean answer, and you live

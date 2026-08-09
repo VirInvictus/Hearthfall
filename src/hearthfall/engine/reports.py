@@ -162,8 +162,37 @@ def _terrain(ledger: Ledger, coord: Coord) -> Terrain | None:
     return Terrain(value) if isinstance(value, str) else None
 
 
+def shortfall_lines(
+    world: World, short: Sequence[tuple[Coord, Terrain, int]]
+) -> list[str]:
+    """Ground that gave less than the clan was counting on.
+
+    This is the only way a player finds out that a survey has gone out of date, which is why
+    it names the place rather than reporting a total: "the store came up nine short" is a
+    number, and "the forest to the west is not what it was" is somewhere to send a party.
+
+    One line for the worst offender, because a season where three tiles all disappointed is
+    still one piece of news, and listing them buries it.
+    """
+    if not short:
+        return []
+
+    coord, terrain, missing = max(short, key=lambda entry: (entry[2], entry[0]))
+    where = place(world, coord, terrain).capitalize()
+    return [
+        (
+            f"{where} gave {missing} less than it should have. "
+            "It is not the ground the clan remembers."
+        )
+    ]
+
+
 def ground_worked(world: World, worked: Sequence[tuple[Coord, Terrain, int]]) -> str:
     """Name the ground a season's foraging was actually done on.
+
+    Takes places and amounts rather than the engine's own record type, which is not squeamish-
+    ness about coupling: `turn` imports this module, so this module cannot import `turn` back.
+    A renderer that speaks in places and numbers is the right shape anyway.
 
     Two forms only. Listing five tiles would bury the number the line exists to carry, and
     naming the best one is what the player needs in order to think about where to scout next.
