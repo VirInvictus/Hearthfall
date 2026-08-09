@@ -10,6 +10,10 @@ story, and violence. Grow a hearth into a war-band into a people, or bury them.
 
 Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in glyphs.
 
+<p align="center">
+  <img src="docs/screenshots/run.png" alt="Hearthfall mid-run: the clan panel, a fog-black map, the season log, and a story event offering two choices">
+</p>
+
 > **Status: v0.1.0, Phase 0 of six.** Playable start to finish, and deliberately small:
 > one map, three jobs, thirty events, twenty seasons. There is no combat yet, and no
 > enemy, which means the spine below is designed but not yet built. See
