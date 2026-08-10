@@ -15,7 +15,7 @@ from __future__ import annotations
 import unittest
 
 from hearthfall.engine import balance, turn
-from hearthfall.engine.people import Household, Rationing, share_out
+from hearthfall.engine.people import Household, Rationing, first_claim, share_out
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import Effect, Orders, Population, Season
 
@@ -24,6 +24,16 @@ PER_ADULT, PER_CHILD = 2, 1
 
 def hh(adults: int, children: int = 0, mood: int = 5) -> Household:
     return Household(adults=adults, children=[4] * children, mood=mood)
+
+
+def a_state(*, food: int, households: list[tuple[int, int]]):
+    """A real run, dealt into the hearths a test wants to watch."""
+    state = turn.new_game(1)
+    state.stores.food = food
+    state.population.households = [
+        hh(adults, children) for adults, children in households
+    ]
+    return state
 
 
 class TestSharingOut(unittest.TestCase):
@@ -263,6 +273,116 @@ class TestTheFoundingClan(unittest.TestCase):
 class TestWinterStillCostsEveryone(unittest.TestCase):
     def test_the_winter_ration_is_larger(self):
         self.assertGreater(turn.rations(Season.WINTER), turn.rations(Season.SPRING))
+
+
+class TestResentmentHasTeeth(unittest.TestCase):
+    """Slice 4. A grudge that only ever sat in a condition key now does three things.
+
+    It accrues where it could not before (burying somebody while another fire ate), it changes
+    how food is divided, and past the last rung the hearth stops being part of this clan.
+    """
+
+    def test_burying_someone_while_another_fire_eats_is_its_own_grievance(self):
+        # Eight food against twelve of demand: enough for the two hearths of hands and nothing
+        # for the third. An empty store would wrong nobody, because nobody ate.
+        state = a_state(food=8, households=[(2, 0), (2, 0), (1, 2)])
+        turn.resolve(state, Orders(rationing=Rationing.WORKERS), Rng(1))
+        passed_over = state.population.households[-1]
+        self.assertGreater(
+            passed_over.resentment,
+            balance.RESENTMENT_PER_SHORT_SHARE,
+            "a hearth that buried somebody while another ate resents it no more than one "
+            "that merely went short; the accrual slice 4 exists for is missing",
+        )
+
+    def test_an_even_split_still_wrongs_nobody(self):
+        # The invariant the accrual is charged against. A first attempt added resentment on any
+        # death, which quietly made EQUAL breed grudges and stopped it being a real option.
+        state = a_state(food=8, households=[(2, 0), (2, 0), (1, 2)])
+        turn.resolve(state, Orders(rationing=Rationing.EQUAL), Rng(1))
+        self.assertEqual(
+            [h.resentment for h in state.population.households],
+            [0, 0, 0],
+            "an even split produced resentment even though nobody was passed over",
+        )
+
+    def test_a_hearth_past_the_line_takes_its_share_first(self):
+        angry = Household(adults=2, mood=5, resentment=balance.HOARDS_AT)
+        patient = Household(adults=2, mood=5)
+        claims = first_claim(
+            [patient, angry],
+            food=4,
+            hoards_at=balance.HOARDS_AT,
+            per_adult=2,
+            per_child=1,
+        )
+        self.assertEqual(claims, [0, 4], "the angry hearth did not take first")
+
+    def test_the_angriest_takes_first_when_two_have_stopped_waiting(self):
+        angrier = Household(adults=1, mood=5, resentment=balance.HOARDS_AT + 3)
+        angry = Household(adults=1, mood=5, resentment=balance.HOARDS_AT)
+        claims = first_claim(
+            [angry, angrier],
+            food=2,
+            hoards_at=balance.HOARDS_AT,
+            per_adult=2,
+            per_child=1,
+        )
+        self.assertEqual(claims, [0, 2])
+
+    def test_a_patient_hearth_divides_only_what_is_left(self):
+        state = a_state(food=6, households=[(2, 0), (2, 0)])
+        state.population.households[0].resentment = balance.HOARDS_AT
+        report = turn.resolve(state, Orders(), Rng(1))
+        # Four food to the hearth that took first, two left for the other, which needed four.
+        self.assertEqual(report.households_hoarding, 1)
+        self.assertGreater(report.starved, 0)
+
+    def test_a_hearth_that_has_had_enough_walks_out(self):
+        state = a_state(food=100, households=[(2, 0), (2, 0)])
+        state.population.households[0].resentment = balance.WALKS_OUT_AT
+        report = turn.resolve(state, Orders(), Rng(1))
+        self.assertEqual(report.households_left, 1)
+        self.assertEqual(report.people_left, 2)
+        self.assertGreater(
+            report.food_taken, 0, "they left without their share of the store"
+        )
+        self.assertEqual(state.population.living_households, 1)
+        self.assertEqual(state.hearths_walked_out, 1)
+
+    def test_the_grudge_has_to_be_a_season_old_before_they_go(self):
+        """The player gets one season to answer it, which is what makes it a decision.
+
+        A hearth that crosses the line and leaves inside the same tick is a mechanic the player
+        only ever learns about from its own aftermath.
+        """
+        state = a_state(food=8, households=[(2, 0), (2, 0), (1, 2)])
+        for _ in range(3):
+            if state.is_over:
+                break
+            report = turn.resolve(state, Orders(rationing=Rationing.WORKERS), Rng(1))
+            worst = state.population.worst_resentment
+            if worst >= balance.WALKS_OUT_AT:
+                self.assertEqual(
+                    report.households_left,
+                    0,
+                    "a hearth crossed the line and left in the same season",
+                )
+                break
+
+    def test_an_event_can_mend_the_longest_grudge(self):
+        state = a_state(food=50, households=[(2, 0), (2, 0)])
+        state.population.households[1].resentment = 5
+        turn.apply_effect(state, Effect(household=(("mood", 1), ("resentment", -3))))
+        self.assertEqual(state.population.households[1].resentment, 2)
+        self.assertEqual(
+            state.population.households[0].resentment, 0, "it hit the wrong hearth"
+        )
+
+    def test_mending_cannot_drive_a_grudge_below_nothing(self):
+        state = a_state(food=50, households=[(2, 0)])
+        turn.apply_effect(state, Effect(household=(("resentment", -9),)))
+        self.assertEqual(state.population.households[0].resentment, 0)
 
 
 if __name__ == "__main__":

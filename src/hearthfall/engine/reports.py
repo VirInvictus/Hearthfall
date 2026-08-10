@@ -162,6 +162,27 @@ def _terrain(ledger: Ledger, coord: Coord) -> Terrain | None:
     return Terrain(value) if isinstance(value, str) else None
 
 
+def walkout_lines(hearths: int, people: int, food: int) -> list[str]:
+    """A hearth leaving, said the way the clan would find out about it.
+
+    Nobody announces this and nobody is asked. The report is what is missing in the morning,
+    which is why it counts what went rather than explaining why.
+    """
+    if not hearths:
+        return []
+
+    who = "A hearth" if hearths == 1 else f"{count(hearths).capitalize()} hearths"
+    lines = [
+        (
+            f"{who} did not come to the fire this morning, or any morning after. "
+            f"{count(people).capitalize()} went with them."
+        )
+    ]
+    if food:
+        lines.append(f"They took {food} food. Nobody stopped them.")
+    return lines
+
+
 def shortfall_lines(
     world: World, short: Sequence[tuple[Coord, Terrain, int]]
 ) -> list[str]:

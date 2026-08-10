@@ -411,9 +411,51 @@ the key binding moved from `e` to `s` with it.
       two names. Each now carries a dependent-count tiebreak, and they diverge properly under
       real scarcity (89 against 73). `test_the_three_policies_are_three_different_functions`
       guards it. Suite 231 → 233.
-- [ ] **Slice 3: traits and compatibility.** The quiet meter behind who pairs with whom.
-- [ ] **Slice 4: resentment with teeth.** The starved household becomes a rival. Corpus
-      entries keyed on household state, using the tallies from slice 2.5.
+- [x] **Slice 4: resentment with teeth (2026-08-09).** Taken out of order, ahead of slice 3,
+      because slice 6 measured `households_resentful` as unreachable and three finished events
+      were cut over it. The meter now moves, does something, and ends somewhere.
+
+      **The accrual first.** Burying somebody *while another fire ate* is its own grievance and
+      a heavier one than being passed over. The old rule needed the store short and the
+      rationing uneven, which is why the highest any hearth ever reached was the threshold
+      itself. It is charged only to a hearth that was also passed over, which keeps the
+      invariant the rationing decision rests on: an even split still wrongs nobody, however
+      badly the season went. A first version charged it on any death, broke exactly that, and
+      the suite caught it.
+
+      **Then two rungs.** Past `HOARDS_AT` a hearth stops waiting to be dealt a share and takes
+      what it thinks it is owed first, so the player's rationing applies only to the remainder.
+      Past `WALKS_OUT_AT` it is gone, with its people and a proportional share of the store,
+      checked against a grudge carried in from *last* season so the player gets one season to
+      answer it. Measured over 120 runs of a policy that always feeds the workers first: a
+      hoarding hearth in 35 runs and a walkout in 9. A policy that splits evenly produces
+      neither, ever.
+
+      **`[event.choice.effect.household]`** is a new structured effect table, landing on the
+      hearth with the longest memory. It exists because effects were clan-wide, so nothing the
+      corpus offered could repair a specific grievance and resentment was a ratchet the player
+      could only watch. The target is the engine's call rather than the author's, for the same
+      reason the survey plan picks its own tile: a selector in the TOML is the event DSL
+      `spec.md` §6 refuses.
+
+      **Gate verdict: ships.**
+      1. *A real decision every season?* **Improved, in the seasons that were already hard.**
+         Rationing was the layer's only decision and it only appeared when short; now a short
+         season has a consequence that outlives it, and there is a second decision (mend it or
+         let it run) in the seasons after.
+      2. *Slack?* Unchanged for an even-splitting player. Deliberately worse for one who keeps
+         favouring the same hearths, which is the point.
+      3. *Worth telling someone about?* **Yes.** "A hearth did not come to the fire this
+         morning, or any morning after. Three went with them. They took 7 food. Nobody stopped
+         them."
+
+      ⚠ **Measured and left alone:** losing a hearth slightly *improves* the odds of enduring,
+      because it is fewer mouths. Total survivors do not improve, but driving them off is not
+      currently punished. What should punish it is the walked-out hearth turning up on the map,
+      which is sub-project 4.
+
+- [ ] **Slice 3: traits and compatibility.** The quiet meter behind who pairs with whom. Still
+      not designed; see the ask in "Raised, not yet designed".
 
 Note the constraint from `spec.md` §5: the pool comes first and names are a layer over it.
 This sub-project ships **no named people**. It ships the thing they will later be drawn from.

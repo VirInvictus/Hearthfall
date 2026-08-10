@@ -60,10 +60,46 @@ RESENTMENT_PER_SHORT_SHARE = 1
 # three, at the very end of runs. At two, the window is a handful of seasons across sixty and
 # events keyed on it fire or do not fire at random.
 #
-# So `households_resentful` is currently a snapshot key content cannot safely be built on, and
-# the fix is not this number. It is sub-project 2 slice 4, which is what "resentment with
-# teeth" means.
+# So `households_resentful` was a snapshot key content could not safely be built on. Slice 4
+# is the fix, and it works on the accrual rather than on this threshold: a hearth that buries
+# somebody now resents it, which is the common case that was missing.
 RESENTFUL_AT = 3
+
+# Resentment a household takes on when the shortfall kills one of its own. Heavier than being
+# passed over, because it is: watching a hearth eat while yours goes hungry is a grievance, and
+# watching them eat while yours buries a child is a different thing entirely.
+#
+# This is the accrual that makes the meter move at all. Before it, the only source was being
+# fed less than an even split, which requires the store to be short *and* the player to have
+# rationed unevenly, and measured across sixty runs of the harshest rationing available the
+# highest any hearth ever reached was three.
+RESENTMENT_PER_DEATH = 2
+
+# Resentment at which a household stops waiting to be dealt its share and takes what it thinks
+# it is owed before anything is divided. The player's rationing then applies only to what is
+# left, so the choice narrows exactly when it matters most.
+HOARDS_AT = 4
+
+# Resentment at which a household stops being part of this clan. They go with their people and
+# their share of the store, and `spec.md` §5 has said from the start that this is where a rival
+# comes from.
+#
+# The check runs at the *top* of the tick, on resentment carried in from last season, which is
+# what gives the player one season to do something about it. A hearth that crosses the line and
+# walks out in the same tick would be a mechanic the player is told about by its own aftermath.
+#
+# Three numbers, one ladder: content may notice at RESENTFUL_AT, they stop waiting at HOARDS_AT,
+# they are gone at WALKS_OUT_AT. Measured over 120 runs of a policy that always feeds the
+# workers first, this ladder produces a hoarding hearth in 35 runs and a walkout in 9. At 3/5 it
+# is 49 and 39, which is too much for something a player is supposed to have earned; at 5/8 the
+# walkout never happens at all.
+#
+# ⚠ One measured wrinkle, recorded rather than fixed: losing a hearth slightly *improves* the
+# odds of the clan enduring, because it is fewer mouths. Total survivors do not improve, since
+# the people and a proportional share of the store both walk out, but "drive them off on
+# purpose" is a strategy the numbers do not currently punish. Revisit when the walked-out hearth
+# becomes a neighbour on the map in sub-project 4, which is the thing that should punish it.
+WALKS_OUT_AT = 6
 
 # --- Food ------------------------------------------------------------------------------
 

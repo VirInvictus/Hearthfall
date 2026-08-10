@@ -28,18 +28,125 @@ to fix.
   [event.choice.effect]
   morale = -1
 
-# THREE ENTRIES WERE CUT FROM HERE RATHER THAN SHIPPED, and the reason is worth more than they
-# were. All three were gated on `households_resentful`, and that key is not reachable content
-# today. Measured across sixty runs of the harshest rationing the game offers (a naive policy
-# feeding the workers first): 142 seasons ran short and 138 household-seasons were wronged, but
-# the highest resentment any hearth ever reached was exactly three, at the very end of runs,
-# which is the threshold itself. Lowering the threshold to two bought a window of a handful of
-# seasons across sixty, and in those seasons the entries traded places at random: removing one
-# of them made another stop firing, because all three were inside the noise.
-#
-# Weighting them up would have satisfied the reachability guard without making them reachable
-# in any sense a player would recognise. They come back when sub-project 2 slice 4 gives
-# resentment teeth, which is exactly what that slice is for.
+# Three entries were cut from here in slice 6 because `households_resentful` was measurably
+# unreachable: the meter only moved when a hearth was passed over, so the highest any hearth
+# ever reached was the threshold itself, at the very end of runs. Slice 4 fixed the accrual (a
+# hearth that buries somebody *while another fire eats* now resents it) and gave resentment two
+# rungs, and the entries below are what that bought. They are keyed on
+# `worst_household_resentment` rather than on the count, because a grudge is about one hearth.
+
+[[event]]
+id = "hearth.the_longest_memory"
+weight = 4
+when = ["worst_household_resentment > 2", "households > 1"]
+title = "The Longest Memory"
+body = """
+One fire in this camp has been fed last often enough to have stopped expecting anything else.
+Nobody there says so. It is in how they take a bowl and how they say thank you for it.
+"""
+
+  [[event.choice]]
+  text = "Sit with them. Hear the whole list, including the parts you remember differently."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.household]
+  resentment = -2
+  mood = 1
+
+  [[event.choice]]
+  text = "Nothing to be done about it now. The store is the store."
+  [event.choice.effect]
+  [event.choice.effect.household]
+  resentment = 1
+
+[[event]]
+id = "hearth.they_take_theirs"
+weight = 5
+when = ["households_hoarding > 0"]
+title = "They Take Theirs"
+body = """
+The far hearth no longer waits to be dealt a share. They come to the store first, take what
+they judge is theirs, and are gone before the argument starts. What you divide tonight is what
+they left.
+"""
+
+  [[event.choice]]
+  text = "Let it stand. A fight over a bowl is how a clan comes apart."
+  [event.choice.effect]
+  morale = -1
+
+  [[event.choice]]
+  text = "Take it back off them in front of everyone."
+  [event.choice.effect]
+  food = 5
+  morale = -2
+  [event.choice.effect.household]
+  resentment = 2
+
+  [[event.choice]]
+  text = "Give them more than they took, and say it was always theirs."
+  [event.choice.effect]
+  food = -6
+  [event.choice.effect.household]
+  resentment = -3
+  mood = 2
+
+[[event]]
+id = "hearth.the_last_word_before_going"
+weight = 6
+when = ["worst_household_resentment > 4", "households > 1"]
+title = "They Have Stopped Asking"
+body = """
+They have not raised anything at the fire in a season. There is a bundle by their door that
+has been packed and unpacked twice, and everybody in the camp has walked past it and said
+nothing, including you.
+"""
+
+  [[event.choice]]
+  text = "Ask them, plainly, in front of everyone, to stay."
+  [event.choice.effect]
+  morale = 1
+  [event.choice.effect.household]
+  resentment = -3
+  mood = 2
+
+  [[event.choice]]
+  text = "Give them the best of the store and no words at all."
+  [event.choice.effect]
+  food = -10
+  [event.choice.effect.household]
+  resentment = -4
+
+  [[event.choice]]
+  text = "Say nothing. If they are going they are going."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.household]
+  resentment = 1
+
+[[event]]
+id = "hearth.the_empty_place"
+weight = 5
+once = true
+when = ["hearths_walked_out > 0"]
+title = "The Empty Place"
+body = """
+Their fire is a ring of cold stones and the ground where they slept is still flattened. Nobody
+has taken the space, though the camp is short of room, and nobody has said out loud that they
+are not coming back.
+"""
+
+  [[event.choice]]
+  text = "Break up the ring and use the stones. They are stones."
+  [event.choice.effect]
+  morale = -2
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+  [[event.choice]]
+  text = "Leave it where it is."
+  [event.choice.effect]
+  morale = 1
 
 [[event]]
 id = "hearth.the_new_fire"

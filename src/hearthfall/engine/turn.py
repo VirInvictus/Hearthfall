@@ -16,7 +16,7 @@ from hearthfall.engine import balance, reports
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event, load_tallies
 from hearthfall.engine.intel import Fact, FactKind, Ledger, Staleness
-from hearthfall.engine.people import Household, Rationing, share_out
+from hearthfall.engine.people import Household, Rationing, first_claim, share_out
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     Effect,
@@ -61,6 +61,12 @@ class TurnReport:
     rationing: Rationing = Rationing.EQUAL
     households_wronged: int = 0
     households_split: int = 0
+    # Hearths that stopped waiting to be dealt a share, and hearths that stopped being part of
+    # this clan at all, with what walked out with them.
+    households_hoarding: int = 0
+    households_left: int = 0
+    people_left: int = 0
+    food_taken: int = 0
     revealed: Coord | None = None
     revealed_terrain: Terrain | None = None
     # Where a big enough party stopped and worked out what the ground will feed. Separate from
@@ -421,6 +427,7 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
         ledger=ledger,
         population=_founding_households(),
         resentful_at=balance.RESENTFUL_AT,
+        hoards_at=balance.HOARDS_AT,
         stores=Stores(food=balance.STARTING_FOOD),
         tallies={
             name: 0 for name in (load_tallies() if tallies is None else tuple(tallies))
@@ -479,12 +486,22 @@ def resolve(
     season = state.season
     report = TurnReport(turn=state.turn, season=season)
 
+    # Captured before anything happens, and acted on at the end. A hearth leaves over a grudge
+    # it was already carrying when the season began, which is what gives the player a season to
+    # do something about it, and what keeps the walkout from invalidating orders already given.
+    doomed = [
+        household
+        for household in state.population.households
+        if not household.is_empty and household.resentment >= balance.WALKS_OUT_AT
+    ]
+
     _produce(state, orders, season, report)
     _consume(state, orders, report)
     _spoil(state, orders, season, report)
     _scout(state, orders, rng, report)
     _draw_event(state, rng, report, events)
     _grow(state, rng, report)
+    _leave(state, doomed, report)
     _advance(state, report)
 
     return report
@@ -524,6 +541,8 @@ def apply_effect(state: GameState, effect: Effect) -> None:
     for _ in range(-effect.children):
         state.population.take_people(1)
 
+    _mend(state, effect)
+
     # Tallies are unclamped and unbounded on purpose. A grudge does not saturate at ten, and
     # the corpus, not the engine, decides what counts as "enough". They never go below zero
     # though: a negative resentment is not forgiveness, it is a bug in an event.
@@ -532,6 +551,30 @@ def apply_effect(state: GameState, effect: Effect) -> None:
 
 
 # --- Steps, in resolution order ---------------------------------------------------------
+
+
+def _mend(state: GameState, effect: Effect) -> None:
+    """Apply an effect's household deltas to the hearth with the longest grudge.
+
+    One target, chosen by the engine, for the same reason the survey plan picks its own tile:
+    orders and effects stay scalar and the engine places them. A choice of target would need a
+    selector language in the TOML, and that is the event DSL `spec.md` §6 refuses.
+
+    Resentment floors at zero. A negative grudge is not forgiveness, it is a bug in an event.
+    """
+    if not effect.household:
+        return
+
+    living = [h for h in state.population.households if not h.is_empty]
+    if not living:
+        return
+
+    target = max(living, key=lambda h: (h.resentment, -h.mood))
+    for field_name, delta in effect.household:
+        if field_name == "resentment":
+            target.resentment = max(0, target.resentment + delta)
+        else:
+            target.mood = _clamp_morale(target.mood + delta)
 
 
 def _produce(
@@ -628,7 +671,7 @@ def _consume(state: GameState, orders: Orders, report: TurnReport) -> None:
     report.rationing = orders.rationing
     report.note(f"{population.total} mouths ate {eaten} food.")
 
-    shares = share_out(households, eaten, orders.rationing, per_adult, per_child)
+    shares = _divide(households, eaten, orders.rationing, per_adult, per_child)
     # What each household would have got under an even split, which is the yardstick for
     # whether it was *wronged* as opposed to merely hungry. Everyone going equally short
     # breeds far less resentment than one household watching another eat.
@@ -636,8 +679,12 @@ def _consume(state: GameState, orders: Orders, report: TurnReport) -> None:
 
     starved = 0
     wronged = 0
+    hoarding = 0
     for household, share, even in zip(households, shares, fair, strict=True):
+        if household.resentment >= balance.HOARDS_AT:
+            hoarding += 1
         short = household.demand(per_adult, per_child) - share
+        deaths = 0
         if short > 0:
             deaths = min(
                 math.ceil(short / balance.FOOD_PER_STARVATION_DEATH), household.size
@@ -650,14 +697,22 @@ def _consume(state: GameState, orders: Orders, report: TurnReport) -> None:
                 - balance.MORALE_LOSS_PER_STARVATION
                 - deaths * balance.MORALE_LOSS_PER_DEATH
             )
-        if short > 0:
             household.went_short += 1
         if share < even:
-            household.resentment += balance.RESENTMENT_PER_SHORT_SHARE
+            # Burying somebody *while another fire ate* is the grievance the old rule missed.
+            # It is charged only to a hearth that was also passed over, which keeps the
+            # invariant EQUAL rests on: everyone going short together wrongs nobody, so an even
+            # split still breeds no resentment however badly the season went. A first attempt
+            # charged it on any death and broke exactly that, which the suite caught.
+            household.resentment += (
+                balance.RESENTMENT_PER_SHORT_SHARE
+                + deaths * balance.RESENTMENT_PER_DEATH
+            )
             wronged += 1
 
     report.starved = starved
     report.households_wronged = wronged
+    report.households_hoarding = hoarding
     if report.shortfall:
         report.note(
             f"The stores ran {report.shortfall} short. {starved} did not survive it."
@@ -666,6 +721,44 @@ def _consume(state: GameState, orders: Orders, report: TurnReport) -> None:
         report.note(
             f"{wronged} of the hearths went without while others ate. They know it."
         )
+    if hoarding:
+        who = (
+            "One hearth no longer waits"
+            if hoarding == 1
+            else f"{hoarding} hearths no longer wait"
+        )
+        report.note(f"{who} to be dealt a share. They take theirs first.")
+
+
+def _divide(
+    households: list[Household],
+    food: int,
+    policy: Rationing,
+    per_adult: int,
+    per_child: int,
+) -> list[int]:
+    """Feed the hearths that take first, then divide what is left by the player's rationing.
+
+    Slice 4's teeth. A household past `HOARDS_AT` has stopped accepting a share and takes what
+    it believes it is owed; the rationing decision then applies only to the remainder, so the
+    choice narrows exactly in the season a short store made it matter most.
+
+    Claimants are out of the split entirely, including one whose claim came to nothing because
+    there was no food left to take. They went first and they got what going first was worth.
+    """
+    claims = first_claim(households, food, balance.HOARDS_AT, per_adult, per_child)
+    claiming = [h.resentment >= balance.HOARDS_AT for h in households]
+    if not any(claiming):
+        return share_out(households, food, policy, per_adult, per_child)
+
+    rest = [h for h, takes in zip(households, claiming, strict=True) if not takes]
+    remainder = share_out(rest, food - sum(claims), policy, per_adult, per_child)
+
+    shares: list[int] = []
+    spare = iter(remainder)
+    for claim, takes in zip(claims, claiming, strict=True):
+        shares.append(claim if takes else next(spare))
+    return shares
 
 
 def _spoil(
@@ -956,6 +1049,36 @@ def _grow(state: GameState, rng: Rng, report: TurnReport) -> None:
             household.mood += 1
         elif household.mood > balance.MORALE_DRIFT_TARGET:
             household.mood -= 1
+
+
+def _leave(state: GameState, doomed: list[Household], report: TurnReport) -> None:
+    """The hearths that are done with this clan go, and take their share with them.
+
+    `spec.md` §5 has promised since the replan that a starved household is where a rival comes
+    from. This is the first half of that: they stop being yours. The second half is sub-project
+    4, where what walked out is somewhere on the map with a grudge and a grain store.
+
+    They take food in proportion to the mouths that leave, which is the only division anybody
+    could call fair, and is not offered as a choice: a hearth that has reached this point is not
+    asking. The list was captured at the top of the tick, so this is last season's grudge acting
+    now, and the season just resolved was the player's chance to answer it.
+    """
+    leaving = [household for household in doomed if not household.is_empty]
+    if not leaving:
+        return
+
+    before = state.population.total
+    gone = state.population.walk_out(leaving)
+    if not gone:
+        return
+
+    taken = state.stores.food * gone // before if before else 0
+    state.stores.food -= taken
+    state.hearths_walked_out += len(leaving)
+    report.households_left = len(leaving)
+    report.people_left = gone
+    report.food_taken = taken
+    report.log.extend(reports.walkout_lines(len(leaving), gone, taken))
 
 
 def _advance(state: GameState, report: TurnReport) -> None:

@@ -304,7 +304,10 @@ class Hearthfall(App[None]):
         choice about people the player could not see.
 
         Mood is shown; resentment deliberately is not. It is meant to stay a quiet meter, and
-        a number the player can watch is a number the player optimises against.
+        a number the player can watch is a number the player optimises against. What *is* shown
+        is a mark once a hearth has started behaving differently, because behaviour is not a
+        secret: a hearth that takes its share before anything is divided is doing that in front
+        of everybody.
         """
         hearths = [h for h in population.households if not h.is_empty]
         status.append("Hearths", "#625e5a")
@@ -328,6 +331,13 @@ class Hearthfall(App[None]):
             status.append(
                 f"{household.mood}", "#c4746e" if household.mood <= 3 else "#8a9a7b"
             )
+            # A grudge stays a number the player cannot read, but a hearth that has stopped
+            # waiting to be dealt a share is *behaving* differently, and behaviour is fair to
+            # show. One mark for taking theirs first, two for a hearth on its way out.
+            if household.resentment >= balance.WALKS_OUT_AT:
+                status.append("!!", "bold #c4746e")
+            elif household.resentment >= balance.HOARDS_AT:
+                status.append("!", "#c4746e")
 
     def render_ledger(self) -> Text:
         """The season's food ledger for the current allocation.

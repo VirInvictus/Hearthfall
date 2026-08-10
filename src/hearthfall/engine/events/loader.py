@@ -25,9 +25,14 @@ EVENT_KEYS = frozenset(
     {"id", "weight", "once", "when", "title", "body", "effect", "choice"}
 )
 CHOICE_KEYS = frozenset({"text", "effect"})
-EFFECT_KEYS = frozenset({"food", "morale", "adults", "children", "tally"})
-# The scalar deltas. `tally` is the one effect key holding a table rather than a number.
-EFFECT_SCALARS = EFFECT_KEYS - {"tally"}
+EFFECT_KEYS = frozenset({"food", "morale", "adults", "children", "tally", "household"})
+# The scalar deltas. `tally` and `household` are the two effect keys holding a table rather
+# than a number.
+EFFECT_SCALARS = EFFECT_KEYS - {"tally", "household"}
+# What a `[effect.household]` table may move on the hearth it lands on. Deliberately short:
+# a grudge and a mood are what an event can reach into a kin group and change. Anything that
+# moves people belongs in the clan-wide keys, where the player can see it in the totals.
+HOUSEHOLD_KEYS = frozenset({"resentment", "mood"})
 
 DATA_PACKAGE = "hearthfall.data"
 EVENTS_DIRECTORY = "events"
@@ -279,8 +284,8 @@ def _parse_effect(raw: object, where: str, reference: Snapshot) -> Effect:
     # be a content error rather than a silent 1.
     deltas: dict[str, int] = {}
     for key, value in table.items():
-        if key == "tally":
-            continue
+        if key not in EFFECT_SCALARS:
+            continue  # `tally` and `household` are tables, parsed below
         if not isinstance(value, int) or isinstance(value, bool):
             raise EventError(
                 f"{where} has effect {key} = {value!r}; it must be an integer"
@@ -288,8 +293,40 @@ def _parse_effect(raw: object, where: str, reference: Snapshot) -> Effect:
         deltas[key] = value
 
     return Effect(
-        tally=_parse_tally_deltas(table.get("tally"), where, reference), **deltas
+        tally=_parse_tally_deltas(table.get("tally"), where, reference),
+        household=_parse_household_deltas(table.get("household"), where),
+        **deltas,
     )
+
+
+def _parse_household_deltas(raw: object, where: str) -> tuple[tuple[str, int], ...]:
+    """Read an `[effect.household]` table into sorted (field, delta) pairs.
+
+    Validated against a fixed key set rather than against the snapshot, because these are not
+    conditions: they name fields on a hearth, and a misspelled one should fail at load exactly
+    as a misspelled effect key does.
+    """
+    if raw is None:
+        return ()
+
+    table = _as_table(raw)
+    if table is None:
+        raise EventError(f"{where} has an effect household that is not a table")
+
+    deltas: list[tuple[str, int]] = []
+    for name, value in table.items():
+        if name not in HOUSEHOLD_KEYS:
+            known = ", ".join(sorted(HOUSEHOLD_KEYS))
+            raise EventError(
+                f"{where} has unknown household key {name!r}; known: {known}"
+            )
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise EventError(
+                f"{where} has household {name} = {value!r}; it must be an integer"
+            )
+        deltas.append((name, value))
+
+    return tuple(sorted(deltas))
 
 
 def _parse_tally_deltas(

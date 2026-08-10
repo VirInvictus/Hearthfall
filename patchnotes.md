@@ -1,5 +1,39 @@
 # Patch notes
 
+## v0.10.0 (2026-08-09)
+
+**A hearth you keep feeding last will eventually stop being yours.** Resentment has been in the
+game since v0.4.0 as a number nothing read; it now accrues where it could not before, changes
+how food is divided, and past the last rung takes its people and walks out.
+
+- **Burying somebody while another fire ate is its own grievance**, heavier than merely being
+  passed over. That is the accrual that was missing: the old rule needed the store to be short
+  *and* the player to have rationed unevenly, so measured across sixty runs the highest any
+  hearth ever reached was the threshold itself.
+- **Past `HOARDS_AT` a hearth stops waiting to be dealt a share** and takes what it thinks it is
+  owed before anything is divided. Your rationing then applies only to what is left, so the
+  decision narrows exactly in the season a short store made it matter.
+- **Past `WALKS_OUT_AT` they are gone**, with their people and a proportional share of the
+  store. The check runs on a grudge carried in from last season, so the season before is your
+  chance to answer it.
+- **An event can now mend one hearth's grudge.** `[event.choice.effect.household]` is a new
+  structured effect table that lands on the hearth with the longest memory. Without it, effects
+  were clan-wide and resentment was a one-way ratchet the player could only watch.
+
+Four new corpus entries key on it, including the offer to sit with them and hear the whole list.
+Measured over 120 runs of a policy that always feeds the workers first: a hoarding hearth in 35
+runs and a walkout in 9. A policy that splits evenly still produces neither, ever, which is the
+invariant the whole rationing decision rests on: everyone going short together wrongs nobody.
+
+**One design catch worth recording.** The first version of the accrual charged resentment on
+any starvation death, which quietly made an even split breed grudges and stopped `EQUAL` being a
+real option. The suite caught it. It is now charged only to a hearth that was *also* passed over.
+
+**And one measured wrinkle left alone:** losing a hearth slightly improves the clan's odds of
+enduring, because it is fewer mouths. Total survivors do not improve, but "drive them off on
+purpose" is not currently punished. The thing that should punish it is the walked-out hearth
+turning up on the map as a neighbour, which is sub-project 4. Suite 294 to 303 tests.
+
 ## v0.9.0 (2026-08-09)
 
 **The corpus went from 34 events to 82**, which is the thing the roadmap calls the actual

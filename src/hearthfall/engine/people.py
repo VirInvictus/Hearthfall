@@ -92,6 +92,38 @@ class Household:
         return False
 
 
+def first_claim(
+    households: list[Household],
+    food: int,
+    hoards_at: int,
+    per_adult: int,
+    per_child: int,
+) -> list[int]:
+    """What the hearths that have stopped waiting take before anything is divided.
+
+    Slice 4's first rung. A household past `hoards_at` does not accept a share any more, it
+    takes what it thinks it is owed, and the player's rationing then applies to what is left.
+    That is the teeth: the decision does not disappear, it narrows, and it narrows most in the
+    season a short store made it matter.
+
+    Angriest first, so when there is not even enough for the claimants the one with the longest
+    memory eats. Pure, like `share_out`, and returns a list in the households' own order.
+    """
+    claims = [0] * len(households)
+    left = food
+    order = sorted(
+        range(len(households)),
+        key=lambda i: (-households[i].resentment, i),
+    )
+    for index in order:
+        household = households[index]
+        if household.resentment < hoards_at or not left:
+            continue
+        claims[index] = min(left, household.demand(per_adult, per_child))
+        left -= claims[index]
+    return claims
+
+
 def share_out(
     households: list[Household],
     food: int,

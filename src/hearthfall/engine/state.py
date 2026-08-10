@@ -53,11 +53,26 @@ class Effect:
     # a *choice* lets a later event require not just that something happened but that you
     # answered it a particular way.
     tally: tuple[tuple[str, int], ...] = ()
+    # Deltas aimed at one hearth rather than at the clan, as sorted (field, delta) pairs. The
+    # target is always the hearth with the longest grudge, because that is the only hearth an
+    # event about a grudge can be about, and because letting content *choose* a target would
+    # need a selector language, which is the event DSL `spec.md` §6 spends a warning block
+    # refusing to build.
+    #
+    # This exists because without it resentment is a one-way ratchet: effects were clan-wide,
+    # so nothing an event offered could repair a specific grievance, and a hearth walking out
+    # would be a thing the player could only ever watch happen.
+    household: tuple[tuple[str, int], ...] = ()
 
     @property
     def is_empty(self) -> bool:
         return not (
-            self.food or self.morale or self.adults or self.children or self.tally
+            self.food
+            or self.morale
+            or self.adults
+            or self.children
+            or self.tally
+            or self.household
         )
 
 
@@ -141,7 +156,16 @@ class Population:
         living = [h.mood for h in self.households if not h.is_empty]
         return min(living) if living else 0
 
+    @property
+    def worst_resentment(self) -> int:
+        """The longest memory in the clan, which is the hearth an event would be about."""
+        living = [h.resentment for h in self.households if not h.is_empty]
+        return max(living) if living else 0
+
     def resentful(self, threshold: int) -> int:
+        """Hearths whose grudge has reached `threshold`. Used at two thresholds, not two
+        functions: `resentful_at` is when content may notice, `hoards_at` is when they stop
+        waiting to be dealt a share."""
         return sum(
             1 for h in self.households if not h.is_empty and h.resentment >= threshold
         )
@@ -243,6 +267,20 @@ class Population:
             made += 1
         return made
 
+    def walk_out(self, leaving: list[Household]) -> int:
+        """Remove hearths that are done with this clan. Returns how many people went.
+
+        The engine does not decide *which* here; the caller does, from a list captured at the
+        top of the tick. A household that crosses the line and walks out inside the same season
+        is a mechanic the player only ever learns about from its own aftermath.
+        """
+        people = 0
+        for household in leaving:
+            if household in self.households:
+                people += household.size
+                self.households.remove(household)
+        return people
+
     def clear_hunger(self) -> None:
         for household in self.households:
             household.went_short = 0
@@ -316,6 +354,13 @@ class GameState:
     # for the same reason `forage_capacity` is: `snapshot()` needs it, and `balance` imports
     # `state`, so reading it directly would close the import loop. `new_game` sets it.
     resentful_at: int = 3
+    # Same reason as `resentful_at`: `snapshot()` needs it and `balance` imports `state`.
+    hoards_at: int = 4
+    # Hearths that have walked out over a grudge, across the whole run. It only ever rises, and
+    # it is on the state rather than in a tally because the engine writes it: a tally is what
+    # the *corpus* remembers, and this is something that happened whether or not any event was
+    # involved.
+    hearths_walked_out: int = 0
     # Ids of events that have fired, so `once = true` entries do not come round again.
     fired_events: list[str] = field(default_factory=list[str])
     # What the clan remembers. Every declared tally is present from the first turn at zero, so
@@ -356,6 +401,12 @@ class GameState:
             "households": self.population.living_households,
             "worst_household_mood": self.population.worst_mood,
             "households_resentful": self.population.resentful(self.resentful_at),
+            # Slice 4's teeth, as flat scalars. `worst_household_resentment` is the one content
+            # should usually reach for: it is the hearth an event would be *about*, where the
+            # count is a fact about the clan.
+            "worst_household_resentment": self.population.worst_resentment,
+            "households_hoarding": self.population.resentful(self.hoards_at),
+            "hearths_walked_out": self.hearths_walked_out,
             "tiles_known": self.ledger.known_count,
             "tiles_unknown": self.ledger.unknown_count(self.world),
             # Walked and surveyed are two different amounts of knowing (slice 3), so content
