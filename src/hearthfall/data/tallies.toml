@@ -50,3 +50,19 @@ name = "ground_lost_to_fear"
 about = """
 Times the clan refused ground it had found. Cowardice is cheap in the moment and compounds.
 """
+
+[[tally]]
+name = "strangers_taken_in"
+about = """
+People let in from outside. Every one is a back that works and a mouth that eats, and the
+clan keeps its own count of which mattered more. Turning one away costs nothing that season
+and is remembered by somebody.
+"""
+
+[[tally]]
+name = "graves"
+about = """
+People buried, however they went. Not a number the clan says out loud, and the only tally that
+never falls. Hunger and violence and bad luck all end in the same ground, and a clan that has
+dug often enough answers questions differently.
+"""

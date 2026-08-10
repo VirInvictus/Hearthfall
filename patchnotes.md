@@ -1,5 +1,45 @@
 # Patch notes
 
+## v0.9.0 (2026-08-09)
+
+**The corpus went from 34 events to 82**, which is the thing the roadmap calls the actual
+project. Five new files, written against vocabulary that did not exist when the old ones were:
+
+- **`ground.toml`** is the second and third look at each terrain, gated on seasons and on how
+  much the clan has worked out rather than on a scout coming home. A wood in winter, deadfall
+  worth a hungry week, a charcoal pit somebody dug and abandoned, what the peat gives up.
+- **`fog.toml`** is keyed on the intel layer: hands with nowhere to work, numbers nobody has
+  checked in years, the map in the dirt becoming a map of what the clan *has*.
+- **`hearths.toml`** is the household layer showing up outside the rationing prompt.
+- **`hunger.toml`** carries the `hungry_winters` tally, read years later.
+- **`debts.toml`** and **`dead.toml`** run three chains on tallies: generosity that is
+  occasionally and unreliably repaid, ground given up out of caution, and the clan's own dead.
+  Two new tallies, `strangers_taken_in` and `graves`.
+
+**Three entries were cut rather than shipped, and the reason is the most useful thing here.**
+All three were gated on `households_resentful`, and that key is not reachable content today:
+across sixty runs of the harshest rationing the game offers, 142 seasons ran short and 138
+household-seasons were wronged, and the highest resentment any hearth ever reached was exactly
+the threshold, at the very end of runs. Lowering the threshold bought a window so narrow that
+removing one of the three made another stop firing. They come back when sub-project 2 slice 4
+gives resentment teeth.
+
+**The reachability guard earned its place twice over.** It caught a condition on
+`terrain_home == hills` that could never be true, because the hearth is always placed on plain,
+and it caught that the test's own policy ladder predated slice 3: nothing in it ever sent a
+third scout or rationed unevenly, so a whole file of content was unreachable by construction of
+the harness rather than by anything wrong with the content. The ladder now includes surveying,
+watchful and unequal-rationing policies.
+
+**`EVENT_COOLDOWN` stays at 16, against the roadmap's own instruction to lower it.** Tripling
+the corpus did help at a fixed cooldown (9 runs in 60 replaying an event, down to 3), but
+lowering the cooldown is worse at 82 events than 16 was at 34. Repetition is governed by how
+many entries are *eligible at once*, not by how many exist.
+
+**One thing this slice made worse and did not fix:** every season now carries an event, where
+it used to be about nine in ten. A quiet season no longer exists, and the fix belongs to the
+director in sub-project 4 rather than to a number here.
+
 ## v0.8.0 (2026-08-09)
 
 **The ground stopped holding still, and the clan's picture of it can now be wrong.** Until now

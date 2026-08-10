@@ -1,0 +1,190 @@
+# What the clan owes and what it is owed: generosity, cowardice, and the people let in.
+#
+# Three chains, all gated on tallies and none on ids, so what a later event requires is not
+# that something happened but that you answered it a particular way. `debts_owed_to_you` is
+# written by choices that cost the hearth something for somebody else's sake, and paid back
+# occasionally and never reliably. `ground_lost_to_fear` is written by the choices that back
+# away. `strangers_taken_in` counts the people who arrived with nothing.
+#
+# Rarity here is by condition. `debts.the_return` needs three separate acts of generosity across
+# a run, which is a run's worth of choosing, and it is worth more than any single event in the
+# corpus because of it. A payoff you earned reads as a consequence; a payoff you rolled reads
+# as noise.
+
+[[event]]
+id = "debts.the_share_out"
+weight = 3
+when = ["food > 25", "people > 5", "morale < 6"]
+title = "More Than Their Share"
+body = """
+There is enough tonight for people to eat until they stop, which almost never happens, and the
+store can carry it if nothing goes wrong for a month. Nothing going wrong for a month is not
+something anyone here would bet on.
+"""
+
+  [[event.choice]]
+  text = "Let them eat until they stop."
+  [event.choice.effect]
+  food = -10
+  morale = 3
+  [event.choice.effect.tally]
+  debts_owed_to_you = 1
+
+  [[event.choice]]
+  text = "Ordinary shares. The month is not over."
+  [event.choice.effect]
+
+[[event]]
+id = "debts.the_other_clan"
+weight = 3
+when = ["food > 22", "year > 1", "tiles_known > 4"]
+title = "Somebody Else's Bad Year"
+body = """
+Four of them, from somewhere over the ridge, standing at the edge of the light and not coming
+closer. They are not armed and they are not begging. They have simply walked here to be seen
+being hungry, which takes a particular kind of pride to do.
+"""
+
+  [[event.choice]]
+  text = "Load them up and send them home fed."
+  [event.choice.effect]
+  food = -12
+  morale = 1
+  [event.choice.effect.tally]
+  debts_owed_to_you = 2
+
+  [[event.choice]]
+  text = "Give them a meal and nothing to carry."
+  [event.choice.effect]
+  food = -4
+
+  [[event.choice]]
+  text = "Send them off. This clan is not a granary for the ridge."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+[[event]]
+id = "debts.the_return"
+weight = 8
+once = true
+when = ["tally_debts_owed_to_you > 2", "year > 2"]
+title = "It Comes Back"
+body = """
+A cart, badly made and heavily loaded, pushed up to the clearing by people you fed in a year
+you could not afford to. They do not stay and they will not be thanked. One of them says the
+name of the winter you helped them through, and that is the whole of the conversation.
+"""
+[event.effect]
+food = 22
+morale = 3
+
+[[event]]
+id = "debts.a_name_over_the_ridge"
+weight = 4
+once = true
+when = ["tally_debts_owed_to_you > 1", "year > 1"]
+title = "A Name Over the Ridge"
+body = """
+Somebody three days from here knows what this hearth is called and says it in a particular
+way. That is worth nothing at all this season. It is worth having.
+"""
+[event.effect]
+morale = 2
+
+[[event]]
+id = "debts.the_habit_of_backing_away"
+weight = 4
+once = true
+when = ["tally_ground_lost_to_fear > 0", "year > 2"]
+title = "The Habit"
+body = """
+There is ground the clan does not go to now, and nobody can say exactly when it was decided.
+It was not decided. It accumulated, one sensible evening at a time, and the map in the dirt
+has a shape it did not have to have.
+"""
+
+  [[event.choice]]
+  text = "Break it. Walk out to the worst of it yourself, and take somebody with you."
+  [event.choice.effect]
+  food = -6
+  morale = 2
+  [event.choice.effect.tally]
+  ground_lost_to_fear = -3
+
+  [[event.choice]]
+  text = "It has kept everyone alive so far."
+  [event.choice.effect]
+  morale = -2
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+[[event]]
+id = "debts.the_stranger_stays"
+weight = 4
+once = true
+when = ["tally_strangers_taken_in > 0", "year > 1"]
+title = "He Is Still Here"
+body = """
+The one who came out of the white has been here a year now, and works, and is spoken to by
+name, and is still called the stranger by people who have known him all that time. He has
+noticed. He has never once mentioned it.
+"""
+
+  [[event.choice]]
+  text = "Give him a job that only he does, so the name stops being what he is."
+  [event.choice.effect]
+  morale = 2
+
+  [[event.choice]]
+  text = "Leave it. A year is not long."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "debts.another_at_the_edge"
+weight = 3
+when = ["tally_strangers_taken_in > 0", "food > 18", "season != winter"]
+title = "Another One"
+body = """
+Word travels, apparently. There is a woman at the treeline with a child and no story she is
+willing to tell, and she already knows this is a hearth that took somebody in once.
+"""
+
+  [[event.choice]]
+  text = "Take them both. It is what the clan is now."
+  [event.choice.effect]
+  adults = 1
+  children = 1
+  food = -8
+  [event.choice.effect.tally]
+  strangers_taken_in = 1
+
+  [[event.choice]]
+  text = "The child, and not the woman. She agrees too quickly."
+  [event.choice.effect]
+  children = 1
+  food = -3
+  morale = -2
+
+  [[event.choice]]
+  text = "Neither. There is a limit and this is where it is."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+[[event]]
+id = "debts.what_the_taken_in_are_worth"
+weight = 4
+once = true
+when = ["tally_strangers_taken_in > 0", "year > 2", "people > 7"]
+title = "The Ones Who Came Later"
+body = """
+Count the hands at work this morning and better than one in four of them walked in from
+somewhere else. The clan has stopped being the people who started it and become the people
+who are here, and nobody can name the season that changed.
+"""
+[event.effect]
+morale = 2

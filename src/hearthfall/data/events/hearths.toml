@@ -1,0 +1,147 @@
+# The hearths: kin groups, and what happens between them.
+#
+# Keyed on the household layer rather than on the clan average, because the average is a
+# question about nobody. A clan at five morale with one hearth at zero is a different clan from
+# one where everybody is at five, and `worst_household_mood` is what tells them apart.
+#
+# The rationing decision is the only place the player touches this directly, and it only
+# appears when the store is short. These are how the layer shows up the rest of the time.
+
+[[event]]
+id = "hearth.the_quiet_one"
+weight = 4
+when = ["worst_household_mood < 3", "households > 1"]
+title = "The Quiet Hearth"
+body = """
+One fire in the camp is not talking. They do the work, they take their share, they answer when
+spoken to and not otherwise. Everybody has noticed and everybody has decided it is not theirs
+to fix.
+"""
+
+  [[event.choice]]
+  text = "Eat with them. Once, publicly, and stay until it is awkward."
+  [event.choice.effect]
+  morale = 1
+
+  [[event.choice]]
+  text = "Leave them to it. People come round in their own time."
+  [event.choice.effect]
+  morale = -1
+
+# THREE ENTRIES WERE CUT FROM HERE RATHER THAN SHIPPED, and the reason is worth more than they
+# were. All three were gated on `households_resentful`, and that key is not reachable content
+# today. Measured across sixty runs of the harshest rationing the game offers (a naive policy
+# feeding the workers first): 142 seasons ran short and 138 household-seasons were wronged, but
+# the highest resentment any hearth ever reached was exactly three, at the very end of runs,
+# which is the threshold itself. Lowering the threshold to two bought a window of a handful of
+# seasons across sixty, and in those seasons the entries traded places at random: removing one
+# of them made another stop firing, because all three were inside the noise.
+#
+# Weighting them up would have satisfied the reachability guard without making them reachable
+# in any sense a player would recognise. They come back when sub-project 2 slice 4 gives
+# resentment teeth, which is exactly what that slice is for.
+
+[[event]]
+id = "hearth.the_new_fire"
+weight = 3
+when = ["people > 9", "households < 4"]
+title = "A Fire Too Big"
+body = """
+There are more of them round that one fire than can sit at it, and the ones on the outside
+have started eating standing up. Somebody is going to walk off and build their own, and
+everybody has worked out who, including them.
+"""
+[event.effect]
+morale = 1
+
+[[event]]
+id = "hearth.the_marriage"
+weight = 3
+when = ["households > 2", "morale > 5", "people > 7"]
+title = "An Arrangement"
+body = """
+Two hearths have worked out between them that a son of one and a daughter of the other would
+make a third, and have come to you with it settled, wanting only to be seen to ask.
+"""
+
+  [[event.choice]]
+  text = "Say yes in front of everyone and make a night of it."
+  [event.choice.effect]
+  food = -8
+  morale = 3
+
+  [[event.choice]]
+  text = "Say yes quietly. There is not the food for a night of it."
+  [event.choice.effect]
+  morale = 1
+
+[[event]]
+id = "hearth.who_holds_the_children"
+weight = 3
+when = ["children > 2", "worst_household_mood < 5"]
+title = "Who Holds the Children"
+body = """
+The young ones have been drifting to the fire that feeds them best, which is not always the
+fire they were born at, and the hearth they are drifting away from has started to notice
+before you did.
+"""
+
+  [[event.choice]]
+  text = "Say nothing. Children go where they are fed."
+  [event.choice.effect]
+  morale = -1
+
+  [[event.choice]]
+  text = "Send them back to their own fire, and send food with them."
+  [event.choice.effect]
+  food = -6
+  morale = 1
+
+[[event]]
+id = "hearth.one_left"
+weight = 4
+when = ["households == 1", "year > 1"]
+title = "One Fire Left"
+body = """
+There was more than one, and now there is not. What is left is a single fire with room around
+it, and everybody sitting closer to it than they need to.
+"""
+[event.effect]
+morale = -2
+
+[[event]]
+id = "hearth.the_full_camp"
+weight = 3
+once = true
+when = ["people > 10", "households > 2", "morale > 4"]
+title = "A Camp, Not a Camp Fire"
+body = """
+Voices at every fire, and somebody at the edge of it who has to raise their own to be heard
+across the middle. It has been a while since a stranger walking in would have called this a
+family.
+"""
+[event.effect]
+morale = 2
+
+[[event]]
+id = "hearth.hands_at_the_worst_fire"
+weight = 2
+when = ["worst_household_mood < 2", "food > 20"]
+title = "The Worst Fire"
+body = """
+There is a hearth here that has not had a good season in living memory, and the store, for
+once, is not the problem. Nothing is stopping you from simply giving them more than their
+share except every other fire in the camp.
+"""
+
+  [[event.choice]]
+  text = "Give it to them anyway, openly, and take the cost in muttering."
+  [event.choice.effect]
+  food = -8
+  morale = 1
+  [event.choice.effect.tally]
+  debts_owed_to_you = 1
+
+  [[event.choice]]
+  text = "Even shares. Whatever is wrong at that fire is not a food problem."
+  [event.choice.effect]

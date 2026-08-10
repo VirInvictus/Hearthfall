@@ -77,6 +77,11 @@ and starts arranging. Defer to him, at a cost you pay that evening, and it runs 
 Nothing announces this and no meter is shown. The powerful moments are rare because they are
 hard to reach, never because a die came up short.
 
+Eighty-two entries so far, keyed on the season, the ground, the hearths, how much the clan
+knows and how long since it checked. A clan that fed strangers in a year it could not afford to
+is remembered by somebody three days' walk away; a clan that has buried enough people answers
+questions differently.
+
 ## Architecture
 
 The engine is a pure Python library with no I/O, no rendering, and no dependencies. The TUI

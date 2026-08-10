@@ -1,0 +1,144 @@
+# What the clan knows, and what it has stopped checking.
+#
+# These are keyed on the intel layer rather than on the ground or the store: how much has been
+# walked, how much has been properly worked out, how many hands there are with nowhere to put
+# them, and how many of the clan's own numbers are memories. That vocabulary did not exist
+# before sub-project 1, and it is the first time the corpus can have an opinion about the
+# player's *habits* rather than about their arithmetic.
+
+[[event]]
+id = "fog.hands_and_nowhere"
+weight = 4
+when = ["hands_without_ground > 1", "season != winter"]
+title = "Standing About"
+body = """
+Two of them came back at midday because there was nowhere left to be useful, and sat down, and
+were seen sitting down. It is not idleness. There is simply not enough known ground to put a
+body on, and everybody can feel the difference.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "fog.the_argument_about_walking"
+weight = 3
+when = ["hands_without_ground > 1", "morale < 6"]
+title = "The Argument About Walking"
+body = """
+Half of them want to send a proper party out and half want every hand on the ground the clan
+already holds. Both halves are right, which is why it has taken all evening and settled
+nothing.
+"""
+
+  [[event.choice]]
+  text = "Side with the walkers. Say it out loud so it is a decision, not a drift."
+  [event.choice.effect]
+  morale = 1
+
+  [[event.choice]]
+  text = "Side with the ones who want to stay. The known ground is known."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+[[event]]
+id = "fog.old_numbers"
+weight = 4
+when = ["stale_surveys > 1"]
+title = "Old Numbers"
+body = """
+The count of what the ground gives was made by people who are not all still here, in a year
+that was not this one. Nobody has been out to check it. Everybody quotes it.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "fog.the_wood_is_not_what_it_was"
+weight = 3
+when = ["stale_surveys > 2", "year > 2"]
+title = "It Is Not What It Was"
+body = """
+The old ones say the far wood used to fill a basket in a morning. The young ones who work it
+now say the old ones are remembering a better wood than the one that is there, and both of
+them are right, and neither of them has walked it recently enough to know.
+"""
+
+  [[event.choice]]
+  text = "Send someone to settle it. A wasted week if the old ones are right."
+  [event.choice.effect]
+  food = -5
+  morale = 2
+
+  [[event.choice]]
+  text = "Let them argue. The baskets come back the size they come back."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "fog.the_map_in_the_dirt"
+weight = 3
+once = true
+when = ["tiles_surveyed > 3"]
+title = "The Map in the Dirt"
+body = """
+It has stopped being a map of where the clan has been and started being a map of what the
+clan has. Four places on it are drawn with a mark that means *this one feeds us*, and someone
+has begun keeping the stones that mark them in a pouch rather than redrawing them each time.
+"""
+[event.effect]
+morale = 2
+
+[[event]]
+id = "fog.everything_within_reach"
+weight = 4
+once = true
+when = ["tiles_unknown < 18", "year > 2"]
+title = "Everything Within Reach"
+body = """
+There is still dark out there, and it is further off than a season of walking. What is close
+is known, and what is known is not enough, and those two facts are going to have to be put
+together by somebody eventually.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "fog.the_ground_we_have"
+weight = 3
+when = ["forage_capacity > 8", "people < 8"]
+title = "More Ground Than People"
+body = """
+There is ground the clan knows and does not work, because there is nobody spare to work it.
+That is a better problem than the other one. It is still a thing that gets said at the fire in
+a particular tone.
+"""
+[event.effect]
+morale = 1
+
+[[event]]
+id = "fog.no_one_has_walked_that_way"
+weight = 2
+when = ["tiles_known < 4", "year > 1"]
+title = "No One Has Walked That Way"
+body = """
+A year in, and the clan could still draw everything it knows in the ash by the fire without
+standing up. The dark starts about as far off as a person can shout.
+"""
+[event.effect]
+morale = -2
+
+[[event]]
+id = "fog.the_walkers_reputation"
+weight = 2
+once = true
+when = ["tiles_known > 7", "tiles_surveyed > 4", "year > 2"]
+title = "The Ones Who Go Out"
+body = """
+There are three of them who always go, and they have stopped being three people who were sent
+and started being a thing the clan has. Children copy how they walk. Nobody has decided this;
+it simply happened while everyone was busy.
+"""
+[event.effect]
+morale = 2

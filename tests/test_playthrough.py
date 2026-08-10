@@ -17,6 +17,7 @@ from support import not_none
 
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
+from hearthfall.engine.people import Rationing
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import Orders, Outcome, Season
 
@@ -141,6 +142,20 @@ def watchful_orders(state) -> Orders:
     adults = state.population.adults
     scout = balance.SCOUTS_TO_SURVEY if adults > balance.SCOUTS_TO_SURVEY else 0
     return Orders(forage=0, scout=scout, tend=adults - scout)
+
+
+def unequal_orders(state) -> Orders:
+    """`steady_orders`, feeding the workers first when the store is short.
+
+    A player who has decided that keeping the hands standing is worth a hearth remembering it.
+    In the spread it is the only policy that ever makes a household resentful, which is the
+    condition a good deal of the corpus is keyed on, and it has to be built on the *naive*
+    policy to manage it: rationing only bites when the store is short, and a competent player
+    is rarely short, so a competent policy rationing unequally rations unequally almost never.
+    """
+    orders = steady_orders(state)
+    orders.rationing = Rationing.WORKERS
+    return orders
 
 
 def _food_lost_to_stale_intel(seed: int, policy) -> int:
@@ -320,6 +335,12 @@ class TestTheCorpusIsAlive(unittest.TestCase):
         # The spread runs across the policy ladder, not just one policy answered two ways.
         # Reachability depends on how prosperous a run gets, and a corpus entry gated on high
         # morale is only ever seen by a player good enough to earn it.
+        #
+        # The ladder has to keep up with the engine, and it did not: this spread predated
+        # slice 3, so nothing in it ever sent a third scout, and a whole file of content keyed
+        # on surveys and staleness was unreachable by construction of the harness rather than
+        # by anything wrong with the content. Same for rationing, which no policy here ever set
+        # away from equal shares, so nothing gated on a resentful hearth could ever be seen.
         seen: set[str] = set()
         for seed in range(60):
             seen.update(play(seed).events)
@@ -327,6 +348,10 @@ class TestTheCorpusIsAlive(unittest.TestCase):
             seen.update(play_with(seed, scouting_orders).events)
             seen.update(play_with(seed, season_aware_orders).events)
             seen.update(play_with(seed, season_aware_orders, choice=1).events)
+            seen.update(play_with(seed, surveying_orders).events)
+            seen.update(play_with(seed, watchful_orders).events)
+            seen.update(play_with(seed, unequal_orders).events)
+            seen.update(play_with(seed, unequal_orders, choice=1).events)
         return seen
 
     def test_every_shipped_event_can_actually_happen(self):

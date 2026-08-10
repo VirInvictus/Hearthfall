@@ -52,6 +52,17 @@ STARTING_HOUSEHOLDS = 3
 RESENTMENT_PER_SHORT_SHARE = 1
 
 # What counts as a resentful household when content asks. Three seasons of being passed over.
+#
+# ⚠ Measured in slice 6 and left alone deliberately: this threshold is barely reachable, and
+# lowering it does not fix that. Across sixty runs of a naive policy feeding the workers first,
+# which is the harshest rationing the game offers, 142 seasons ran short and 138
+# household-seasons were wronged, and the highest resentment any hearth reached was exactly
+# three, at the very end of runs. At two, the window is a handful of seasons across sixty and
+# events keyed on it fire or do not fire at random.
+#
+# So `households_resentful` is currently a snapshot key content cannot safely be built on, and
+# the fix is not this number. It is sub-project 2 slice 4, which is what "resentment with
+# teeth" means.
 RESENTFUL_AT = 3
 
 # --- Food ------------------------------------------------------------------------------
@@ -248,14 +259,16 @@ TERRAIN_WEIGHTS: dict[Terrain, int] = {
 
 # Seasons an event must sit out before it can come round again. Zero disables the cooldown.
 #
-# Measured across sixty runs, by how many of them replayed an event verbatim: no cooldown 60,
-# 8 seasons 57, 12 seasons 49, 16 seasons 9. Event density barely moves (89% of seasons carry
-# an event either way), so this buys variety without buying silence.
+# Measured across sixty runs, by how many of them replayed an event verbatim. At thirty-four
+# events: no cooldown 60, 8 seasons 57, 12 seasons 49, 16 seasons 9. At eighty-two, the same
+# ladder reads 8 seasons 35, 12 seasons 18, 16 seasons 3.
 #
-# It is set this high because the corpus is small. Twenty seasons drawing from thirty-four
-# events cannot avoid repeating without something like this, and reading the same paragraph
-# twice is what makes a corpus feel thin whatever its size. The real fix is more events, which
-# is what slice 6 is for; lower this as the corpus grows.
+# **Slice 6 said to lower this as the corpus grew, and the measurement says not to.** Tripling
+# the corpus did help at a fixed cooldown (9 runs in 60 down to 3), but lowering the cooldown
+# is worse at eighty-two events than sixteen was at thirty-four. What governs repetition is not
+# how many events exist, it is how many are *eligible at once*, and most entries are gated
+# tightly enough that any given season offers a dozen or so candidates however big the corpus
+# gets. Writing more events raises the ceiling; it does not remove the need for this.
 EVENT_COOLDOWN = 16
 
 # --- Intel -------------------------------------------------------------------------------

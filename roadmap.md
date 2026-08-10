@@ -71,9 +71,13 @@ the answer to it. Do not try to fix it by making winter harsher.
 
 ---
 
-## Sub-project 1: the fact ledger (in progress). HOLDS THE KILL SWITCH
+## Sub-project 1: the fact ledger (complete, 2026-08-09). HELD THE KILL SWITCH
 
-*Question: does paying to look pull the player forward?*
+*Question: does paying to look pull the player forward?* **Yes, measured, and defended by the
+suite.** All six slices are in. What the sub-project leaves behind: fog is a property of a fact
+rather than of a tile, scouting is a slope rather than a threshold, the party's account is
+rendered from what it learned, the ground moves under a picture nobody refreshes, and the
+corpus that reads all of it is 82 entries rather than 34.
 
 Built in slices, each green before the next starts.
 
@@ -267,10 +271,49 @@ Built in slices, each green before the next starts.
          spent is worth less than ground that cannot, and that is the trade this slice makes.
       3. *Anything worth telling someone about?* **Yes, and it is the best line in the game so
          far**, because it is the only one that tells the player something they got wrong.
-- [ ] **Slice 6: corpus toward 80**, terrain-keyed. **More urgent than it looks.** At 34
-      events every run in a sixty-seed sample replayed one verbatim; a draw cooldown took that
-      to nine, but a cooldown is a stopgap for a corpus too small to avoid repeating itself.
-      Lower `EVENT_COOLDOWN` as this lands.
+- [x] **Slice 6: corpus toward 80 (2026-08-09).** 34 events to 82, in five new files written
+      against vocabulary that did not exist when the old ones were: terrain plus season and
+      survey depth (`ground.toml`), the intel layer itself (`fog.toml`), households outside the
+      rationing prompt (`hearths.toml`), hunger the clan remembers (`hunger.toml`), and three
+      tally chains for generosity, caution and the dead (`debts.toml`, `dead.toml`). Two new
+      tallies, `strangers_taken_in` and `graves`.
+
+      **`EVENT_COOLDOWN` stays at 16, against this slice's own instruction to lower it.**
+      Tripling the corpus did help at a fixed cooldown: runs replaying an event verbatim fell
+      from 9 in 60 to 3 in 60. But lowering the cooldown is *worse* at 82 events than 16 was at
+      34 (8 seasons: 35 runs in 60). Repetition is governed by how many entries are eligible at
+      once, not by how many exist, and tight gating means a season offers about a dozen
+      candidates however big the corpus gets. Writing more raises the ceiling; it does not
+      retire the cooldown.
+
+      **Three entries were cut rather than shipped, and the finding is worth more than they
+      were.** All three were gated on `households_resentful`, which is not reachable content:
+      across sixty runs of the harshest rationing available, 142 seasons ran short and 138
+      household-seasons were wronged, and the highest resentment any hearth reached was exactly
+      the threshold, at the very end of runs. Lowering the threshold to two bought a window so
+      narrow that the three traded places at random, and removing one made another stop firing.
+      `RESENTFUL_AT` was put back to 3 and the events wait for sub-project 2 slice 4.
+
+      **The reachability guard earned its keep twice.** It caught a condition on
+      `terrain_home == hills`, which can never be true because the hearth is always placed on
+      plain; and it caught that the guard's own policy ladder predated slice 3, so nothing in
+      it ever sent a third scout or rationed unevenly and a whole file was unreachable by
+      construction of the harness. The ladder now runs nine policies including surveying,
+      watchful and unequal-rationing.
+
+      **Gate verdict: ships, with one regression named.**
+      1. *A real decision every season?* Unchanged. This slice is content, not mechanics.
+      2. *Slack?* Unchanged.
+      3. *Anything worth telling someone about?* **Yes, and this is the slice that was supposed
+         to deliver it.** Reading a run, no entry repeats and the seasons are about different
+         things: a marriage arranged between two hearths, a camp that has outgrown one fire,
+         the wind off the hills charging for the high ground, ground that gave less than it
+         should have.
+
+      **What it made worse:** every season now carries an event, where it used to be about nine
+      in ten. A quiet season no longer exists, and with something always eligible the draw
+      always fires. That is a pacing problem and the fix belongs to the director (sub-project
+      4), not to a constant here. Recorded rather than patched.
 
 **A larger map: deferred, and the reason has changed.** It was parked as a balance change on
 top of a balance change, to be revisited once slice 2's numbers settled. They have settled, and

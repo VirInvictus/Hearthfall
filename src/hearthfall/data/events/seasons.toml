@@ -79,6 +79,8 @@ helps, or is said to help, and it grows two days out.
   [event.choice.effect]
   children = -1
   morale = -2
+  [event.choice.effect.tally]
+  graves = 1
 
 [[event]]
 id = "summer.dry_spell"

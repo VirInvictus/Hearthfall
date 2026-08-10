@@ -1,0 +1,211 @@
+# The ground itself: what a place turns out to be once the clan has to live off it.
+#
+# `wandering.toml` is the first look at a terrain, one entry each. These are the second and
+# third, and they are gated harder: on the ground the hearth stands on, on how much of the map
+# the clan has actually worked out, on a season. A terrain event that can fire the moment a
+# scout comes home is a first impression; one that needs a year of standing on the stuff is a
+# place the clan lives.
+
+[[event]]
+id = "ground.the_wood_in_winter"
+weight = 3
+when = ["terrain_revealed == forest", "season == winter"]
+title = "The Wood in Winter"
+body = """
+Nothing moves in there. The snow under the trees is thinner and older and holds tracks for
+weeks, so the clan can read exactly how much has walked past and not stopped.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "ground.deadfall"
+weight = 3
+when = ["terrain_revealed == forest", "food < 25"]
+title = "Deadfall"
+body = """
+A whole stand came down in some year nobody was here for, and it has been drying ever since.
+Fuel for a winter, if the hands can be spared to drag it, and hands cannot be spared.
+"""
+
+  [[event.choice]]
+  text = "Drag it back anyway. A warm hearth is worth a hungry week."
+  [event.choice.effect]
+  food = -5
+  morale = 2
+
+  [[event.choice]]
+  text = "Leave it standing. Cold is survivable and hunger is not."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "ground.the_charcoal_pit"
+weight = 2
+once = true
+when = ["terrain_revealed == forest", "tiles_surveyed > 2"]
+title = "The Charcoal Pit"
+body = """
+A round black scar under the leaf mould, and the shape of a hut beside it that has gone back
+to the ground. Somebody worked this wood properly once, with a trade and a name for it, and
+then stopped.
+"""
+
+  [[event.choice]]
+  text = "Learn what you can from how it was built."
+  [event.choice.effect]
+  morale = 1
+
+  [[event.choice]]
+  text = "Fill it in. Nobody needs to be thinking about who left."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+[[event]]
+id = "ground.the_wind_off_the_hills"
+weight = 3
+when = ["terrain_revealed == hills", "season != summer"]
+title = "The Wind Off the Hills"
+body = """
+It comes down the slope every evening and finds every gap in every wall. The high ground was
+worth having and it is going to charge for it, all winter, in firewood.
+"""
+[event.effect]
+food = -4
+
+[[event]]
+id = "ground.stone_worth_carrying"
+weight = 2
+when = ["terrain_revealed == hills", "people > 6"]
+title = "Stone Worth Carrying"
+body = """
+Flat slabs, split clean by frost, lying about like something left out for you. Walls could be
+built of that. Walls, or a wall, or the beginning of one.
+"""
+
+  [[event.choice]]
+  text = "Carry it down. It costs a season of backs and it does not rot."
+  [event.choice.effect]
+  food = -7
+  morale = 2
+
+  [[event.choice]]
+  text = "Not this year."
+  [event.choice.effect]
+
+[[event]]
+id = "ground.the_hill_watch"
+weight = 2
+once = true
+# Not `terrain_home == hills`: the hearth is always placed on plain, so that condition
+# describes a world the game never produces. The reachability guard caught it.
+when = ["terrain_revealed == hills", "year > 1"]
+title = "The Watch"
+body = """
+Somebody has taken to walking up to the high ground most evenings and sitting there until the
+light goes, not saying why. Nobody asked them to. Nobody tells them to come down either.
+"""
+[event.effect]
+morale = 1
+
+[[event]]
+id = "ground.fever_water"
+weight = 3
+when = ["terrain_revealed == marsh", "season == summer"]
+title = "Fever Water"
+body = """
+The marsh in high summer smells like something that has already died, and the children who
+went near it are hot and quiet. It is probably the water. It is always the water.
+"""
+
+  [[event.choice]]
+  text = "Boil everything and burn the reeds back. A week of work for a maybe."
+  [event.choice.effect]
+  food = -6
+  morale = 1
+
+  [[event.choice]]
+  text = "Keep everyone away from it and hope that is enough."
+  [event.choice.effect]
+  children = -1
+  morale = -2
+  [event.choice.effect.tally]
+  graves = 1
+
+[[event]]
+id = "ground.what_the_marsh_keeps"
+weight = 2
+once = true
+when = ["terrain_revealed == marsh", "year > 1"]
+title = "What the Marsh Keeps"
+body = """
+The peat gives up a man, brown and folded and perfectly kept, with a cord still knotted at his
+throat. He has been down there long enough to be nobody's grandfather. Somebody did that to
+him on purpose and thought it was the right thing to do.
+"""
+
+  [[event.choice]]
+  text = "Put him back and say the words over him."
+  [event.choice.effect]
+  morale = 1
+  [event.choice.effect.tally]
+  graves = 1
+
+  [[event.choice]]
+  text = "Leave him where he lies and do not go that way again."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+[[event]]
+id = "ground.the_lake_gives"
+weight = 2
+when = ["terrain_revealed == water", "season == spring"]
+title = "The Lake Gives"
+body = """
+Something is running in the shallows, thick enough to take by hand, and it will do this for
+about nine days and then stop. Everything else can wait nine days.
+"""
+[event.effect]
+food = 9
+
+[[event]]
+id = "ground.the_drowned_field"
+weight = 2
+when = ["terrain_revealed == water", "food > 20"]
+title = "The Drowned Field"
+body = """
+Under the shallow end there are furrows. Straight ones, in rows, going down into the dark
+water and out of sight. The lake is newer than the ploughing.
+"""
+[event.effect]
+morale = -2
+
+[[event]]
+id = "ground.nothing_between_here_and_there"
+weight = 2
+when = ["terrain_revealed == plain", "people > 7"]
+title = "Nothing Between Here and There"
+body = """
+A clan this size makes smoke a clan this size cannot hide, and out there the horizon is a flat
+line in every direction. Whoever is looking has already seen it.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "ground.the_hearth_ground"
+weight = 2
+once = true
+when = ["terrain_home == plain", "year > 2", "people > 6"]
+title = "Ground Underfoot"
+body = """
+The clearing is not a clearing any more. It is worn flat and hard by feet that go the same
+ways every day, and somebody born here would call this shape home and not know it was ever
+anything else.
+"""
+[event.effect]
+morale = 2

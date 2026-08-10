@@ -36,11 +36,15 @@ saying it again only makes the walls closer.
   [event.choice.effect]
   food = -10
   morale = 3
+  [event.choice.effect.tally]
+  hungry_winters = 1
 
   [[event.choice]]
   text = "Let them be grim. Grim keeps."
   [event.choice.effect]
   morale = -1
+  [event.choice.effect.tally]
+  hungry_winters = 1
 
 [[event]]
 id = "winter.frozen_ground"
@@ -53,6 +57,8 @@ under stones at the edge of the clearing, and everyone walks the long way round.
 """
 [event.effect]
 morale = -1
+[event.effect.tally]
+graves = 1
 
 [[event]]
 id = "winter.wolves_at_the_edge"
@@ -91,6 +97,8 @@ best lie there is. He asks for a place by the fire and does not say for how long
   [event.choice.effect]
   adults = 1
   food = -6
+  [event.choice.effect.tally]
+  strangers_taken_in = 1
 
   [[event.choice]]
   text = "Turn him out. The clan is already too many mouths."
@@ -113,6 +121,8 @@ volunteers anyway, in the flat voice of a person who has already done the arithm
   food = 14
   adults = -1
   morale = -2
+  [event.choice.effect.tally]
+  graves = 1
 
   [[event.choice]]
   text = "Forbid it. Nobody dies for a maybe."

@@ -1,0 +1,154 @@
+# Hunger, and what the clan remembers about it.
+#
+# `hungry_winters` is the tally that carries this file. It is written by the seasons that go
+# badly and read by events years later, which is the point: a clan that has been hungry answers
+# questions differently from one that has not, long after the store has recovered. Nothing here
+# tells the player the counter exists.
+
+[[event]]
+id = "hunger.the_empty_shelf"
+weight = 4
+when = ["food < 8", "season != autumn"]
+title = "The Empty Shelf"
+body = """
+The store is a room with things in the corners of it. Somebody has started tidying it, which
+is what people do when there is nothing in a place to move around.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "hunger.the_hungry_winter"
+weight = 5
+when = ["season == winter", "food < 10"]
+title = "A Winter to Remember"
+body = """
+It is the middle of it and there is not enough, and everyone has worked out that there is not
+enough, and there are eight weeks left. This is the kind of winter that gets a name and gets
+brought up for twenty years.
+"""
+
+  [[event.choice]]
+  text = "Halve the shares now. Everyone thin, nobody dead, if it holds."
+  [event.choice.effect]
+  food = 6
+  morale = -3
+  [event.choice.effect.tally]
+  hungry_winters = 1
+
+  [[event.choice]]
+  text = "Feed them properly while there is anything to feed them with."
+  [event.choice.effect]
+  food = -6
+  morale = 1
+  [event.choice.effect.tally]
+  hungry_winters = 1
+
+[[event]]
+id = "hunger.what_is_left_of_the_seed"
+weight = 3
+when = ["food < 6", "season == spring", "tally_hungry_winters > 0"]
+title = "The Last of It"
+body = """
+This has happened before and everyone in the camp knows exactly how it goes. The arguing part
+is skipped. Somebody simply brings the last of the grain out and sets it down between you and
+the fire and waits.
+"""
+
+  [[event.choice]]
+  text = "Eat it. Again."
+  [event.choice.effect]
+  food = 7
+  morale = -2
+
+  [[event.choice]]
+  text = "Not again. It goes in the ground."
+  [event.choice.effect]
+  food = -3
+  morale = 2
+
+[[event]]
+id = "hunger.the_boiling_of_bones"
+weight = 3
+when = ["food < 5", "people > 4"]
+title = "Boiled Bones"
+body = """
+Everything that was ever an animal has been through the pot twice. There is a third boiling in
+it, technically. Nobody says the word technically.
+"""
+[event.effect]
+food = 3
+morale = -2
+
+[[event]]
+id = "hunger.the_child_who_does_not_ask"
+weight = 3
+when = ["children > 0", "food < 10"]
+title = "The One Who Stopped Asking"
+body = """
+The small ones ask constantly, and one of them has stopped, and that is worse. She sits where
+she can see the pot and does not come over to it.
+"""
+
+  [[event.choice]]
+  text = "Feed her out of your own share. Nobody is meant to see."
+  [event.choice.effect]
+  morale = 1
+  [event.choice.effect.tally]
+  debts_owed_to_you = 1
+
+  [[event.choice]]
+  text = "Shares are shares. Making one child an exception makes every other child a lesson."
+  [event.choice.effect]
+  morale = -2
+
+[[event]]
+id = "hunger.thin_year_thin_clan"
+weight = 3
+when = ["tally_hungry_winters > 0", "morale < 5", "year > 2"]
+title = "Thin Years"
+body = """
+Two of these now, or three, depending on which one you count as the bad one. The clan has
+stopped talking about years as good or bad and started talking about them as survivable or
+not, which is a smaller vocabulary and a heavier one.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "hunger.they_remember_being_fed"
+weight = 4
+once = true
+when = ["tally_hungry_winters > 0", "food > 35", "year > 2"]
+title = "They Remember Being Fed"
+body = """
+The store is full for the first time since the bad winters, and nobody trusts it. People eat
+fast and take seconds they do not want, and half of them are hiding something back in their
+own bedding where they can reach it in the night.
+"""
+
+  [[event.choice]]
+  text = "Let them hoard. It costs a little and it costs nothing that matters."
+  [event.choice.effect]
+  food = -6
+
+  [[event.choice]]
+  text = "Turn out the bedding and put it all back in the store, in front of everyone."
+  [event.choice.effect]
+  morale = -2
+  [event.choice.effect.tally]
+  hungry_winters = 1
+
+[[event]]
+id = "hunger.the_first_full_belly"
+weight = 3
+once = true
+when = ["food > 40", "morale > 5", "tally_hungry_winters == 0"]
+title = "Enough, For Once"
+body = """
+There is more in the store than the clan can eat before it spoils, which has not been true
+before, and the argument tonight is about what to do with the excess rather than about who
+goes without. It is a good argument. Everyone is enjoying it.
+"""
+[event.effect]
+morale = 2

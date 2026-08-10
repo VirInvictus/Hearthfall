@@ -1,0 +1,79 @@
+# The clan's dead, and what a hearth becomes once it has buried enough people.
+#
+# `graves` is the only tally that never falls. Hunger, violence, fever and bad luck all end in
+# the same ground, and the count is written by the events that do the killing rather than by
+# the engine: the corpus decides what counts as a death worth remembering. Nothing here is
+# gated on *how* anyone died, which is deliberate. A clan that has dug six times is a clan that
+# has dug six times.
+
+[[event]]
+id = "dead.the_stones_at_the_edge"
+weight = 3
+when = ["tally_graves > 1"]
+title = "The Stones at the Edge"
+body = """
+There is a row of them now, and rows are different from a stone. Nobody planned the row. The
+second one went beside the first because that was where the ground was easy, and the third
+went beside the second because by then it was a row.
+"""
+[event.effect]
+morale = -1
+
+[[event]]
+id = "dead.the_naming"
+weight = 3
+when = ["tally_graves > 2", "morale > 4"]
+title = "The Naming"
+body = """
+Somebody has started saying the names at the evening fire, all of them, in the order they went.
+It takes a while now. It is not a mourning exactly; it has the rhythm of a list being kept
+correct.
+"""
+
+  [[event.choice]]
+  text = "Say them with her. Every evening, from now on."
+  [event.choice.effect]
+  morale = 2
+
+  [[event.choice]]
+  text = "Ask her to stop. Half the camp cannot sleep after it."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "dead.a_hearth_that_has_buried_enough"
+weight = 4
+once = true
+when = ["tally_graves > 2", "year > 2"]
+title = "What This Hearth Has Cost"
+body = """
+Somebody does the count out loud, of who started here and who is still standing, and gets it
+wrong, and is corrected by three people at once. All four numbers are lower than anybody
+expected to hear.
+"""
+
+  [[event.choice]]
+  text = "Say that it was the ground and the winters and not the choosing."
+  [event.choice.effect]
+  morale = 1
+
+  [[event.choice]]
+  text = "Say nothing. It was some of both and they know it."
+  [event.choice.effect]
+  morale = -2
+  [event.choice.effect.tally]
+  elder_resentment = 2
+
+[[event]]
+id = "dead.nobody_left_who_remembers"
+weight = 4
+once = true
+when = ["tally_graves > 1", "tally_strangers_taken_in > 0", "year > 2"]
+title = "Nobody Left Who Remembers"
+body = """
+The ones who buried the first of them are mostly gone themselves, and the ones doing the work
+this morning learned the story secondhand from people who were also told it. It is still true.
+It has simply stopped being a memory and started being a thing the clan says.
+"""
+[event.effect]
+morale = -1
