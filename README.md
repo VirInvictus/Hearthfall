@@ -134,3 +134,13 @@ how to ration a short store, space resolves the season.
 ## License
 
 MIT. See [`LICENSE`](LICENSE).
+
+### support
+
+if any of this is useful to you and you'd like to chip in:
+
+```
+bc1qkge6zr45tzqfwfmvma2ylumt6mg7wlwmhr05yv
+```
+
+https://liberapay.com/bdkl/
