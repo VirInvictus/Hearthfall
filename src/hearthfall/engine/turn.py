@@ -451,6 +451,7 @@ def _founding_households() -> Population:
         # to the clan", which is a batch job rather than a thing that happened. Spread out,
         # each birth is its own line in its own season.
         Household(
+            id=index + 1,
             adults=0,
             mood=balance.STARTING_MORALE,
             bond=index * (balance.BOND_TO_BEAR // count),
@@ -461,7 +462,7 @@ def _founding_households() -> Population:
         households[index % count].adults += 1
     for index in range(balance.STARTING_CHILDREN):
         households[index % count].children.append(balance.CHILD_MATURES_AFTER)
-    return Population(households=households)
+    return Population(households=households, next_household_id=count + 1)
 
 
 def resolve(

@@ -22,8 +22,12 @@ from hearthfall.engine.state import Effect, Orders, Population, Season
 PER_ADULT, PER_CHILD = 2, 1
 
 
+_test_hh_id = 1
 def hh(adults: int, children: int = 0, mood: int = 5) -> Household:
-    return Household(adults=adults, children=[4] * children, mood=mood)
+    global _test_hh_id
+    id_ = _test_hh_id
+    _test_hh_id += 1
+    return Household(id=id_, adults=adults, children=[4] * children, mood=mood)
 
 
 def a_state(*, food: int, households: list[tuple[int, int]]):
@@ -307,8 +311,8 @@ class TestResentmentHasTeeth(unittest.TestCase):
         )
 
     def test_a_hearth_past_the_line_takes_its_share_first(self):
-        angry = Household(adults=2, mood=5, resentment=balance.HOARDS_AT)
-        patient = Household(adults=2, mood=5)
+        angry = Household(id=1, adults=2, mood=5, resentment=balance.HOARDS_AT)
+        patient = Household(id=2, adults=2, mood=5)
         claims = first_claim(
             [patient, angry],
             food=4,
@@ -319,8 +323,8 @@ class TestResentmentHasTeeth(unittest.TestCase):
         self.assertEqual(claims, [0, 4], "the angry hearth did not take first")
 
     def test_the_angriest_takes_first_when_two_have_stopped_waiting(self):
-        angrier = Household(adults=1, mood=5, resentment=balance.HOARDS_AT + 3)
-        angry = Household(adults=1, mood=5, resentment=balance.HOARDS_AT)
+        angrier = Household(id=1, adults=1, mood=5, resentment=balance.HOARDS_AT + 3)
+        angry = Household(id=2, adults=1, mood=5, resentment=balance.HOARDS_AT)
         claims = first_claim(
             [angry, angrier],
             food=2,

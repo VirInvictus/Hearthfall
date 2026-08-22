@@ -1,5 +1,15 @@
 # Patch notes
 
+## v0.11.0 (2026-08-21)
+
+**Households now have traits and build attraction (the quiet meter behind who pairs with whom).** 
+
+- **Traits:** Added four core traits (`HEARTH`, `IRON`, `WOLF`, `OWL`) that determine the fundamental character of a kin group.
+- **Compatibility and Attraction:** Each household now tracks an `attraction` meter towards other households based on a `TRAIT_COMPATIBILITY` web. For example, IRON respects IRON and WOLF, but clashes with OWL.
+- **Mingling:** During a fed and settled season, households mingle and their attraction grows based on trait compatibility.
+- **Strain:** Hungry seasons damage relationships. A season spent hungry reduces a household's attraction to others, mirroring how scarcity breeds resentment.
+- **Household Identifiers:** Households are now assigned a stable, purely deterministic `id` to allow attraction tracking between specific households without relying on index positions that could shift.
+
 ## v0.10.0 (2026-08-09)
 
 **A hearth you keep feeding last will eventually stop being yours.** Resentment has been in the

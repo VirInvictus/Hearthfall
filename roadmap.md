@@ -532,6 +532,20 @@ commitment should show its arithmetic before you make it.
 
 ## Sub-project 8: the long game (planned)
 
+## Sub-project 9: Infrastructure and Upgrades (planned)
+
+*Question: does investing a season's surplus into a permanent upgrade or building feel earned?*
+
+- [ ] Building infrastructure to greatly increase output (a new use for labour and resources)
+- [ ] Seasonal upgrades to make the civ more powerful over time
+
+## Sub-project 10: Races and Factions (planned)
+
+*Question: does playing a different race make you value the map differently?*
+
+- [ ] Races with distinct benefits and weaknesses
+- [ ] Variance and replayability through asymmetric starting conditions
+
 - [ ] Multiple peoples with distinct doctrines and group structures
 - [ ] Resource variance across terrain
 - [ ] The arc from hearth to city to power, with each tier retiring a chore

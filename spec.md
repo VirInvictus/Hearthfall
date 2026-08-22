@@ -202,10 +202,7 @@ used. The RNG exists so runs reproduce, not so every mechanic must be a lottery,
 here would sever the connection between how you rationed and whether the clan grew. That
 connection is the point: **the hearth you feed last is the hearth that stops growing.**
 
-Two things Brandon asked for that live here and are **not yet designed**: a compatibility or
-attraction meter deciding *which* households pair, and characteristics for it to read. Both
-belong at this layer, not at the named-cast layer, because §5's own ordering says a household
-is what marries. Names are drawn from these later; they are never the foundation.
+**Traits and Attraction (Sub-project 2 Slice 3).** Households have fundamental traits (`HEARTH`, `IRON`, `WOLF`, `OWL`). Attraction between households is a meter built up during fed and settled seasons based on a predefined compatibility matrix (e.g., IRON respects WOLF but clashes with OWL). Hungry seasons strain these relationships and cause the attraction meter to decay. This belongs firmly at this layer rather than the named-cast layer, because §5's own ordering says a household is what marries, and names are drawn from these later.
 
 ### Intel: the fact ledger
 

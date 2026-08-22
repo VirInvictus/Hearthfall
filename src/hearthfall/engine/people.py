@@ -22,6 +22,20 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 
+
+class Trait(StrEnum):
+    HEARTH = "hearth"
+    IRON = "iron"
+    WOLF = "wolf"
+    OWL = "owl"
+
+TRAIT_COMPATIBILITY = {
+    Trait.HEARTH: {Trait.HEARTH: 1, Trait.IRON: 1, Trait.WOLF: 0, Trait.OWL: 1},
+    Trait.IRON: {Trait.HEARTH: 1, Trait.IRON: 2, Trait.WOLF: 2, Trait.OWL: -1},
+    Trait.WOLF: {Trait.HEARTH: -1, Trait.IRON: 2, Trait.WOLF: 0, Trait.OWL: 1},
+    Trait.OWL: {Trait.HEARTH: 1, Trait.IRON: -1, Trait.WOLF: 1, Trait.OWL: 2},
+}
+
 class Rationing(StrEnum):
     """How a short store gets divided. There is no right answer, which is the point."""
 
@@ -34,6 +48,7 @@ class Rationing(StrEnum):
 class Household:
     """A kin group holding a share of the pool."""
 
+    id: int
     adults: int
     # One entry per child, holding turns remaining until they can be assigned work.
     children: list[int] = field(default_factory=list[int])
@@ -50,6 +65,10 @@ class Household:
     # Seasons this household went short. Read by `_grow`, so hunger costs growth as well as
     # people, and by content that wants to know who has been carrying the lean years.
     went_short: int = 0
+    # The fundamental character of this kin group.
+    trait: Trait = Trait.HEARTH
+    # The silent meter behind who pairs with whom. Maps Household ID to attraction score.
+    attraction: dict[int, int] = field(default_factory=dict)
 
     @property
     def child_count(self) -> int:
