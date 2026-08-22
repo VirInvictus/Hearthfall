@@ -31,6 +31,9 @@ class FactKind(StrEnum):
     TERRAIN = "terrain"  # what the ground is. never goes stale.
     FORAGE = "forage"  # what can be taken from it. rots slowly.
     PRESENCE = "presence"  # who or what was there. rots fast.
+    AGENT_FOOD = "agent_food"
+    AGENT_MOOD = "agent_mood"
+    AGENT_INTENT = "agent_intent"
 
 
 class Staleness(StrEnum):

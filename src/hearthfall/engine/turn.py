@@ -16,9 +16,9 @@ from hearthfall.engine import balance, reports
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event, load_tallies
 from hearthfall.engine.intel import Fact, FactKind, Ledger, Staleness
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.people import Household, Rationing, first_claim, share_out
 from hearthfall.engine.rng import Rng
-from hearthfall.engine.orders import Orders
 from hearthfall.engine.state import (
     Effect,
     GameState,
@@ -399,6 +399,9 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
     )
 
 
+from hearthfall.engine.agents import populate_agents
+
+
 def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
     """A fresh run. Everything downstream of this is a function of the seed.
 
@@ -421,7 +424,9 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
     ledger.survey(world.home, true_yield(world.tile(world.home)), turn=0)
+    agents = populate_agents(world, rng)
     state = GameState(
+        agents=agents,
         seed=seed,
         world=world,
         ledger=ledger,
@@ -827,7 +832,11 @@ def _walk(
     state.last_revealed = tile.terrain
     report.revealed = target
     report.revealed_terrain = tile.terrain
-    return (fact,)
+    learned = [fact]
+    for agent in state.agents.values():
+        if agent.location == target:
+            learned.append(state.ledger.learn(FactKind.PRESENCE, target, agent.name, state.turn))
+    return tuple(learned)
 
 
 @dataclass(frozen=True, slots=True)
@@ -937,7 +946,15 @@ def _survey(state: GameState, report: TurnReport) -> tuple[Fact, ...]:
     worth = ledger.survey(coord, true_yield(state.world.tile(coord)), state.turn)
     _refresh_ground(state)
     report.surveyed = coord
-    return learned + (ground, worth)
+    agent_facts: list[Fact] = []
+    for agent in state.agents.values():
+        if agent.location == coord:
+            agent_facts.append(ledger.learn(FactKind.PRESENCE, coord, agent.name, state.turn))
+            agent_facts.append(ledger.learn(FactKind.AGENT_FOOD, agent.id, agent.food, state.turn))
+            agent_facts.append(ledger.learn(FactKind.AGENT_MOOD, agent.id, agent.mood, state.turn))
+            intent_str = agent.intent.kind if agent.intent else "none"
+            agent_facts.append(ledger.learn(FactKind.AGENT_INTENT, agent.id, intent_str, state.turn))
+    return learned + (ground, worth) + tuple(agent_facts)
 
 
 def _walk_the_estate(state: GameState) -> tuple[Fact, ...]:
@@ -1118,6 +1135,7 @@ def _clamp_morale(value: int) -> int:
 
 
 from enum import StrEnum
+
 
 class InterruptReason(StrEnum):
     EVENT = "event"

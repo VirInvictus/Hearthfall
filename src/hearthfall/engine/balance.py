@@ -320,4 +320,7 @@ FACT_HALFLIFE: dict[FactKind, int | None] = {
     FactKind.TERRAIN: None,
     FactKind.FORAGE: 8,
     FactKind.PRESENCE: 2,
+    FactKind.AGENT_FOOD: 4,
+    FactKind.AGENT_MOOD: 4,
+    FactKind.AGENT_INTENT: 1,
 }

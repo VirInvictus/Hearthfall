@@ -9,10 +9,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hearthfall.engine.agents import Agent
+    from hearthfall.engine.chronicle import ChronicleEntry
+    from hearthfall.engine.orders import Orders
 
 from hearthfall.engine.intel import FactKind, Ledger
-from hearthfall.engine.people import Household, Rationing
-from hearthfall.engine.world import Coord, Terrain, World
+from hearthfall.engine.people import Household
+from hearthfall.engine.world import Terrain, World
 
 
 class Season(StrEnum):
@@ -334,11 +340,12 @@ class GameState:
     ledger: Ledger
     population: Population
     stores: Stores
+    agents: dict[str, Agent] = field(default_factory=dict)  # type: ignore
     turn: int = 0
     outcome: Outcome | None = None
     pending: PendingChoice | None = None
-    standing_orders: 'Orders' | None = None
-    chronicle: list['ChronicleEntry'] = field(default_factory=list)
+    standing_orders: Orders | None = None
+    chronicle: list[ChronicleEntry] = field(default_factory=list)  # type: ignore
     # The terrain most recently walked into. Kept on the state rather than passed around
     # per turn so that `snapshot()` stays the only seam content reads through.
     last_revealed: Terrain | None = None
