@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from hearthfall.engine.world import Coord
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from hearthfall.engine.world import World
     from hearthfall.engine.rng import Rng
+    from hearthfall.engine.world import World
 
 
 class AgentType(StrEnum):
@@ -39,18 +40,19 @@ class Agent:
     mood: int = 0
     intent: Intent | None = None
 
-def populate_agents(world: 'World', rng: 'Rng') -> dict[str, Agent]:
+
+def populate_agents(world: World, rng: Rng) -> dict[str, Agent]:
     """Seed the map with neighbours and wildlife.
-    
+
     This replaces an empty world with one that has actors in it.
     """
     agents: dict[str, Agent] = {}
-    
+
     # Generate 1-2 neighbour clans somewhere not at home.
     num_neighbours = rng.randint(1, 2)
     placed_neighbours = 0
     attempts = 0
-    
+
     while placed_neighbours < num_neighbours and attempts < 100:
         attempts += 1
         x = rng.randint(0, world.width - 1)
@@ -67,8 +69,8 @@ def populate_agents(world: 'World', rng: 'Rng') -> dict[str, Agent]:
                 type=AgentType.NEIGHBOUR,
                 location=coord,
                 food=rng.randint(20, 50),
-                mood=rng.randint(3, 7)
+                mood=rng.randint(3, 7),
             )
             placed_neighbours += 1
-            
+
     return agents

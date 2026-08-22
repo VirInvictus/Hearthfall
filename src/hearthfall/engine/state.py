@@ -126,7 +126,9 @@ class Population:
         """Build a single-household population. The old flat shape, for fixtures and tests."""
         return cls(
             households=[
-                Household(id=1, adults=adults, children=list(children or []), mood=morale)
+                Household(
+                    id=1, adults=adults, children=list(children or []), mood=morale
+                )
             ]
         )
 
@@ -234,7 +236,7 @@ class Population:
         """
         born = 0
         from hearthfall.engine.people import TRAIT_COMPATIBILITY
-        
+
         for household in self.households:
             if household.is_empty:
                 continue
@@ -249,21 +251,25 @@ class Population:
                     household.bond = 0
                     household.children.append(matures_after)
                     born += 1
-                
+
                 # Mingle and build attraction with compatible households
                 for other in self.households:
                     if other.id != household.id and not other.is_empty:
-                        compatibility = TRAIT_COMPATIBILITY.get(household.trait, {}).get(other.trait, 0)
+                        compatibility = TRAIT_COMPATIBILITY.get(
+                            household.trait, {}
+                        ).get(other.trait, 0)
                         if compatibility > 0:
                             current = household.attraction.get(other.id, 0)
                             household.attraction[other.id] = current + compatibility
-                            
+
             else:
                 household.bond = max(0, household.bond - lost)
                 # Hunger strains outside relationships
                 for other in self.households:
                     if other.id != household.id:
-                        household.attraction[other.id] = max(0, household.attraction.get(other.id, 0) - lost)
+                        household.attraction[other.id] = max(
+                            0, household.attraction.get(other.id, 0) - lost
+                        )
         return born
 
     def split_crowded(self, limit: int) -> int:
@@ -285,7 +291,12 @@ class Population:
             taken = household.children[moving:]
             household.children = household.children[:moving]
             self.households.append(
-                Household(id=self.next_household_id, adults=moving, children=taken, mood=household.mood)
+                Household(
+                    id=self.next_household_id,
+                    adults=moving,
+                    children=taken,
+                    mood=household.mood,
+                )
             )
             self.next_household_id += 1
             made += 1
@@ -327,8 +338,6 @@ class Population:
 @dataclass(slots=True)
 class Stores:
     food: int = 0
-
-
 
 
 @dataclass(slots=True)

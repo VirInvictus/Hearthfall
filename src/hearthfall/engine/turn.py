@@ -835,7 +835,9 @@ def _walk(
     learned = [fact]
     for agent in state.agents.values():
         if agent.location == target:
-            learned.append(state.ledger.learn(FactKind.PRESENCE, target, agent.name, state.turn))
+            learned.append(
+                state.ledger.learn(FactKind.PRESENCE, target, agent.name, state.turn)
+            )
     return tuple(learned)
 
 
@@ -949,11 +951,19 @@ def _survey(state: GameState, report: TurnReport) -> tuple[Fact, ...]:
     agent_facts: list[Fact] = []
     for agent in state.agents.values():
         if agent.location == coord:
-            agent_facts.append(ledger.learn(FactKind.PRESENCE, coord, agent.name, state.turn))
-            agent_facts.append(ledger.learn(FactKind.AGENT_FOOD, agent.id, agent.food, state.turn))
-            agent_facts.append(ledger.learn(FactKind.AGENT_MOOD, agent.id, agent.mood, state.turn))
+            agent_facts.append(
+                ledger.learn(FactKind.PRESENCE, coord, agent.name, state.turn)
+            )
+            agent_facts.append(
+                ledger.learn(FactKind.AGENT_FOOD, agent.id, agent.food, state.turn)
+            )
+            agent_facts.append(
+                ledger.learn(FactKind.AGENT_MOOD, agent.id, agent.mood, state.turn)
+            )
             intent_str = agent.intent.kind if agent.intent else "none"
-            agent_facts.append(ledger.learn(FactKind.AGENT_INTENT, agent.id, intent_str, state.turn))
+            agent_facts.append(
+                ledger.learn(FactKind.AGENT_INTENT, agent.id, intent_str, state.turn)
+            )
     return learned + (ground, worth) + tuple(agent_facts)
 
 
@@ -1142,11 +1152,14 @@ class InterruptReason(StrEnum):
     STARVATION = "starvation"
     GAME_OVER = "game_over"
 
-def run_until_interrupted(state: GameState, rng: Rng, events: Sequence[Event] = ()) -> InterruptReason:
+
+def run_until_interrupted(
+    state: GameState, rng: Rng, events: Sequence[Event] = ()
+) -> InterruptReason:
     """Run turns using standing orders until an interrupt condition is met."""
     if not state.standing_orders:
         raise ValueError("Cannot run without standing orders")
-    
+
     from hearthfall.engine.chronicle import ChronicleEntry
 
     while True:
@@ -1154,17 +1167,15 @@ def run_until_interrupted(state: GameState, rng: Rng, events: Sequence[Event] = 
             return InterruptReason.GAME_OVER
         if state.pending:
             return InterruptReason.EVENT
-            
+
         projection = forecast(state, state.standing_orders)
         if projection.shortfall > 0:
             return InterruptReason.STARVATION
 
         report = resolve(state, state.standing_orders, rng, events)
-        
+
         entry = ChronicleEntry(
-            turn=report.turn,
-            season=report.season,
-            lines=list(report.log)
+            turn=report.turn, season=report.season, lines=list(report.log)
         )
         if state.pending:
             entry.event_title = "Event"
@@ -1178,7 +1189,7 @@ def run_until_interrupted(state: GameState, rng: Rng, events: Sequence[Event] = 
                         break
 
         state.chronicle.append(entry)
-        
+
         if state.is_over:
             return InterruptReason.GAME_OVER
         if state.pending:

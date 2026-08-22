@@ -7,6 +7,7 @@ from hearthfall.engine.people import Rationing
 @dataclass(slots=True)
 class Orders:
     """Labor allocation."""
+
     forage: int = 0
     scout: int = 0
     tend: int = 0

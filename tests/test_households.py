@@ -24,6 +24,8 @@ PER_ADULT, PER_CHILD = 2, 1
 
 
 _test_hh_id = 1
+
+
 def hh(adults: int, children: int = 0, mood: int = 5) -> Household:
     global _test_hh_id
     id_ = _test_hh_id

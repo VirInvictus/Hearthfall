@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 import pickle
+import typing
 from enum import StrEnum
 
 from textual.app import App, ComposeResult
@@ -25,10 +26,35 @@ class GlyphTier(StrEnum):
     UNICODE = "unicode"
     NERD = "nerd"
 
+
 GLYPHS = {
-    GlyphTier.ASCII: { Terrain.PLAIN: ".", Terrain.FOREST: "T", Terrain.HILLS: "^", Terrain.MARSH: "%", Terrain.WATER: "~", "FOG": "░", "HEARTH": "@" },
-    GlyphTier.UNICODE: { Terrain.PLAIN: "·", Terrain.FOREST: "♣", Terrain.HILLS: "▲", Terrain.MARSH: "⚑", Terrain.WATER: "≈", "FOG": "░", "HEARTH": "⌂" },
-    GlyphTier.NERD: { Terrain.PLAIN: "󰝤", Terrain.FOREST: "󰔎", Terrain.HILLS: "󰎙", Terrain.MARSH: "󰏠", Terrain.WATER: "󰖌", "FOG": "▒", "HEARTH": "󰋜" },
+    GlyphTier.ASCII: {
+        Terrain.PLAIN: ".",
+        Terrain.FOREST: "T",
+        Terrain.HILLS: "^",
+        Terrain.MARSH: "%",
+        Terrain.WATER: "~",
+        "FOG": "░",
+        "HEARTH": "@",
+    },
+    GlyphTier.UNICODE: {
+        Terrain.PLAIN: "·",
+        Terrain.FOREST: "♣",
+        Terrain.HILLS: "▲",
+        Terrain.MARSH: "⚑",
+        Terrain.WATER: "≈",
+        "FOG": "░",
+        "HEARTH": "⌂",
+    },
+    GlyphTier.NERD: {
+        Terrain.PLAIN: "󰝤",
+        Terrain.FOREST: "󰔎",
+        Terrain.HILLS: "󰎙",
+        Terrain.MARSH: "󰏠",
+        Terrain.WATER: "󰖌",
+        "FOG": "▒",
+        "HEARTH": "󰋜",
+    },
 }
 
 COLOURS: dict[Terrain, str] = {
@@ -38,6 +64,7 @@ COLOURS: dict[Terrain, str] = {
     Terrain.MARSH: "#8992a7",
     Terrain.WATER: "#8ba4b0",
 }
+
 
 class ActionProvider(Provider):
     async def search(self, query: str) -> Hits:
@@ -53,7 +80,14 @@ class ActionProvider(Provider):
         for title, action in actions:
             score = matcher.match(title)
             if score > 0:
-                yield Hit(score, matcher.highlight(title), lambda a=action: getattr(self.app, "action_dispatch")(a))
+                yield Hit(
+                    score,
+                    matcher.highlight(title),
+                    lambda a=action: typing.cast(
+                        "HearthfallApp", self.app
+                    ).action_dispatch(a),
+                )
+
 
 class HearthfallApp(App):
     CSS = """
@@ -65,14 +99,14 @@ class HearthfallApp(App):
     ModalScreen { align: center middle; background: #181616 70%; }
     #modal-container { background: #1d1c19; padding: 1 2; border: solid #c0a36e; width: 50; height: auto; }
     """
-    
+
     COMMANDS = App.COMMANDS | {ActionProvider}
-    
-    BINDINGS = [
+
+    BINDINGS: typing.ClassVar = [
         Binding("ctrl+p", "command_palette", "Commands"),
-        Binding("q", "quit", "Quit")
+        Binding("q", "quit", "Quit"),
     ]
-    
+
     def __init__(self, state: GameState, rng: Rng) -> None:
         super().__init__()
         self.state = state
@@ -93,9 +127,13 @@ class HearthfallApp(App):
             self.state.standing_orders = Orders(is_standing=True)
         self.update_rail()
         log = self.query_one("#chronicle", RichLog)
-        log.write(f"[#c0a36e]Hearthfall {VERSION}[/][#625e5a] · seed [/]{self.state.seed}")
+        log.write(
+            f"[#c0a36e]Hearthfall {VERSION}[/][#625e5a] · seed [/]{self.state.seed}"
+        )
         for entry in self.state.chronicle:
-            log.write(f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]")
+            log.write(
+                f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]"
+            )
             for line in entry.lines:
                 log.write(line)
 
@@ -111,11 +149,15 @@ class HearthfallApp(App):
         status = f"[bold]Year {st.year}, {st.season.value.title()}[/]\nPeople: {st.population.total} ({st.population.adults} adults)\nFood: {st.stores.food}  Morale: {st.population.morale}/10\n"
         self.query_one("#status", Static).update(status)
         self.query_one("#map", Static).update(self.render_map())
-        
+
     def render_map(self) -> str:
         world = self.state.world
         ledger = self.state.ledger
-        target = self.state.standing_orders.scout_target if self.state.standing_orders else None
+        target = (
+            self.state.standing_orders.scout_target
+            if self.state.standing_orders
+            else None
+        )
         lines = []
         g = GLYPHS[self.glyph_tier]
         for y in range(world.height):
@@ -135,14 +177,18 @@ class HearthfallApp(App):
                 else:
                     cells.append(f"[#3a3733]{g['FOG']}[/]")
             lines.append(" ".join(cells))
-        
+
         # Legend
         lines.append("")
-        lines.append(f" {g['HEARTH']} hearth   {g[Terrain.PLAIN]} plain   {g[Terrain.FOREST]} forest")
-        lines.append(f" {g[Terrain.HILLS]} hills    {g[Terrain.MARSH]} marsh   {g[Terrain.WATER]} water")
-        
+        lines.append(
+            f" {g['HEARTH']} hearth   {g[Terrain.PLAIN]} plain   {g[Terrain.FOREST]} forest"
+        )
+        lines.append(
+            f" {g[Terrain.HILLS]} hills    {g[Terrain.MARSH]} marsh   {g[Terrain.WATER]} water"
+        )
+
         return "\n".join(lines)
-        
+
     def action_dispatch(self, action: str) -> None:
         if action == "run_season":
             self.run_season()
@@ -151,12 +197,21 @@ class HearthfallApp(App):
         elif action == "load_game":
             self.load_game()
         elif action == "show_test_card":
-            log = self.query_one("#chronicle", type(self).app.query_one("#chronicle").__class__ if False else __import__("textual.widgets", fromlist=["RichLog"]).RichLog)
+            log = self.query_one(
+                "#chronicle",
+                type(self).app.query_one("#chronicle").__class__
+                if False
+                else __import__("textual.widgets", fromlist=["RichLog"]).RichLog,
+            )
             log.write("[bold #c0a36e]Glyph Test Card[/]")
             for t in GlyphTier:
                 g = GLYPHS[t]
-                log.write(f"{t.value.upper():8} | {g['HEARTH']} {g[Terrain.PLAIN]} {g[Terrain.FOREST]} {g[Terrain.HILLS]} {g[Terrain.MARSH]} {g[Terrain.WATER]} {g['FOG']}")
-            log.write("[italic #8ba4b0]Advisor: If you see empty boxes or overlapping characters in Unicode or Nerd tiers, your terminal font lacks those glyphs. Use the command palette (Ctrl+P) to switch to ASCII.[/]")
+                log.write(
+                    f"{t.value.upper():8} | {g['HEARTH']} {g[Terrain.PLAIN]} {g[Terrain.FOREST]} {g[Terrain.HILLS]} {g[Terrain.MARSH]} {g[Terrain.WATER]} {g['FOG']}"
+                )
+            log.write(
+                "[italic #8ba4b0]Advisor: If you see empty boxes or overlapping characters in Unicode or Nerd tiers, your terminal font lacks those glyphs. Use the command palette (Ctrl+P) to switch to ASCII.[/]"
+            )
         elif action == "pick_glyph":
             # cycle tiers for simplicity here
             tiers = list(GlyphTier)
@@ -166,39 +221,43 @@ class HearthfallApp(App):
         elif action == "set_orders":
             # Just log that it works for now, or you can build a ModalScreen for it
             log = self.query_one("#chronicle", RichLog)
-            log.write("[italic #8ba4b0]Standing orders modal not yet fully implemented. Using defaults.[/]")
-            
+            log.write(
+                "[italic #8ba4b0]Standing orders modal not yet fully implemented. Using defaults.[/]"
+            )
+
     def run_season(self) -> None:
         if self.state.is_over:
             return
-            
+
         from hearthfall.engine.turn import InterruptReason, run_until_interrupted
-        
+
         start_turn = self.state.turn
         reason = run_until_interrupted(self.state, self.rng, self.corpus)
-        
+
         log = self.query_one("#chronicle", RichLog)
-        
+
         for entry in self.state.chronicle[start_turn:]:
-            log.write(f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]")
+            log.write(
+                f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]"
+            )
             if entry.event_title:
                 log.write(f"[bold #c0a36e]Event: {entry.event_title}[/]")
             for line in entry.lines:
                 log.write(line)
-                
+
         if reason == InterruptReason.STARVATION:
             log.write("[bold #c4746e]Interrupted: Starvation predicted![/]")
         elif reason == InterruptReason.GAME_OVER:
             log.write("[bold #c4746e]The hearth goes out.[/]")
-            
+
         self.update_rail()
-        
+
     def save_game(self) -> None:
         with open("savegame.pkl", "wb") as f:
             pickle.dump((self.state, self.rng), f)
         log = self.query_one("#chronicle", RichLog)
         log.write("[italic #8ba4b0]Game saved to savegame.pkl[/]")
-            
+
     def load_game(self) -> None:
         if os.path.exists("savegame.pkl"):
             with open("savegame.pkl", "rb") as f:
@@ -206,7 +265,8 @@ class HearthfallApp(App):
             self.update_rail()
             log = self.query_one("#chronicle", RichLog)
             log.write("[italic #8ba4b0]Game loaded from savegame.pkl[/]")
-            
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int)
@@ -214,12 +274,14 @@ def main() -> None:
 
     seed = args.seed if args.seed else int.from_bytes(os.urandom(8), "little")
     rng = Rng(seed)
-    
+
     from hearthfall.engine.turn import new_game
+
     state = new_game(seed)
-    
+
     app = HearthfallApp(state, rng)
     app.run()
+
 
 if __name__ == "__main__":
     main()

@@ -28,12 +28,14 @@ class Trait(StrEnum):
     WOLF = "wolf"
     OWL = "owl"
 
+
 TRAIT_COMPATIBILITY = {
     Trait.HEARTH: {Trait.HEARTH: 1, Trait.IRON: 1, Trait.WOLF: 0, Trait.OWL: 1},
     Trait.IRON: {Trait.HEARTH: 1, Trait.IRON: 2, Trait.WOLF: 2, Trait.OWL: -1},
     Trait.WOLF: {Trait.HEARTH: -1, Trait.IRON: 2, Trait.WOLF: 0, Trait.OWL: 1},
     Trait.OWL: {Trait.HEARTH: 1, Trait.IRON: -1, Trait.WOLF: 1, Trait.OWL: 2},
 }
+
 
 class Rationing(StrEnum):
     """How a short store gets divided. There is no right answer, which is the point."""
@@ -67,7 +69,7 @@ class Household:
     # The fundamental character of this kin group.
     trait: Trait = Trait.HEARTH
     # The silent meter behind who pairs with whom. Maps Household ID to attraction score.
-    attraction: dict[int, int] = field(default_factory=dict)
+    attraction: dict[int, int] = field(default_factory=dict[int, int])
 
     @property
     def child_count(self) -> int:
