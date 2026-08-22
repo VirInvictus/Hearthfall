@@ -51,6 +51,7 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 - Engine dataclasses carry `slots=True`, and `frozen=True` too when they are value types.
   This is deliberate (`spec.md` §8): it is a chunk of what a stricter language would have
   given, bought without leaving Python.
+- **Deterministic IDs**: Always assign a deterministic `id` incrementally (like `next_household_id` in `Population`) rather than relying on object identity, memory addresses, or list indices (which shift on deletion). This is required so households can map affinities persistently across seasons without breaking the seeded RNG guarantees.
 - Two idioms exist to keep strict mode honest rather than to satisfy it. `field(default_factory=list[str])`
   is parameterised because a bare `list` leaves the element type unknown and that unknown
   spreads to callers. `tests/support.py` holds `not_none` and `an_int` because
