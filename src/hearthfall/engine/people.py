@@ -22,7 +22,6 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 
-
 class Trait(StrEnum):
     HEARTH = "hearth"
     IRON = "iron"

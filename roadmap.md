@@ -464,9 +464,9 @@ This sub-project ships **no named people**. It ships the thing they will later b
 
 *Question: can the game run three years unattended and still feel like yours?*
 
-- [ ] `engine/chronicle.py`: typed entries, engine-side
-- [ ] `engine/orders.py`: standing orders and per-season orders as one type
-- [ ] `turn.run_until_interrupted`, with the naive threshold-based interrupt
+- [x] `engine/chronicle.py`: typed entries, engine-side
+- [x] `engine/orders.py`: standing orders and per-season orders as one type
+- [x] `turn.run_until_interrupted`, with the naive threshold-based interrupt
 - [ ] TUI rebuilt around the chronicle spine; `tui/app.py` is replaced, not edited
 - [ ] Ctrl+P command palette as the navigation surface
 - [ ] Glyph tiers (`ascii` / `unicode` / `nerd`), `unicode` default, palette-hosted picker,

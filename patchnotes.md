@@ -1,5 +1,13 @@
 # Patch notes
 
+## v0.12.0 (2026-08-21)
+
+**The Chronicle Backend (Sub-project 3, Slice 1).**
+
+- **Engine-Side Chronicle:** Added `ChronicleEntry` to track historical turns. Every turn now pushes a typed record of its lines and events directly into `state.chronicle`.
+- **Standing Orders:** Relocated `Orders` into `engine/orders.py` and merged standing and per-season orders into a single type via `is_standing`.
+- **Run Until Interrupted:** Added the engine loop `run_until_interrupted` which executes turns seamlessly based on standing orders. It implements a naive threshold-based interrupt: using the game's `forecast`, the engine halts and yields to the player the moment the clan is predicted to suffer a food shortfall, or when an event fires. This ensures time can pass quickly without punishing the player for inattention.
+
 ## v0.11.0 (2026-08-21)
 
 **Households now have traits and build attraction (the quiet meter behind who pairs with whom).** 

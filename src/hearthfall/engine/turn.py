@@ -18,10 +18,10 @@ from hearthfall.engine.events.loader import Event, load_tallies
 from hearthfall.engine.intel import Fact, FactKind, Ledger, Staleness
 from hearthfall.engine.people import Household, Rationing, first_claim, share_out
 from hearthfall.engine.rng import Rng
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.state import (
     Effect,
     GameState,
-    Orders,
     Outcome,
     PendingChoice,
     Population,
@@ -1115,3 +1115,53 @@ def _clamp_morale(value: int) -> int:
 
 # Naming places, counting in words, and everything else the clan says out loud now lives in
 # `reports.py`. The rules move the state; how the season reads is one module's job.
+
+
+from enum import StrEnum
+
+class InterruptReason(StrEnum):
+    EVENT = "event"
+    STARVATION = "starvation"
+    GAME_OVER = "game_over"
+
+def run_until_interrupted(state: GameState, rng: Rng, events: Sequence[Event] = ()) -> InterruptReason:
+    """Run turns using standing orders until an interrupt condition is met."""
+    if not state.standing_orders:
+        raise ValueError("Cannot run without standing orders")
+    
+    from hearthfall.engine.chronicle import ChronicleEntry
+
+    while True:
+        if state.is_over:
+            return InterruptReason.GAME_OVER
+        if state.pending:
+            return InterruptReason.EVENT
+            
+        projection = forecast(state, state.standing_orders)
+        if projection.shortfall > 0:
+            return InterruptReason.STARVATION
+
+        report = resolve(state, state.standing_orders, rng, events)
+        
+        entry = ChronicleEntry(
+            turn=report.turn,
+            season=report.season,
+            lines=list(report.log)
+        )
+        if state.pending:
+            entry.event_title = "Event"
+            # We don't have the event object here to get its title/body easily.
+            # `events` list could be searched for `report.event_id`.
+            if report.event_id:
+                for ev in events:
+                    if ev.id == report.event_id:
+                        entry.event_title = ev.title
+                        entry.event_body = ev.body
+                        break
+
+        state.chronicle.append(entry)
+        
+        if state.is_over:
+            return InterruptReason.GAME_OVER
+        if state.pending:
+            return InterruptReason.EVENT
