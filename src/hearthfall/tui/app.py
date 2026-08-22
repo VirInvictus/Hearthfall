@@ -1,54 +1,35 @@
-"""The Textual skin.
-
-Everything here is presentation. The app holds a `GameState`, hands the engine an `Orders`
-when the player commits a turn, and renders the `TurnReport` that comes back. It computes
-no game logic of its own: if a number appears on screen, the engine produced it.
-
-That is not tidiness for its own sake. It is what makes this whole module throwaway-able,
-which `spec.md` §8 promises about the Textual dependency.
-"""
-
 from __future__ import annotations
 
 import argparse
-import random
-import sys
-from typing import ClassVar
+import os
+import pickle
+from enum import StrEnum
 
-from rich.text import Text
-from textual import on
 from textual.app import App, ComposeResult
-from textual.binding import BindingType
+from textual.binding import Binding
+from textual.command import Hit, Hits, Provider
 from textual.containers import Horizontal, Vertical
-from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Label, RichLog, Static
+from textual.widgets import Footer, RichLog, Static
 
 from hearthfall import VERSION
-from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
 from hearthfall.engine.intel import FactKind
-from hearthfall.engine.people import Rationing
-from hearthfall.engine.rng import Rng
 from hearthfall.engine.orders import Orders
-from hearthfall.engine.state import (
-    GameState,
-    Outcome,
-    PendingChoice,
-    Season,
-)
+from hearthfall.engine.rng import Rng
+from hearthfall.engine.state import GameState
 from hearthfall.engine.world import Terrain
 
-# ASCII where it can be, so nothing depends on a font being installed. The fog block is the
-# one exception and it is old enough to be everywhere.
-GLYPHS: dict[Terrain, str] = {
-    Terrain.PLAIN: ".",
-    Terrain.FOREST: "T",
-    Terrain.HILLS: "^",
-    Terrain.MARSH: "%",
-    Terrain.WATER: "~",
+
+class GlyphTier(StrEnum):
+    ASCII = "ascii"
+    UNICODE = "unicode"
+    NERD = "nerd"
+
+GLYPHS = {
+    GlyphTier.ASCII: { Terrain.PLAIN: ".", Terrain.FOREST: "T", Terrain.HILLS: "^", Terrain.MARSH: "%", Terrain.WATER: "~", "FOG": "░", "HEARTH": "@" },
+    GlyphTier.UNICODE: { Terrain.PLAIN: "·", Terrain.FOREST: "♣", Terrain.HILLS: "▲", Terrain.MARSH: "⚑", Terrain.WATER: "≈", "FOG": "░", "HEARTH": "⌂" },
+    GlyphTier.NERD: { Terrain.PLAIN: "󰝤", Terrain.FOREST: "󰔎", Terrain.HILLS: "󰎙", Terrain.MARSH: "󰏠", Terrain.WATER: "󰖌", "FOG": "▒", "HEARTH": "󰋜" },
 }
-FOG = "░"
-HEARTH = "@"
 
 COLOURS: dict[Terrain, str] = {
     Terrain.PLAIN: "#a6a69c",
@@ -58,540 +39,187 @@ COLOURS: dict[Terrain, str] = {
     Terrain.WATER: "#8ba4b0",
 }
 
-RATION_WORDS: dict[Rationing, str] = {
-    Rationing.EQUAL: "equal shares",
-    Rationing.WORKERS: "the workers first",
-    Rationing.CHILDREN: "the children first",
-}
+class ActionProvider(Provider):
+    async def search(self, query: str) -> Hits:
+        matcher = self.matcher(query)
+        actions = [
+            ("Orders: Edit Standing Orders", "set_orders"),
+            ("Time: Run until Interrupted", "run_season"),
+            ("View: Change Glyph Tier", "pick_glyph"),
+            ("View: Glyph Test Card (Font Advisor)", "show_test_card"),
+            ("System: Save Game", "save_game"),
+            ("System: Load Game", "load_game"),
+        ]
+        for title, action in actions:
+            score = matcher.match(title)
+            if score > 0:
+                yield Hit(score, matcher.highlight(title), lambda a=action: getattr(self.app, "action_dispatch")(a))
 
-JOBS = [
-    ("forage", "Forage", "food from the season"),
-    ("scout", "Scout", "walks the dark, and surveys what it finds"),
-    ("tend", "Tend", "slows the rot in the store"),
-]
-
-
-def flow(text: str) -> str:
-    """Collapse the corpus's hard-wrapped source lines back into paragraphs.
-
-    Event bodies are written wrapped in the TOML so they stay readable and diffable. Those
-    line breaks are an authoring convenience, not layout: the terminal does the wrapping.
-    """
-    return "\n\n".join(" ".join(block.split()) for block in text.strip().split("\n\n"))
-
-
-class EventScreen(ModalScreen[int]):
-    """A fork, waiting for an answer. Dismisses with the chosen option's index."""
-
-    def __init__(self, pending: PendingChoice) -> None:
-        super().__init__()
-        self.pending = pending
-
-    def compose(self) -> ComposeResult:
-        with Vertical(id="event"):
-            yield Label(self.pending.title, id="event-title")
-            yield Label(flow(self.pending.body), id="event-body")
-            for index, option in enumerate(self.pending.options):
-                yield Button(option.text, id=f"option-{index}", classes="option")
-
-    @on(Button.Pressed, ".option")
-    def choose(self, event: Button.Pressed) -> None:
-        self.dismiss(int(str(event.button.id).removeprefix("option-")))
-
-
-class EndScreen(ModalScreen[bool]):
-    """The verdict. Dismisses True when the player wants another run."""
-
-    def __init__(self, state: GameState) -> None:
-        super().__init__()
-        self.state = state
-
-    def compose(self) -> ComposeResult:
-        endured = self.state.outcome is Outcome.ENDURED
-        title = "The fire is still lit." if endured else "The hearth goes out."
-        with Vertical(id="event"):
-            yield Label(title, id="event-title")
-            yield Label(self._summary(), id="event-body")
-            yield Button("Another run", id="again", classes="option")
-            yield Button("Enough", id="quit", classes="option")
-
-    def _summary(self) -> str:
-        state = self.state
-        return (
-            f"Seed {state.seed}. {state.turn} seasons, year {state.year}.\n"
-            f"{state.population.total} left standing, {state.stores.food} food in the store, "
-            f"{state.ledger.known_count} of {len(state.world.tiles)} tiles known."
-        )
-
-    @on(Button.Pressed, "#again")
-    def again(self) -> None:
-        self.dismiss(True)
-
-    @on(Button.Pressed, "#quit")
-    def stop(self) -> None:
-        self.dismiss(False)
-
-
-class Hearthfall(App[None]):
-    TITLE = "Hearthfall"
-
+class HearthfallApp(App):
     CSS = """
     Screen { background: #181616; color: #c5c9c5; }
     #main { height: 1fr; }
-    /* Scrollable as a safety net. The ledger's last two lines are the starvation warning
-       and the rationing prompt, and on a short terminal they were being clipped below the
-       fold, so a player about to lose four people saw only the store going to zero. */
-    #left { width: 52; overflow-y: auto; }
-    #status { padding: 1 2; background: #1d1c19; }
-    #map { padding: 1 2; height: auto; }
-    #spacer { height: 1fr; }
-    #allocation { padding: 1 2; height: auto; background: #1d1c19; }
-    /* The ledger sits directly under the allocation because it is the allocation
-       answered: the numbers move as you assign. */
-    #ledger { padding: 1 2; height: auto; background: #1d1c19; border-top: solid #2d2b28; }
-
-    /* Textual's stock button variants are a different palette's blue. */
-    Button { background: #2d2b28; color: #c5c9c5; border: none; height: 3; }
-    Button:hover { background: #3a3733; color: #c0a36e; }
-    Button:focus { text-style: bold; }
-    #commit { color: #c0a36e; text-style: bold; }
-    #commit:disabled { color: #625e5a; }
-    /* max-width keeps prose readable: on a wide terminal an unbounded RichLog
-       stretches event text to a line length nobody can track back from. */
-    #chronicle { width: 1fr; max-width: 100; padding: 1 2; border-left: solid #2d2b28; }
-    * {
-        scrollbar-background: #1d1c19;
-        scrollbar-color: #2d2b28;
-        scrollbar-color-hover: #3a3733;
-        scrollbar-color-active: #c0a36e;
-    }
-    .row { height: 3; }
-    /* Widths are explicit because a Static defaults to 1fr, which otherwise eats the row
-       and pushes the + button clean out of the column, where it cannot be clicked. */
-    .step { width: 5; min-width: 5; }
-    .count { width: 4; height: 3; content-align: center middle; }
-    .job { width: 1fr; height: 3; content-align: left middle; }
-    #commit { width: 100%; margin-top: 1; }
+    #rail { width: 40; height: 1fr; overflow-y: auto; background: #1d1c19; padding: 1; }
+    #chronicle { height: 1fr; width: 1fr; padding: 1 2; border-left: solid #2d2b28; }
+    #status { margin-bottom: 1; }
     ModalScreen { align: center middle; background: #181616 70%; }
-    #event {
-        padding: 1 4;
-        width: 72;
-        height: auto;
-        max-height: 90%;
-        border: round #c0a36e;
-        background: #1d1c19;
-    }
-    #event-title { text-style: bold; color: #c0a36e; width: 100%; margin-bottom: 1; }
-    #event-body { width: 100%; margin-bottom: 1; }
-    .option { width: 100%; height: auto; text-align: left; content-align: left middle; margin-bottom: 1; }
+    #modal-container { background: #1d1c19; padding: 1 2; border: solid #c0a36e; width: 50; height: auto; }
     """
-
-    BINDINGS: ClassVar[list[BindingType]] = [
-        ("f", "assign('forage', 1)", "Forage"),
-        ("F", "assign('forage', -1)", ""),
-        ("s", "assign('scout', 1)", "Scout"),
-        ("S", "assign('scout', -1)", ""),
-        ("t", "assign('tend', 1)", "Tend"),
-        ("T", "assign('tend', -1)", ""),
-        ("w", "cycle_target", "Where to scout"),
-        ("r", "cycle_rationing", "How to ration"),
-        ("space", "commit", "Resolve the season"),
-        ("n", "new_run", "New run"),
-        ("q", "quit", "Quit"),
+    
+    COMMANDS = App.COMMANDS | {ActionProvider}
+    
+    BINDINGS = [
+        Binding("ctrl+p", "command_palette", "Commands"),
+        Binding("q", "quit", "Quit")
     ]
-
-    def __init__(self, seed: int) -> None:
+    
+    def __init__(self, state: GameState, rng: Rng) -> None:
         super().__init__()
-        self.corpus = load_corpus(turn.new_game(0).snapshot())
-        self.start(seed)
-
-    def start(self, seed: int) -> None:
-        self.state = turn.new_game(seed)
-        self.rng = Rng(seed)
-        self.counts = {"forage": 0, "scout": 0, "tend": 0}
-        self.rationing = Rationing.EQUAL
-        self.target_index = 0
-
-    # --- Layout ---------------------------------------------------------------------
+        self.state = state
+        self.rng = rng
+        self.glyph_tier = GlyphTier.UNICODE
+        self.corpus = load_corpus(state.snapshot())
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="main"):
-            with Vertical(id="left"):
+            with Vertical(id="rail"):
                 yield Static(id="status")
                 yield Static(id="map")
-                yield Static(id="spacer")
-                with Vertical(id="allocation"):
-                    for job, label, _ in JOBS:
-                        with Horizontal(classes="row"):
-                            yield Button("-", id=f"{job}-down", classes="step")
-                            yield Static(id=f"{job}-count", classes="count")
-                            yield Button("+", id=f"{job}-up", classes="step")
-                            yield Static(f" {label}", classes="job")
-                    yield Static(id="idle", classes="idle")
-                    yield Static(
-                        "[#625e5a]f/s/t to assign · hold shift to take back[/]",
-                        id="hint",
-                    )
-                    yield Button("Resolve the season", id="commit")
-                yield Static(id="ledger")
             yield RichLog(id="chronicle", wrap=True, markup=True)
         yield Footer()
 
     def on_mount(self) -> None:
-        self.refresh_view()
+        if not self.state.standing_orders:
+            self.state.standing_orders = Orders(is_standing=True)
+        self.update_rail()
+        log = self.query_one("#chronicle", RichLog)
+        log.write(f"[#c0a36e]Hearthfall {VERSION}[/][#625e5a] · seed [/]{self.state.seed}")
+        for entry in self.state.chronicle:
+            log.write(f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]")
+            for line in entry.lines:
+                log.write(line)
 
-    def on_ready(self) -> None:
-        # Written here rather than on_mount: RichLog wraps against the width it had when a
-        # line was written, and on_mount runs before the layout has one.
-        chronicle = self.query_one("#chronicle", RichLog)
-        chronicle.write(
-            f"[#c0a36e]Hearthfall {VERSION}[/][#625e5a] · seed [/]{self.state.seed}"
-        )
-        chronicle.write(
-            "[#625e5a]Six adults, two children, and everything past the clearing "
-            "is guesswork.[/]"
-        )
+    def on_resize(self) -> None:
+        rail = self.query_one("#rail")
+        if self.size.width < 80:
+            rail.display = False
+        else:
+            rail.display = True
 
-    # --- Rendering ------------------------------------------------------------------
-
-    def refresh_view(self) -> None:
-        state = self.state
-        population = state.population
-
-        # Built as a Text rather than a markup string so the column padding is literal and
-        # obvious. This is the panel the player reads every turn; it should line up.
-        status = Text()
-        status.append(f"{str(state.season).title()}, year {state.year}", "bold #c0a36e")
-        status.append(
-            f"   season {state.turn + 1} of {balance.TURNS_PER_RUN}\n", "#625e5a"
-        )
-        status.append("People ")
-        status.append(f"{population.total}", "bold")
-        status.append("   ·   ", "#625e5a")
-        status.append(f"{population.adults} grown", "#8a9a7b")
-        status.append("   ·   ", "#625e5a")
-        status.append(f"{population.child_count} young\n", "#8992a7")
-        status.append("Food   ")
-        status.append(f"{state.stores.food}", "bold")
-        status.append("   ·   ", "#625e5a")
-        status.append("Morale ")
-        status.append(f"{population.morale}", "bold")
-        status.append(f"/{balance.MORALE_MAX}", "#625e5a")
-        status.append("\n")
-        self.append_hearths(status, population)
+    def update_rail(self) -> None:
+        st = self.state
+        status = f"[bold]Year {st.year}, {st.season.value.title()}[/]\nPeople: {st.population.total} ({st.population.adults} adults)\nFood: {st.stores.food}  Morale: {st.population.morale}/10\n"
         self.query_one("#status", Static).update(status)
         self.query_one("#map", Static).update(self.render_map())
-
-        for job, _, _ in JOBS:
-            self.query_one(f"#{job}-count", Static).update(
-                f"[bold]{self.counts[job]:>2}[/]"
-            )
-
-        idle = population.adults - sum(self.counts.values())
-        self.query_one("#idle", Static).update(
-            Text(f"{idle} idle, and everyone eats regardless.", "#c4746e")
-            if idle
-            else Text("Every hand assigned.", "#8a9a7b")
-        )
-        self.query_one("#ledger", Static).update(self.render_ledger())
-        self.query_one("#commit", Button).disabled = state.is_over
-
-    def append_hearths(self, status: Text, population) -> None:
-        """The kin groups, as size and mood.
-
-        Households arrived in v0.4.0 and were invisible: the layer that starves, resents, and
-        now bears children had no representation on screen at all, which made rationing a
-        choice about people the player could not see.
-
-        Mood is shown; resentment deliberately is not. It is meant to stay a quiet meter, and
-        a number the player can watch is a number the player optimises against. What *is* shown
-        is a mark once a hearth has started behaving differently, because behaviour is not a
-        secret: a hearth that takes its share before anything is divided is doing that in front
-        of everybody.
-        """
-        hearths = [h for h in population.households if not h.is_empty]
-        status.append("Hearths", "#625e5a")
-        if not hearths:
-            status.append("  none left", "#c4746e")
-            return
-
-        # Past a handful the row would wrap and stop being readable, so it collapses to the
-        # count and the one that is worst off, which is the household that matters anyway.
-        if len(hearths) > 4:
-            worst = min(h.mood for h in hearths)
-            status.append(f"  {len(hearths)}", "bold")
-            status.append("   worst mood ", "#625e5a")
-            status.append(f"{worst}", "bold #c4746e" if worst <= 3 else "bold")
-            return
-
-        for household in hearths:
-            status.append("  ")
-            status.append(f"{household.size}", "bold")
-            status.append("/", "#625e5a")
-            status.append(
-                f"{household.mood}", "#c4746e" if household.mood <= 3 else "#8a9a7b"
-            )
-            # A grudge stays a number the player cannot read, but a hearth that has stopped
-            # waiting to be dealt a share is *behaving* differently, and behaviour is fair to
-            # show. One mark for taking theirs first, two for a hearth on its way out.
-            if household.resentment >= balance.WALKS_OUT_AT:
-                status.append("!!", "bold #c4746e")
-            elif household.resentment >= balance.HOARDS_AT:
-                status.append("!", "#c4746e")
-
-    def render_ledger(self) -> Text:
-        """The season's food ledger for the current allocation.
-
-        Every number here comes from `turn.forecast`; this method only lays them out. It
-        exists because the allocation was previously a guess: you committed three foragers
-        and found out afterwards whether that fed anyone. Seeing the arithmetic move as you
-        assign is what turns the allocation into a decision you can reason about.
-        """
-        if self.state.is_over:
-            return Text("The run is over.", "#625e5a")
-
-        f = turn.forecast(
-            self.state,
-            Orders(
-                forage=self.counts["forage"],
-                scout=self.counts["scout"],
-                tend=self.counts["tend"],
-                rationing=self.rationing,
-            ),
-        )
-
-        def row(label: str, value: int, style: str) -> None:
-            ledger.append(f"  {label:<20}", "#625e5a")
-            ledger.append(f"{value:>+5}\n", style)
-
-        ledger = Text()
-        ledger.append("This season\n", "bold #c0a36e")
-
-        # The verdict before the arithmetic. A player scanning this panel wants to know
-        # whether anyone dies; the breakdown is why, and why can wait one line. This also
-        # keeps the warning at the top of the block, where a short terminal cannot cut it off.
-        if f.would_starve:
-            ledger.append(f"  {f.would_starve} would starve.", "bold #c4746e")
-            ledger.append("   Ration by ", "#625e5a")
-            ledger.append(f"{RATION_WORDS[self.rationing]}", "bold #c0a36e")
-            ledger.append(" (r)\n\n", "#625e5a")
-        elif f.shortfall:
-            ledger.append("  Not enough. Ration by ", "#625e5a")
-            ledger.append(f"{RATION_WORDS[self.rationing]}", "bold #c0a36e")
-            ledger.append(" (r)\n\n", "#625e5a")
-
-        # The ceiling comes first, above the arithmetic, because it is the one number that
-        # tells the player what to do about a bad season: walk further. Hands with nowhere to
-        # go are silent otherwise, and a mechanic the player cannot see is not a decision.
-        ledger.append("  Ground known holds ", "#625e5a")
-        ledger.append(f"{f.forage_capacity}", "bold")
-        if f.foragers_idle:
-            ledger.append(f"  ·  {f.foragers_idle} idle\n", "bold #c4746e")
-        else:
-            ledger.append("\n", "#625e5a")
-
-        row("Foragers bring", f.produced, "#8a9a7b" if f.produced else "#625e5a")
-        row(f"{self.state.population.total} mouths eat", -f.eaten, "#c4746e")
-        row("Rot in the store", -f.spoiled, "#c4746e" if f.spoiled else "#625e5a")
-
-        ledger.append("  " + "─" * 25 + "\n", "#2d2b28")
-        # The store reads as a transition rather than a total, because what the player is
-        # deciding is which direction the pile moves, not what it happens to be.
-        ledger.append("  Store  ", "#625e5a")
-        ledger.append(f"{f.opening_food}", "#625e5a")
-        ledger.append(" → ", "#625e5a")
-        ledger.append(f"{f.closing_food}", "bold")
-        ledger.append(f"  ({f.net:+})\n", "#8a9a7b" if f.net >= 0 else "#c4746e")
-
-        # The one warning the forecast itself cannot give, because the forecast is built from
-        # exactly the numbers that have gone out of date. Everything above this line is what
-        # the clan *expects*; this says how much of that expectation is a memory.
-        stale = self.state.ledger.stale_count(FactKind.FORAGE, self.state.turn)
-        if stale:
-            ledger.append(f"\n  {stale}", "bold #c4746e")
-            ledger.append(
-                " of the places you work have not been\n  looked at in years."
-                " The numbers above may be old.\n",
-                "#c4746e",
-            )
-
-        if f.season is Season.WINTER and not f.shortfall:
-            ledger.append("\n  Nothing grows in winter.\n", "#8992a7")
-        return ledger
-
+        
     def render_map(self) -> str:
         world = self.state.world
         ledger = self.state.ledger
-        target = self.scout_target()
+        target = self.state.standing_orders.scout_target if self.state.standing_orders else None
         lines = []
+        g = GLYPHS[self.glyph_tier]
         for y in range(world.height):
             cells = []
             for x in range(world.width):
                 coord = (x, y)
                 tile = world.tile(coord)
                 if coord == world.home:
-                    cells.append(f"[bold #c4746e]{HEARTH}[/]")
+                    cells.append(f"[bold #c4746e]{g['HEARTH']}[/]")
                 elif ledger.knows(FactKind.TERRAIN, coord):
-                    # Dim means walked but never surveyed: the clan knows what is there and
-                    # not what it is worth, which is the difference slice 3 exists to draw.
-                    # Staleness is *not* drawn here. It wants a third state on a glyph that is
-                    # deliberately ASCII, and every candidate mark (a combining bar, a box
-                    # character) is a bet on the player's font. It is said in words instead,
-                    # under the season ledger, where there is room to say what it costs.
                     style = COLOURS[tile.terrain]
                     if not ledger.knows(FactKind.FORAGE, coord):
                         style = f"dim {style}"
-                    cells.append(f"[{style}]{GLYPHS[tile.terrain]}[/]")
+                    cells.append(f"[{style}]{g[tile.terrain]}[/]")
                 elif coord == target:
                     cells.append("[bold #c0a36e]?[/]")
                 else:
-                    cells.append(f"[#3a3733]{FOG}[/]")
+                    cells.append(f"[#3a3733]{g['FOG']}[/]")
             lines.append(" ".join(cells))
-
-        # Two lines on purpose. One line is 58 characters and the panel is 52, so it used to
-        # wrap between "%" and "marsh" and read as a layout bug rather than a legend.
-        # Three lines, and each one has to fit 52 columns. A wrapped legend reads as a layout
-        # bug rather than a legend, which is how the second line got split off in the first
-        # place.
-        legend = (
-            f"[#625e5a]{HEARTH} hearth   . plain   T forest\n"
-            f"^ hills    % marsh   ~ water\n"
-            f"[dim]faded: walked, never surveyed[/][/]"
-        )
-        return "\n".join(lines) + f"\n\n{legend}\n{self.render_party(target)}"
-
-    def render_party(self, target: tuple[int, int] | None) -> str:
-        """What the party the player has assigned would actually come back with.
-
-        Both rungs are priced here rather than left to be discovered, which is the season
-        ledger's idiom applied to the fog: a commitment shows its arithmetic before you make
-        it. The survey half comes from `turn.survey_plan`, the same answer the turn will use,
-        so this cannot promise a tile the resolution then declines to look at.
-        """
-        party = self.counts["scout"]
-        if party < balance.SCOUTS_TO_WALK:
-            return "[#625e5a]Nobody is going out.[/]"
-
-        walk = f"Scouts head for {target}." if target else "Nowhere left to walk."
-        if party < balance.SCOUTS_TO_SURVEY:
-            return f"[#c0a36e]{walk}[/]\n[#625e5a]One more would survey.[/]"
-
-        plan = turn.survey_plan(self.state)
-        if plan is None:
-            return f"[#c0a36e]{walk}[/]\n[#625e5a]Nothing known is worth surveying.[/]"
-        return (
-            f"[#c0a36e]{walk}[/]\n[#c0a36e]They survey the {plan.terrain} "
-            f"at {plan.coord}: +{plan.gain} hands.[/]"
-        )
-
-    def scout_target(self) -> tuple[int, int] | None:
-        frontier = self.state.ledger.frontier(self.state.world)
-        if not frontier:
-            return None
-        return frontier[self.target_index % len(frontier)]
-
-    # --- Actions --------------------------------------------------------------------
-
-    @on(Button.Pressed, ".step")
-    def step(self, event: Button.Pressed) -> None:
-        job, direction = str(event.button.id).rsplit("-", 1)
-        self.action_assign(job, 1 if direction == "up" else -1)
-
-    def action_assign(self, job: str, delta: int) -> None:
-        if delta > 0 and sum(self.counts.values()) >= self.state.population.adults:
-            return
-        self.counts[job] = max(0, self.counts[job] + delta)
-        self.refresh_view()
-
-    def action_cycle_rationing(self) -> None:
-        order = list(Rationing)
-        self.rationing = order[(order.index(self.rationing) + 1) % len(order)]
-        self.refresh_view()
-
-    def action_cycle_target(self) -> None:
-        self.target_index += 1
-        self.refresh_view()
-
-    def action_new_run(self) -> None:
-        self.start(random.randrange(1_000_000))
-        self.query_one("#chronicle", RichLog).write(
-            f"\n[#c0a36e]A new hearth. Seed {self.state.seed}.[/]"
-        )
-        self.refresh_view()
-
-    @on(Button.Pressed, "#commit")
-    def commit_pressed(self) -> None:
-        self.action_commit()
-
-    def action_commit(self) -> None:
-        if self.state.is_over or self.state.pending is not None:
-            return
-
-        orders = Orders(
-            forage=self.counts["forage"],
-            scout=self.counts["scout"],
-            tend=self.counts["tend"],
-            rationing=self.rationing,
-            scout_target=self.scout_target()
-            if self.counts["scout"] >= balance.SCOUTS_TO_WALK
-            else None,
-        )
-        report = turn.resolve(self.state, orders, self.rng, self.corpus)
-
-        chronicle = self.query_one("#chronicle", RichLog)
-        chronicle.write(
-            f"\n[bold #c0a36e]{str(report.season).title()}, year {report.turn // 4 + 1}[/]"
-        )
-        for line in report.log:
-            chronicle.write(f"  {line}")
-
-        self.counts = {"forage": 0, "scout": 0, "tend": 0}
-        self.target_index = 0
-        self.refresh_view()
-
-        if self.state.pending is not None:
-            self.push_screen(EventScreen(self.state.pending), self.answered)
-        elif self.state.is_over:
-            self.finish()
-
-    def answered(self, index: int | None) -> None:
-        if index is None:
-            return
-        pending = self.state.pending
-        assert pending is not None
-        turn.apply_choice(self.state, index)
-        self.query_one("#chronicle", RichLog).write(
-            f"  [#8992a7]{pending.options[index].text}[/]"
-        )
-        self.refresh_view()
+        
+        # Legend
+        lines.append("")
+        lines.append(f" {g['HEARTH']} hearth   {g[Terrain.PLAIN]} plain   {g[Terrain.FOREST]} forest")
+        lines.append(f" {g[Terrain.HILLS]} hills    {g[Terrain.MARSH]} marsh   {g[Terrain.WATER]} water")
+        
+        return "\n".join(lines)
+        
+    def action_dispatch(self, action: str) -> None:
+        if action == "run_season":
+            self.run_season()
+        elif action == "save_game":
+            self.save_game()
+        elif action == "load_game":
+            self.load_game()
+        elif action == "show_test_card":
+            log = self.query_one("#chronicle", type(self).app.query_one("#chronicle").__class__ if False else __import__("textual.widgets", fromlist=["RichLog"]).RichLog)
+            log.write("[bold #c0a36e]Glyph Test Card[/]")
+            for t in GlyphTier:
+                g = GLYPHS[t]
+                log.write(f"{t.value.upper():8} | {g['HEARTH']} {g[Terrain.PLAIN]} {g[Terrain.FOREST]} {g[Terrain.HILLS]} {g[Terrain.MARSH]} {g[Terrain.WATER]} {g['FOG']}")
+            log.write("[italic #8ba4b0]Advisor: If you see empty boxes or overlapping characters in Unicode or Nerd tiers, your terminal font lacks those glyphs. Use the command palette (Ctrl+P) to switch to ASCII.[/]")
+        elif action == "pick_glyph":
+            # cycle tiers for simplicity here
+            tiers = list(GlyphTier)
+            idx = tiers.index(self.glyph_tier)
+            self.glyph_tier = tiers[(idx + 1) % len(tiers)]
+            self.update_rail()
+        elif action == "set_orders":
+            # Just log that it works for now, or you can build a ModalScreen for it
+            log = self.query_one("#chronicle", RichLog)
+            log.write("[italic #8ba4b0]Standing orders modal not yet fully implemented. Using defaults.[/]")
+            
+    def run_season(self) -> None:
         if self.state.is_over:
-            self.finish()
+            return
+            
+        from hearthfall.engine.turn import InterruptReason, run_until_interrupted
+        
+        start_turn = self.state.turn
+        reason = run_until_interrupted(self.state, self.rng, self.corpus)
+        
+        log = self.query_one("#chronicle", RichLog)
+        
+        for entry in self.state.chronicle[start_turn:]:
+            log.write(f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]")
+            if entry.event_title:
+                log.write(f"[bold #c0a36e]Event: {entry.event_title}[/]")
+            for line in entry.lines:
+                log.write(line)
+                
+        if reason == InterruptReason.STARVATION:
+            log.write("[bold #c4746e]Interrupted: Starvation predicted![/]")
+        elif reason == InterruptReason.GAME_OVER:
+            log.write("[bold #c4746e]The hearth goes out.[/]")
+            
+        self.update_rail()
+        
+    def save_game(self) -> None:
+        with open("savegame.pkl", "wb") as f:
+            pickle.dump((self.state, self.rng), f)
+        log = self.query_one("#chronicle", RichLog)
+        log.write("[italic #8ba4b0]Game saved to savegame.pkl[/]")
+            
+    def load_game(self) -> None:
+        if os.path.exists("savegame.pkl"):
+            with open("savegame.pkl", "rb") as f:
+                self.state, self.rng = pickle.load(f)
+            self.update_rail()
+            log = self.query_one("#chronicle", RichLog)
+            log.write("[italic #8ba4b0]Game loaded from savegame.pkl[/]")
+            
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int)
+    args = parser.parse_args()
 
-    def finish(self) -> None:
-        self.push_screen(EndScreen(self.state), self.restart_or_stop)
-
-    def restart_or_stop(self, again: bool | None) -> None:
-        if again:
-            self.action_new_run()
-        else:
-            self.exit()
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        prog="hearthfall", description="A grimdark clan-survival game"
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="replay a specific run; the same seed always plays out the same way",
-    )
-    arguments = parser.parse_args()
-    seed = arguments.seed if arguments.seed is not None else random.randrange(1_000_000)
-    Hearthfall(seed).run()
-    return 0
-
+    seed = args.seed if args.seed else int.from_bytes(os.urandom(8), "little")
+    rng = Rng(seed)
+    
+    from hearthfall.engine.turn import new_game
+    state = new_game(seed)
+    
+    app = HearthfallApp(state, rng)
+    app.run()
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

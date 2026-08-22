@@ -1,5 +1,14 @@
 # Patch notes
 
+## v0.13.0
+
+- **TUI Rebuild:** `tui/app.py` has been completely replaced with a responsive Textual UI built around the new `ChronicleEntry` spine.
+- **Command Palette:** Navigation and actions have moved to the Textual Command Palette (Ctrl+P).
+- **Glyph Tiers:** The UI now supports `ascii`, `unicode`, and `nerd` glyph tiers for rendering the map, selectable via the command palette.
+- **Font Advisor:** Included a Glyph Test Card in the palette to help users verify if their font supports the selected glyphs.
+- **Save / Load:** Implemented full game state serialization to `savegame.pkl` for persistence.
+- **Responsive Layout:** The status/map side-rail intelligently yields its screen real estate to the chronicle on narrow terminals (under 80 columns).
+
 ## v0.12.0 (2026-08-21)
 
 **The Chronicle Backend (Sub-project 3, Slice 1).**

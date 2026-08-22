@@ -17,9 +17,10 @@ from support import not_none
 
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import load_corpus
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.people import Rationing
 from hearthfall.engine.rng import Rng
-from hearthfall.engine.state import Orders, Outcome, Season
+from hearthfall.engine.state import Outcome, Season
 
 CORPUS = load_corpus(turn.new_game(0).snapshot())
 

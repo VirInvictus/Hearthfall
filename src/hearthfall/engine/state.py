@@ -323,29 +323,6 @@ class Stores:
     food: int = 0
 
 
-@dataclass(slots=True)
-class Orders:
-    """One turn's labor allocation. Everything not assigned still eats."""
-
-    forage: int = 0
-    scout: int = 0
-    tend: int = 0
-    scout_target: Coord | None = None
-    # How a short store gets divided. Only bites when there is not enough to go round, which
-    # is what keeps it a decision about scarcity rather than a setting.
-    rationing: Rationing = Rationing.EQUAL
-
-    @property
-    def assigned(self) -> int:
-        return self.forage + self.scout + self.tend
-
-    def validate(self, adults: int) -> None:
-        if min(self.forage, self.scout, self.tend) < 0:
-            raise ValueError("orders cannot assign a negative number of people")
-        if self.assigned > adults:
-            raise ValueError(
-                f"orders assign {self.assigned} people but only {adults} adults exist"
-            )
 
 
 @dataclass(slots=True)
@@ -360,6 +337,8 @@ class GameState:
     turn: int = 0
     outcome: Outcome | None = None
     pending: PendingChoice | None = None
+    standing_orders: 'Orders' | None = None
+    chronicle: list['ChronicleEntry'] = field(default_factory=list)
     # The terrain most recently walked into. Kept on the state rather than passed around
     # per turn so that `snapshot()` stays the only seam content reads through.
     last_revealed: Terrain | None = None

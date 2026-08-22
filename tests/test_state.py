@@ -12,7 +12,8 @@ import unittest
 from support import an_int
 
 from hearthfall.engine import turn
-from hearthfall.engine.state import Orders, Population, Season
+from hearthfall.engine.orders import Orders
+from hearthfall.engine.state import Population, Season
 
 SNAPSHOT_KEYS = {
     "turn",

@@ -467,12 +467,12 @@ This sub-project ships **no named people**. It ships the thing they will later b
 - [x] `engine/chronicle.py`: typed entries, engine-side
 - [x] `engine/orders.py`: standing orders and per-season orders as one type
 - [x] `turn.run_until_interrupted`, with the naive threshold-based interrupt
-- [ ] TUI rebuilt around the chronicle spine; `tui/app.py` is replaced, not edited
-- [ ] Ctrl+P command palette as the navigation surface
-- [ ] Glyph tiers (`ascii` / `unicode` / `nerd`), `unicode` default, palette-hosted picker,
+- [x] TUI rebuilt around the chronicle spine; `tui/app.py` is replaced, not edited
+- [x] Ctrl+P command palette as the navigation surface
+- [x] Glyph tiers (`ascii` / `unicode` / `nerd`), `unicode` default, palette-hosted picker,
       glyph test card, and font advisor
-- [ ] Responsive layout: the rail yields to the chronicle on narrow terminals
-- [ ] Save and load
+- [x] Responsive layout: the rail yields to the chronicle on narrow terminals
+- [x] Save and load
 
 Replacing the skin is not a regression; `spec.md` §3 promised it was throwaway-able and this
 is the first time that promise is cashed. Keep the season ledger: it is the model for how a

@@ -15,9 +15,10 @@ from __future__ import annotations
 import unittest
 
 from hearthfall.engine import balance, turn
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.people import Household, Rationing, first_claim, share_out
 from hearthfall.engine.rng import Rng
-from hearthfall.engine.state import Effect, Orders, Population, Season
+from hearthfall.engine.state import Effect, Population, Season
 
 PER_ADULT, PER_CHILD = 2, 1
 

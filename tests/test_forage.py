@@ -16,6 +16,7 @@ import unittest
 
 from hearthfall.engine import balance, turn
 from hearthfall.engine.intel import FactKind, Ledger
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.state import Season
 from hearthfall.engine.world import Terrain, Tile, World
 
@@ -368,7 +369,6 @@ class TestTheCachedCapacityNeverLies(unittest.TestCase):
 
     def test_it_agrees_with_a_live_count_at_every_step_of_a_run(self):
         from hearthfall.engine.rng import Rng
-        from hearthfall.engine.state import Orders
 
         state = turn.new_game(seed=3)
         rng = Rng(3)

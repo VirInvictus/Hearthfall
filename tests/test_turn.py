@@ -13,12 +13,12 @@ from support import not_none
 from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import Event
 from hearthfall.engine.intel import FactKind, Ledger
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     ChoiceOption,
     Effect,
     GameState,
-    Orders,
     Outcome,
     Population,
     Season,

@@ -14,7 +14,7 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.11.0. Sub-project 3 of ten, in progress.** Playable start to finish, and
+> **Status: v0.13.0. Sub-project 3 of ten, in progress.** Playable start to finish, and
 > deliberately small: one map, three jobs, twenty seasons. There is no combat yet and no
 > enemy, so the later tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,
@@ -110,7 +110,7 @@ uv venv && uv pip install -e .
 .venv/bin/hearthfall --seed 42   # replay a run exactly
 ```
 
-`f` `e` `t` assign a job, shift takes one back, `w` cycles where the scouts go, `r` chooses
+Hit `Ctrl+P` to open the command palette, where you can set standing orders, advance the season, change your glyph tier (ascii/unicode/nerd), and save or load the game.
 how to ration a short store, space resolves the season.
 
 ## Requirements
