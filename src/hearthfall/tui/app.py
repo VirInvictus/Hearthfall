@@ -29,9 +29,9 @@ from hearthfall.engine.events.loader import load_corpus
 from hearthfall.engine.intel import FactKind
 from hearthfall.engine.people import Rationing
 from hearthfall.engine.rng import Rng
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.state import (
     GameState,
-    Orders,
     Outcome,
     PendingChoice,
     Season,
