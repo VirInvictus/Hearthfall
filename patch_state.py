@@ -1,14 +1,13 @@
-with open('src/hearthfall/engine/state.py', 'r') as f:
+with open("src/hearthfall/engine/state.py", "r") as f:
     lines = f.readlines()
 
 out = []
 for line in lines:
-    if line.startswith("    pending: PendingChoice | None = None"):
+    if line.strip() == "stores: Stores":
         out.append(line)
-        out.append("    standing_orders: 'Orders' | None = None\n")
-        out.append("    chronicle: list['ChronicleEntry'] = field(default_factory=list)\n")
+        out.append("    agents: dict[str, Agent] = field(default_factory=dict)\n")
     else:
         out.append(line)
 
-with open('src/hearthfall/engine/state.py', 'w') as f:
+with open("src/hearthfall/engine/state.py", "w") as f:
     f.writelines(out)
