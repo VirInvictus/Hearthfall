@@ -535,19 +535,24 @@ commitment should show its arithmetic before you make it.
 
 *Question: does investing a season's surplus into a permanent upgrade or building feel earned?*
 
-- [ ] Building infrastructure to greatly increase output (a new use for labour and resources)
-- [ ] Seasonal upgrades to make the civ more powerful over time
+*(See `report.md` for the analysis on buildings, passive yields, and research scaling)*
 
-## Sub-project 10: Races and Factions (planned)
+- [ ] **City Planning:** Building infrastructure to greatly increase output and provide passive baseline resources.
+- [ ] Seasonal upgrades to make the civ more powerful over time.
+- [ ] **Research Integration:** Tech progression driven by the fact ledger, processed by educational buildings.
+
+## Sub-project 10: The City and Power (planned)
 
 *Question: does playing a different race make you value the map differently?*
 
+*(See `report.md` for the macro-stage transition and time compression)*
+
 - [ ] Races with distinct benefits and weaknesses
 - [ ] Variance and replayability through asymmetric starting conditions
-
 - [ ] Multiple peoples with distinct doctrines and group structures
 - [ ] Resource variance across terrain
-- [ ] The arc from hearth to city to power, with each tier retiring a chore
+- [ ] **The Macro Transition:** The arc from hearth to city to power, retiring manual individual placement for population-wide assignment.
+- [ ] **The Calendar Flow:** Extensive standing orders allowing time to compress, acting like real-time without breaking the turn-based engine.
 - [ ] Grimdark endgame: attrition, hard borders, a people that endures or is buried
 
 ---
