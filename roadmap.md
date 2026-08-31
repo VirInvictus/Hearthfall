@@ -481,12 +481,12 @@ commitment should show its arithmetic before you make it.
 
 *Question: is being raided by someone you could have scouted better than being raided?*
 
-- [ ] `engine/agents.py`: neighbours, weather, and wildlife with state, needs, and intents
-- [ ] Peoples placed on the map, discoverable, with grain stores and moods that go stale
-- [ ] `engine/director.py`: pacing only, never invention
-- [ ] The honesty guarantee enforced in code: an intent requires a learnable fact
-- [ ] Interrupts that break standing orders, with the cause traceable in the chronicle
-- [ ] The 190-in-200 defect re-measured; the target is pressure, not a harsher winter
+- [x] `engine/agents.py`: neighbours, weather, and wildlife with state, needs, and intents
+- [x] Peoples placed on the map, discoverable, with grain stores and moods that go stale
+- [x] `engine/director.py`: pacing only, never invention
+- [x] The honesty guarantee enforced in code: an intent requires a learnable fact
+- [x] Interrupts that break standing orders, with the cause traceable in the chronicle
+- [x] The 190-in-200 defect re-measured; the target is pressure, not a harsher winter
 
 ## Sub-project 5: the ring (planned)
 

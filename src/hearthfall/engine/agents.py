@@ -40,6 +40,32 @@ class Agent:
     mood: int = 0
     intent: Intent | None = None
 
+    def grow(self, rng: Rng) -> None:
+        """Process one season for this agent.
+
+        They consume food. If they run out, mood drops. If mood drops low enough,
+        they may form a hostile intent (like RAID) if they don't already have one.
+        """
+        if self.type == AgentType.NEIGHBOUR:
+            # Abstract foraging: they find some food, but it might not be enough
+            foraged = 9
+            self.food += foraged
+            self.food -= 10  # Base consumption
+            
+            if self.food < 0:
+                self.food = 0
+                self.mood -= 1
+            elif self.food > 20:
+                self.mood = min(10, self.mood + 1)
+            
+            # Form intents if miserable and not already holding one
+            if self.mood <= 0 and self.intent is None:
+                # Target turn is assigned when it forms.
+                self.intent = Intent(
+                    kind=IntentKind.RAID,
+                    target_turn=0,
+                )
+
 
 def populate_agents(world: World, rng: Rng) -> dict[str, Agent]:
     """Seed the map with neighbours and wildlife.

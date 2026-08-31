@@ -78,6 +78,7 @@ class TurnReport:
     # write its own without the engine having to guess which it wanted.
     learned: tuple[Fact, ...] = ()
     event_id: str | None = None
+    director_interrupt_cause: str | None = None
     log: list[str] = field(default_factory=list[str])
     pending: PendingChoice | None = None
     outcome: Outcome | None = None
@@ -510,6 +511,8 @@ def resolve(
     _scout(state, orders, rng, report)
     _draw_event(state, rng, report, events)
     _grow(state, rng, report)
+    _agents_tick(state, rng)
+    _director_tick(state, rng, report)
     _leave(state, doomed, report)
     _advance(state, report)
 
@@ -1151,9 +1154,12 @@ from enum import StrEnum
 
 
 class InterruptReason(StrEnum):
+    """Why the background engine run broke and handed control back to the player."""
+
     EVENT = "event"
     STARVATION = "starvation"
     GAME_OVER = "game_over"
+    DIRECTOR = "director"
 
 
 def run_until_interrupted(
@@ -1193,7 +1199,24 @@ def run_until_interrupted(
 
         state.chronicle.append(entry)
 
+        if report.director_interrupt_cause:
+            return InterruptReason.DIRECTOR
+
         if state.is_over:
             return InterruptReason.GAME_OVER
         if state.pending:
             return InterruptReason.EVENT
+
+
+def _agents_tick(state: GameState, rng: Rng) -> None:
+    for agent in state.agents.values():
+        agent.grow(rng)
+
+
+def _director_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
+    from hearthfall.engine.director import Director
+
+    interrupt = Director().evaluate(state, rng)
+    if interrupt:
+        report.director_interrupt_cause = interrupt.cause
+        report.note(interrupt.message)
