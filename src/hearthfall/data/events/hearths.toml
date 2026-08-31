@@ -164,7 +164,7 @@ morale = 1
 [[event]]
 id = "hearth.the_marriage"
 weight = 3
-when = ["households > 2", "morale > 5", "people > 7"]
+when = ["households > 2", "highest_attraction > 5", "people > 7"]
 title = "An Arrangement"
 body = """
 Two hearths have worked out between them that a son of one and a daughter of the other would

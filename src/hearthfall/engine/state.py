@@ -180,6 +180,20 @@ class Population:
         )
 
     @property
+    def highest_attraction(self) -> int:
+        """The highest attraction score between any two living households."""
+        scores = [
+            score
+            for h in self.households
+            if not h.is_empty
+            for other_id, score in h.attraction.items()
+            if not any(
+                other.is_empty and other.id == other_id for other in self.households
+            )
+        ]
+        return max(scores) if scores else 0
+
+    @property
     def living_households(self) -> int:
         return sum(1 for h in self.households if not h.is_empty)
 
@@ -296,6 +310,7 @@ class Population:
                     adults=moving,
                     children=taken,
                     mood=household.mood,
+                    trait=household.trait,
                 )
             )
             self.next_household_id += 1
@@ -419,6 +434,7 @@ class GameState:
             # count is a fact about the clan.
             "worst_household_resentment": self.population.worst_resentment,
             "households_hoarding": self.population.resentful(self.hoards_at),
+            "highest_attraction": self.population.highest_attraction,
             "hearths_walked_out": self.hearths_walked_out,
             "tiles_known": self.ledger.known_count,
             "tiles_unknown": self.ledger.unknown_count(self.world),

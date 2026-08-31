@@ -35,6 +35,7 @@ SNAPSHOT_KEYS = {
     "households_resentful",
     "worst_household_resentment",
     "households_hoarding",
+    "highest_attraction",
     "hearths_walked_out",
     "terrain_home",
     "terrain_revealed",

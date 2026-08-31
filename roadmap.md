@@ -454,8 +454,7 @@ the key binding moved from `e` to `s` with it.
       currently punished. What should punish it is the walked-out hearth turning up on the map,
       which is sub-project 4.
 
-- [ ] **Slice 3: traits and compatibility.** The quiet meter behind who pairs with whom. Still
-      not designed; see the ask in "Raised, not yet designed".
+- [x] **Slice 3: traits and compatibility.** The quiet meter behind who pairs with whom. Households have traits (Hearth, Iron, Wolf, Owl) and build attraction over settled seasons. Hunger strains them. Marriages are gated on this meter.
 
 Note the constraint from `spec.md` §5: the pool comes first and names are a layer over it.
 This sub-project ships **no named people**. It ships the thing they will later be drawn from.

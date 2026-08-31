@@ -445,11 +445,13 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
 def _founding_households() -> Population:
     """Deal the starting clan into kin groups, as evenly as the numbers allow.
 
-    Deterministic and seed-independent: who is in which household at turn zero is not
-    something a run should differ on, and making it random would add variance to the opening
-    without adding a decision.
+    Deterministic and seed-independent counts and traits.
     """
     count = balance.STARTING_HOUSEHOLDS
+    from hearthfall.engine.people import Trait
+
+    traits = list(Trait)
+
     households = [
         # Staggered bond, so the hearths do not move in lockstep. Started level, all three
         # reached BOND_TO_BEAR on the same season and the chronicle read "3 children were born
@@ -460,6 +462,7 @@ def _founding_households() -> Population:
             adults=0,
             mood=balance.STARTING_MORALE,
             bond=index * (balance.BOND_TO_BEAR // count),
+            trait=traits[index % len(traits)],
         )
         for index in range(count)
     ]

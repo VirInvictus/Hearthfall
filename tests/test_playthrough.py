@@ -343,7 +343,7 @@ class TestTheCorpusIsAlive(unittest.TestCase):
         # by anything wrong with the content. Same for rationing, which no policy here ever set
         # away from equal shares, so nothing gated on a resentful hearth could ever be seen.
         seen: set[str] = set()
-        for seed in range(60):
+        for seed in range(100):
             seen.update(play(seed).events)
             seen.update(play_with(seed, homebody_orders).events)
             seen.update(play_with(seed, scouting_orders).events)
