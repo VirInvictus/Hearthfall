@@ -1,26 +1,36 @@
-# Sub-project 4: Neighbours and the Director - Implementation Plan
+# Sub-project 5: The Ring - Implementation Plan
 
-This plan addresses the un-checked goals for **Sub-project 4: Neighbours and the Director** in `roadmap.md`. The design adheres to `spec.md`'s rigid demand for the "honesty guarantee" (intents must exist as scoutable facts before they execute) and the separation of pacing (the Director) from threat generation (Agents).
+## Overview
+Sub-project 5 transitions the game from managing anonymous kin groups to dealing with a named council (The Ring). This introduces personalities, agendas, and internal political friction. The core philosophy of this sub-project is that "losing an argument to your own council is worse than losing to winter."
 
-## 1. `engine/agents.py`: Stateful Neighbors
-Currently, agents (like "Stonefold Clan") are placed on the map during `new_game` but they sit frozen. We will:
-- Implement `Agent.grow(season)`: Agents will consume food each season. If `food <= 0`, their `mood` plummets.
-- **Intent Formation:** When an agent is starving (or resentful), they form an `Intent` (e.g., `IntentKind.RAID`). 
-- **The Honesty Guarantee:** This intent is stored directly on `agent.intent`. It doesn't instantly strike the player. Because it exists on the agent, the player can scout the agent's tile and discover this fact *before* it happens, placing it in the Fact Ledger.
+## 1. Named Cast (`engine/people.py`)
+We will introduce a `Person` dataclass to represent the named cast.
+- **Attributes:** `id`, `name`, `household_id`, `age`, `trait` (personal character), and `ambition` (what they want the clan to focus on).
+- **Lifecycle:** 
+  - They are born from/attached to a `Household`.
+  - They age each season.
+  - They can die (due to age, events, or starvation in their household).
+- **Generation:** A `Person` is generated deterministically when a Household becomes influential or when the Ring is formed. We will add a simple name generator or list in `data/names.toml`.
 
-## 2. `engine/director.py`: The Pacing Layer
-The Director never spawns threats out of thin air; it only marshals the intents that Agents have already formed. We will:
-- Create `Director.evaluate(state, rng)`: Looks at all `agent.intent`s.
-- **Pacing Logic:** The Director looks at the player's "slack" (e.g., current food stores, mood). If the player is cruising effortlessly, the Director accelerates the execution of a pending `RAID` intent. If the player is already starving, the Director might delay it (within reason).
-- **Interrupts:** When the Director decides an intent must surface, it raises an `Interrupt`.
+## 2. The Ring and Tiers (`engine/tiers.py` and `engine/state.py`)
+- We will define the concept of the clan's "Tier". Starting as a disorganized clan, they hit an **emergence condition** (e.g., reaching 10 households or a certain food surplus) that triggers "The Named Moment" — the formation of The Ring.
+- **The Ring:** A list of `Person` references acting as the active council. 
+- The Ring limits the player's absolute power by injecting *Advisors* into the event loop.
 
-## 3. Integration into `turn.py` & `state.py`
-- Modify `turn.py`'s `resolve_season()` to step the agents (letting them consume food and form intents).
-- Pass the state to `Director.evaluate()`. If the Director fires an interrupt, `run_until_interrupted` (the standing orders loop from Sub-project 3) is immediately broken.
-- The cause of the interrupt is logged to the `chronicle`.
+## 3. Agendas and Council Advice
+- **Characteristic Agendas:** Advisors will have logic to evaluate pending choices in an event. Based on their `trait` or `ambition` (e.g., *Militaristic*, *Cautious*, *Greedy*), they will endorse specific event choices.
+- **The Wrong Answer:** Advisors are designed to be "wrong in characteristic ways." A cautious advisor will always suggest hoarding, even if you need to spend to survive. The player must weigh their advice against reality.
 
-## 4. Testing
-- Write `test_agents.py` to assert that isolated agents naturally consume stores and form RAID intents when starving.
-- Write `test_director.py` to assert that the Director *never* surfaces a raid if no agent possesses a RAID intent (testing the Honesty Guarantee).
+## 4. Chronicle Integration
+- When a `PendingChoice` (Event) is presented, if The Ring exists, the advisors' endorsements will be injected into the event's presentation.
+- The `TurnReport` and Chronicle will render these council decisions inline, showing not just what happened, but *who pushed for it*.
 
-**Does this implementation plan align with your vision for Sub-project 4? If so, I'll begin with `agents.py` and `director.py`.**
+## 5. Event Corpus Gating
+- We will add new events to `data/events` that only fire if the Ring exists, or if a specific advisor type is on the council (e.g., `condition = [{key = "ring_has_trait", op = "==", value = "ambitious"}]`).
+
+## Step-by-Step Execution
+1. Add `Person`, name generation, and lifecycle logic to `people.py` and `state.py`.
+2. Create `tiers.py` with emergence logic for The Ring.
+3. Update `turn.py` and `chronicle.py` to append advisor opinions to event choices.
+4. Add new TOML events gated on these new state properties.
+5. Ensure tests pass without consuming arbitrary RNG and breaking existing sequences.

@@ -66,3 +66,7 @@ People buried, however they went. Not a number the clan says out loud, and the o
 never falls. Hunger and violence and bad luck all end in the same ground, and a clan that has
 dug often enough answers questions differently.
 """
+
+[[tally]]
+name = "ring_formed"
+about = "Whether the ring has emerged"

@@ -22,6 +22,26 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 
+class Ambition(StrEnum):
+    CAUTIOUS = "cautious"
+    MILITARISTIC = "militaristic"
+    EXPANSIONIST = "expansionist"
+    COMMUNAL = "communal"
+
+
+@dataclass(slots=True)
+class Person:
+    """A named member of the cast, drawn from a household."""
+
+    id: str
+    name: str
+    household_id: int
+    age: int
+    trait: Trait
+    ambition: Ambition
+    alive: bool = True
+
+
 class Trait(StrEnum):
     HEARTH = "hearth"
     IRON = "iron"

@@ -514,7 +514,7 @@ def resolve(
     _agents_tick(state, rng)
     _director_tick(state, rng, report)
     _leave(state, doomed, report)
-    _advance(state, report)
+    _advance(state, rng, report)
 
     return report
 
@@ -534,7 +534,14 @@ def apply_choice(state: GameState, index: int) -> Effect:
             f"choice {index} is out of range for event {pending.event_id!r}"
         )
 
-    effect = pending.options[index].effect
+    option = pending.options[index]
+    effect = option.effect
+    if state.chronicle and state.chronicle[-1].event_title == pending.title:
+        taken = option.text
+        if option.endorsements:
+            names = ", ".join(option.endorsements)
+            taken += f" (Endorsed by {names})"
+        state.chronicle[-1].choice_taken = taken
     state.pending = None
     apply_effect(state, effect)
     _judge(state)
@@ -1024,11 +1031,24 @@ def _draw_event(
     report.note(event.title)
 
     if event.has_choices:
+        from hearthfall.engine.tiers import get_endorsements
+
+        endorsements = get_endorsements(state, event.options)
+
+        from hearthfall.engine.state import ChoiceOption
+
+        new_options: list[ChoiceOption] = []
+        for i, opt in enumerate(event.options):
+            names = tuple(endorsements.get(i, []))
+            new_options.append(
+                ChoiceOption(text=opt.text, effect=opt.effect, endorsements=names)
+            )
+
         state.pending = PendingChoice(
             event_id=event.id,
             title=event.title,
             body=event.body,
-            options=event.options,
+            options=tuple(new_options),
         )
     elif not event.effect.is_empty:
         apply_effect(state, event.effect)
@@ -1115,8 +1135,20 @@ def _leave(state: GameState, doomed: list[Household], report: TurnReport) -> Non
     report.log.extend(reports.walkout_lines(len(leaving), gone, taken))
 
 
-def _advance(state: GameState, report: TurnReport) -> None:
+def _advance(state: GameState, rng: Rng, report: TurnReport) -> None:
     state.turn += 1
+    # Check if ring formed
+    if state.tallies.get("ring_formed", 0) > 0 and state.tier == "clan":
+        from hearthfall.engine.tiers import Council, Tier, generate_person
+
+        state.tier = Tier.RING
+        state.council = Council()
+        # Add one representative from each household to the council
+        for hh in state.population.households:
+            if not hh.is_empty:
+                person = generate_person(state, hh.id, rng)
+                state.council.advisors.append(person.id)
+        report.note(f"The Ring is formed with {len(state.council.advisors)} advisors.")
     _judge(state)
     report.outcome = state.outcome
     report.pending = state.pending

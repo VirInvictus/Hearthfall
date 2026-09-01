@@ -1,0 +1,18 @@
+[[event]]
+id = "emergence.the_ring"
+# High weight so it triggers quickly, but conditions keep it locked
+weight = 100
+once = true
+# Gated on having 3+ households and not having formed the ring
+when = ["households >= 3", "tally_ring_formed == 0"]
+title = "The Ring"
+body = """
+The clan has grown. The decisions are too big for one voice at the fire. The heads of the households gather in a ring. You are still the leader, but you will hear them speak.
+"""
+
+[[event.choice]]
+text = "Let them speak."
+[event.choice.effect]
+morale = 1
+[event.choice.effect.tally]
+ring_formed = 1

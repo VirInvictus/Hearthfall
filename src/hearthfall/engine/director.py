@@ -61,10 +61,10 @@ class Director:
                 # The raid steals food based on the agent's desperation
                 # (Sub-project 6 will make this real combat. For now, it's just a pacing interrupt)
                 agent.mood = 3  # Reset mood slightly so they don't chain-raid
-                
+
                 return DirectorInterrupt(
                     cause=f"raid_{agent.id}",
-                    message=f"The {agent.name} is massing on the border. (Combat not yet implemented)."
+                    message=f"The {agent.name} is massing on the border. (Combat not yet implemented).",
                 )
 
         return None

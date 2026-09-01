@@ -492,11 +492,11 @@ commitment should show its arithmetic before you make it.
 
 *Question: is losing an argument to your own council worse than losing to winter?*
 
-- [ ] Named cast drawn from households: traits, ambitions, relationships, ageing, death
-- [ ] Advisors with agendas that are wrong in characteristic ways
-- [ ] `engine/tiers.py`: emergence conditions and the named moment
-- [ ] Council decisions rendered inline in the chronicle
-- [ ] Corpus entries gated on ring composition and household standing
+- [x] Named cast drawn from households: traits, ambitions, relationships, ageing, death
+- [x] Advisors with agendas that are wrong in characteristic ways
+- [x] `engine/tiers.py`: emergence conditions and the named moment
+- [x] Council decisions rendered inline in the chronicle
+- [x] Corpus entries gated on ring composition and household standing
 
 > **Sub-projects 6 to 8 are the plateau fix, not garnish on a working economy.**
 >

@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from hearthfall.engine.agents import Agent
     from hearthfall.engine.chronicle import ChronicleEntry
     from hearthfall.engine.orders import Orders
+    from hearthfall.engine.people import Person
+    from hearthfall.engine.tiers import Council
 
 from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.people import Household
@@ -86,6 +88,7 @@ class Effect:
 class ChoiceOption:
     text: str
     effect: Effect
+    endorsements: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -365,6 +368,10 @@ class GameState:
     population: Population
     stores: Stores
     agents: dict[str, Agent] = field(default_factory=dict)  # type: ignore
+    tier: str = "clan"
+    next_person_id: int = 1
+    cast: dict[str, Person] = field(default_factory=dict)  # type: ignore
+    council: Council | None = None
     turn: int = 0
     outcome: Outcome | None = None
     pending: PendingChoice | None = None

@@ -51,13 +51,13 @@ class Agent:
             foraged = 9
             self.food += foraged
             self.food -= 10  # Base consumption
-            
+
             if self.food < 0:
                 self.food = 0
                 self.mood -= 1
             elif self.food > 20:
                 self.mood = min(10, self.mood + 1)
-            
+
             # Form intents if miserable and not already holding one
             if self.mood <= 0 and self.intent is None:
                 # Target turn is assigned when it forms.
