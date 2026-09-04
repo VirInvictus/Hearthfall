@@ -14,7 +14,7 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.13.0. Sub-project 3 of ten, in progress.** Playable start to finish, and
+> **Status: v0.13.1. Sub-project 5 of ten complete.** Playable start to finish, and
 > deliberately small: one map, three jobs, twenty seasons. There is no combat yet and no
 > enemy, so the later tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,
@@ -77,7 +77,7 @@ and starts arranging. Defer to him, at a cost you pay that evening, and it runs 
 Nothing announces this and no meter is shown. The powerful moments are rare because they are
 hard to reach, never because a die came up short.
 
-Eighty-two entries so far, keyed on the season, the ground, the hearths, how much the clan
+Eighty-seven entries so far, keyed on the season, the ground, the hearths, how much the clan
 knows and how long since it checked. A clan that fed strangers in a year it could not afford to
 is remembered by somebody three days' walk away; a clan that has buried enough people answers
 questions differently.
@@ -111,7 +111,6 @@ uv venv && uv pip install -e .
 ```
 
 Hit `Ctrl+P` to open the command palette, where you can set standing orders, advance the season, change your glyph tier (ascii/unicode/nerd), and save or load the game.
-how to ration a short store, space resolves the season.
 
 ## Requirements
 
@@ -127,7 +126,7 @@ how to ration a short store, space resolves the season.
 ## Documentation
 
 - [`spec.md`](spec.md): the contract. Read it before changing semantics.
-- [`roadmap.md`](roadmap.md): the eight sub-projects, their kill gates, and what playing
+- [`roadmap.md`](roadmap.md): the ten sub-projects, their kill gates, and what playing
   each one actually revealed.
 - [`patchnotes.md`](patchnotes.md): release notes.
 

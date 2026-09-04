@@ -3,7 +3,7 @@
 > A hearth is what you gather around and what you defend. A fall is what happens to most
 > of them. The name holds both halves of the arc: grow a fire into a people, or bury them.
 
-**Status:** Phase 0 shipped (v0.1.1). Everything past it is unbuilt.
+**Status:** v0.13.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is the live front.
 
 **This document was rewritten on 2026-08-08.** The original is in git history and should be
 read by anyone who wants to know what was given up. It was a knife aimed at scope creep, and
@@ -314,7 +314,7 @@ of this document and it should be read as such.
 
 ## 7. Build order: nothing is ever fully broken
 
-Eight sub-projects. Each is playable, each answers a question, each gets its own spec and
+Ten sub-projects. Each is playable, each answers a question, each gets its own spec and
 plan. `roadmap.md` holds the detail. The order is load-bearing.
 
 1. **The fact ledger.** Scouts, reports, staleness. **Holds the kill switch.**

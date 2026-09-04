@@ -30,6 +30,13 @@ The gate, run at the end of every slice:
 - A slice that fails this does not ship, and the answer is not to lower the difficulty
   reflexively. It is to find which of the three questions failed and fix that one.
 
+**Verdict discipline (added 2026-09-04).** SP 1 and SP 2 recorded their gate verdicts in the
+slice entries; SP 3, SP 4, and SP 5 shipped on green suites without a recorded year-read, and
+`FUNMETER` stops at SP 4. That debt is called out rather than papered over: the SP 3-5
+verdicts are owed a single combined year-read before SP 6's first player-visible slice
+(the raiders) can claim the gate, and every SP 6 slice records its verdict here when it is
+run.
+
 **Why this exists.** Slice 2's first measurement passed every automated guard while year one
 killed half the clan under good play and left the store at zero for the rest of the run. The
 guards are shaped to catch a broken loop, not a joyless one, and nothing in the suite can tell
@@ -345,7 +352,7 @@ grand-strategy endgame will not retrofit a reason to explore. Stop.
 **Settled in slice 3:** `Orders.explore` versus `Orders.scout`. It is `scout`, everywhere, and
 the key binding moved from `e` to `s` with it.
 
-## Sub-project 2: households (in progress)
+## Sub-project 2: households (shipped)
 
 *Question: does a famine that creates a rival hurt more than a famine that creates a number?*
 
@@ -459,7 +466,7 @@ the key binding moved from `e` to `s` with it.
 Note the constraint from `spec.md` §5: the pool comes first and names are a layer over it.
 This sub-project ships **no named people**. It ships the thing they will later be drawn from.
 
-## Sub-project 3: the chronicle (planned)
+## Sub-project 3: the chronicle (shipped)
 
 *Question: can the game run three years unattended and still feel like yours?*
 
@@ -477,7 +484,7 @@ Replacing the skin is not a regression; `spec.md` §3 promised it was throwaway-
 is the first time that promise is cashed. Keep the season ledger: it is the model for how a
 commitment should show its arithmetic before you make it.
 
-## Sub-project 4: neighbours and the director (planned)
+## Sub-project 4: neighbours and the director (shipped)
 
 *Question: is being raided by someone you could have scouted better than being raided?*
 
@@ -488,7 +495,7 @@ commitment should show its arithmetic before you make it.
 - [x] Interrupts that break standing orders, with the cause traceable in the chronicle
 - [x] The 190-in-200 defect re-measured; the target is pressure, not a harsher winter
 
-## Sub-project 5: the ring (planned)
+## Sub-project 5: the ring (shipped)
 
 *Question: is losing an argument to your own council worse than losing to winter?*
 

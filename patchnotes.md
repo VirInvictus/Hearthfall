@@ -1,3 +1,25 @@
+# v0.13.1 (2026-09-04)
+
+**Hygiene release: the workspace audit's Stage 0 pass.** No behavior change.
+
+- The version drift is closed: `__init__.py` said 0.12.0 while `pyproject.toml`
+  and the patchnotes said 0.13.0; both now read 0.13.0 (this release moves
+  both to 0.13.1 together, per the two-file rule).
+- Dead files removed: `src/hearthfall/tui/app2.py` (180 unreferenced lines
+  born in a commit titled "this shouldn't work"), the five root patch scripts
+  (`patch_advance.py` and kin), the root debug script `test_seed_4.py`, and
+  the stale plan docs (`plan_subproject_4.md`, `implementation_plan.md`).
+- README: the status line caught up (SP 5 of ten complete), the sub-project
+  counts corrected to ten, the broken sentence after the Playing block
+  removed, and the event count updated (82 → 87).
+- `spec.md`: the status line now reflects v0.13.x and the sub-project count
+  corrected to ten.
+- Roadmap: SP 2-5 headers synced to their shipped state, and the standing
+  gate section now records the verdict-discipline debt: SP 3-5 shipped
+  without recorded year-reads, `FUNMETER` stops at SP 4, and the combined
+  verdict is owed before SP 6's first player-visible slice claims the gate.
+
+Suite unchanged and green.
 # Patch notes
 
 ## v0.13.0
