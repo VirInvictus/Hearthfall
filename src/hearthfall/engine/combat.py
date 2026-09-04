@@ -108,3 +108,25 @@ def resolve(
     roll = rng.fraction()
     won = roll < odds
     return Outcome(won=won, odds=odds, roll=roll, margin=odds - roll)
+
+
+def raid_deaths(margin: float) -> int:
+    """Graves for a lost fight, graded by the margin.
+
+    A near-run loss costs one — blood, but few graves. A rout costs the full
+    band of them. The dead are the price of the read and the order, so they
+    scale with how far the draw landed from the decision boundary, capped at
+    what a small clan can bury.
+    """
+    from hearthfall.engine import balance
+
+    deaths = round(-margin * balance.RAID_DEATHS_PER_MARGIN)
+    return max(1, min(balance.RAID_DEATHS_MAX, deaths))
+
+
+def is_rout(margin: float) -> bool:
+    """Whether a won or lost fight was a rout — decisive enough that the band
+    scattered beyond shadowing distance, marking its camp on the map."""
+    from hearthfall.engine import balance
+
+    return abs(margin) >= balance.RAID_WIN_REVEAL_MARGIN

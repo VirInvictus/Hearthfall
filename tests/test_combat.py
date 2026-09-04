@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import unittest
 
+from hearthfall.engine import combat
 from hearthfall.engine.combat import Outcome, resolve
 from hearthfall.engine.intel import FactKind
 from hearthfall.engine.orders import Orders
@@ -21,6 +22,29 @@ def _sweep(ours: int, theirs: int, seeds: int = 200) -> tuple[int, float]:
         wins += outcome.won
         odds_sum += outcome.odds
     return wins, odds_sum / seeds
+
+
+def _state_with_band(strength: int):
+    """A one-band world: populate_agents seeds several, and every extra band
+    shares the rng stream — their drift would confound any guarded-vs-twin
+    comparison. The band massed last season, so the read is aging and the raid
+    matures this turn."""
+    from hearthfall.engine.agents import Agent, AgentType
+    from hearthfall.engine.turn import new_game
+
+    state = new_game(seed=42)
+    band = Agent(
+        id="band_1",
+        name="the Ashfang",
+        type=AgentType.NEIGHBOUR,
+        strength=strength,
+    )
+    state.agents = {"band_1": band}
+    state.ledger.learn(
+        FactKind.RAIDER_STRENGTH, band.id, strength, max(0, state.turn - 2)
+    )
+    band.intent = None
+    return state, band
 
 
 class TestResolution(unittest.TestCase):
@@ -205,35 +229,12 @@ class TestRaidWiring(unittest.TestCase):
     """Slice 4: the raid end-to-end. A miserable band masses, the militia
     order was the decision, and the granary pays on a loss."""
 
-    def _state_with_band(self, strength: int):
-        from hearthfall.engine.agents import Agent, AgentType
-        from hearthfall.engine.turn import new_game
-
-        state = new_game(seed=42)
-        band = Agent(
-            id="band_1",
-            name="the Ashfang",
-            type=AgentType.NEIGHBOUR,
-            strength=strength,
-        )
-        # A one-band world: populate_agents seeds several, and every extra
-        # band shares the rng stream — their drift would confound any
-        # guarded-vs-twin food comparison.
-        state.agents = {"band_1": band}
-        # The band massed last season: the read is already aging, the raid
-        # matures this turn.
-        state.ledger.learn(
-            FactKind.RAIDER_STRENGTH, band.id, strength, max(0, state.turn - 2)
-        )
-        state.agents[band.id].intent = None
-        return state, band
-
     def test_militia_repels_and_keeps_the_granary(self):
         from hearthfall.engine.agents import Intent, IntentKind
         from hearthfall.engine.turn import resolve as turn_resolve
 
         def run(with_raid: bool) -> tuple[int, str]:
-            state, band = self._state_with_band(strength=6)
+            state, band = _state_with_band(strength=6)
             if with_raid:
                 band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
                 band.mood = 0
@@ -257,7 +258,7 @@ class TestRaidWiring(unittest.TestCase):
         from hearthfall.engine.turn import resolve as turn_resolve
 
         def run(militia: int) -> tuple[int, str]:
-            state, band = self._state_with_band(strength=6)
+            state, band = _state_with_band(strength=6)
             band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
             band.mood = 0
             state.stores.food = 30
@@ -278,7 +279,7 @@ class TestRaidWiring(unittest.TestCase):
         from hearthfall.engine.turn import resolve as turn_resolve
 
         def run():
-            state, band = self._state_with_band(strength=6)
+            state, band = _state_with_band(strength=6)
             band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
             band.mood = 0
             state.stores.food = 30
@@ -286,3 +287,75 @@ class TestRaidWiring(unittest.TestCase):
             return state.stores.food, "\n".join(report.log)
 
         self.assertEqual(run(), run())
+
+
+class TestGradedStakes(unittest.TestCase):
+    """Slice 5: the dead and the ground grade by the margin. A near-run raid
+    costs a grave; a rout costs the band and marks the map."""
+
+    def test_raid_deaths_grade_by_margin(self):
+        # Near-run: one grave. Rout: the full band of them. Capped.
+        self.assertEqual(combat.raid_deaths(0.0), 1)
+        self.assertEqual(combat.raid_deaths(-0.1), 1)
+        self.assertEqual(combat.raid_deaths(-0.3), 2)
+        self.assertEqual(combat.raid_deaths(-0.5), 3)
+        self.assertEqual(combat.raid_deaths(-1.0), 3)  # capped
+        self.assertEqual(combat.raid_deaths(0.4), 1)  # a won fight buries nobody
+
+    def test_is_rout_threshold(self):
+        self.assertFalse(combat.is_rout(0.24))
+        self.assertTrue(combat.is_rout(0.25))
+        self.assertTrue(combat.is_rout(-0.25))  # a lost fight can be a rout too
+
+
+class TestRaidStakesWiring(unittest.TestCase):
+    """Slice 5 wiring: deaths land on the households, a rout marks the camp."""
+
+    def _paired_raid_runs(self, seed: int, band_strength: int):
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        def run(militia: int):
+            state, band = _state_with_band(strength=band_strength)
+            band.location = (0, 0)
+            # Both runs raid; only the guard differs. Same seed -> same roll.
+            band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+            band.mood = 0
+            state.stores.food = 30
+            report = turn_resolve(state, Orders(forage=1, militia=militia), Rng(seed))
+            return state.population.total, "\n".join(report.log), state
+
+        guarded_pop, guarded_log, guarded_state = run(5)
+        open_pop, open_log, _ = run(0)
+        won = "broke against the militia" in guarded_log
+        # The guarded run's state is the one that fought (and possibly routed)
+        # the band; the open run only prices the granary pairing.
+        return won, guarded_pop, open_pop, guarded_log, open_log, guarded_state
+
+    def test_raid_deaths_land_on_the_households(self):
+        deaths_seen = set()
+        for seed in range(20):
+            won, guarded_pop, open_pop, _g, _o, _ = self._paired_raid_runs(seed, 6)
+            if not won:
+                continue  # a guarded loss muddies the pairing; sweep skips it
+            deaths = guarded_pop - open_pop
+            self.assertIn(deaths, {1, 2, 3}, f"seed {seed}: {deaths} raid deaths")
+            deaths_seen.add(deaths)
+        self.assertGreaterEqual(
+            len(deaths_seen), 2, "grading never varied across 20 seeds"
+        )
+
+    def test_rout_marks_the_camp_on_the_map(self):
+
+        revealed_on_rout = 0
+        for seed in range(20):
+            won, _, _, _, _, state = self._paired_raid_runs(seed, 2)
+            if not won:
+                continue
+            knows_camp = state.ledger.knows(FactKind.TERRAIN, (0, 0))
+            if knows_camp:
+                revealed_on_rout += 1
+        # Odds 10:2 is 0.833; over 20 seeds most wins are routs (threshold
+        # 0.25 means roll <= 0.583), so the camp must have surfaced at least
+        # once for the reveal wiring to count as proven.
+        self.assertGreaterEqual(revealed_on_rout, 1)

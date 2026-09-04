@@ -1293,16 +1293,42 @@ def _raid(
         intel_staleness=staleness,
     )
     if outcome.won:
-        report.note(
+        note = (
             f"The {agent.name} broke against the militia and melted back into the fog."
         )
+        # A rout scatters the band far enough that its fleeing shape marks the
+        # camp on the map: ground gained, bought in blood.
+        if combat.is_rout(outcome.margin) and agent.location is not None:
+            state.ledger.reveal(state.world, agent.location, state.turn)
+            note += " Their flight marks the camp on the map."
+        report.note(note)
         return
     lost = min(state.stores.food, balance.RAID_STORE_LOSS)
     state.stores.food -= lost
     state.population.shift_mood(
         -balance.MORALE_LOSS_PER_RAID, balance.MORALE_MIN, balance.MORALE_MAX
     )
+    # The dead grade by the margin: a near-run raid costs a grave, a rout
+    # costs the full band of them. Round-robin over the living hearths, the
+    # way a clan shares a blow it all took together.
+    deaths = combat.raid_deaths(outcome.margin)
+    buried = 0
+    living = [h for h in state.population.households if not h.is_empty]
+    while buried < deaths and living:
+        progressed = False
+        for household in living:
+            if buried >= deaths:
+                break
+            if not household.is_empty and household.take_a_person():
+                buried += 1
+                progressed = True
+                household.mood = _clamp_morale(
+                    household.mood - balance.MORALE_LOSS_PER_DEATH
+                )
+        if not progressed:
+            break
+    grave_note = f", and {buried} of the clan are dead" if buried else ""
     report.note(
-        f"The {agent.name} hit the granary and carried off {lost} food. "
+        f"The {agent.name} hit the granary and carried off {lost} food{grave_note}. "
         f"(read: {staleness.value}, odds {outcome.odds:.2f})"
     )

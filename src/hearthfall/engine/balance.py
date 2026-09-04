@@ -380,3 +380,15 @@ RAID_STORE_LOSS = 15
 # Mirrors MORALE_LOSS_PER_STARVATION: a raid that lands is as demoralising as a
 # season of hunger, without taking anyone.
 MORALE_LOSS_PER_RAID = 2
+
+# --- Combat: graded stakes (SP 6, slice 5) ---------------------------------------
+
+# A raid's stakes grade by the margin (how far the roll landed from the decision
+# boundary). A near-run loss costs a grave; a rout costs the full band of them —
+# the militia that slowed the raiders saved the rest. Deaths per full unit of
+# lost margin, capped: a clan of ten cannot bury a legion.
+RAID_DEATHS_PER_MARGIN = 6
+RAID_DEATHS_MAX = 3
+# A win this decisive scattered the band far enough that its fleeing shape
+# marked the camp on the map. Ground gained, bought in blood.
+RAID_WIN_REVEAL_MARGIN = 0.25
