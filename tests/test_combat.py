@@ -143,3 +143,57 @@ class TestTerrainAndMorale(unittest.TestCase):
         outcome = resolve(6, 4, fought, our_ground=Terrain.HILLS, our_morale=8)
         self.assertEqual(outcome.roll, fresh.fraction())
         self.assertEqual(fought.fraction(), fresh.fraction())
+
+
+class TestIntelQuality(unittest.TestCase):
+    """Slice 3: a stale fact should cost you. The staleness bands price the
+    read; the truth still wins on the numbers."""
+
+    def test_fresh_intel_costs_nothing(self):
+        from hearthfall.engine.intel import Staleness
+
+        plain = resolve(6, 4, Rng(1)).odds
+        fresh = resolve(6, 4, Rng(1), intel_staleness=Staleness.FRESH).odds
+        self.assertAlmostEqual(plain, fresh)
+
+    def test_staleness_steps_the_penalty(self):
+        from hearthfall.engine.intel import Staleness
+
+        fresh = resolve(6, 4, Rng(1), intel_staleness=Staleness.FRESH).odds
+        aging = resolve(6, 4, Rng(1), intel_staleness=Staleness.AGING).odds
+        stale = resolve(6, 4, Rng(1), intel_staleness=Staleness.STALE).odds
+        never = resolve(6, 4, Rng(1), intel_staleness=Staleness.NEVER).odds
+        self.assertGreater(fresh, aging)
+        self.assertGreater(aging, stale)
+        self.assertGreater(stale, never)
+
+    def test_never_scouted_pays_the_full_price(self):
+        from hearthfall.engine.balance import INTEL_COMBAT_FACTOR
+        from hearthfall.engine.intel import Staleness
+
+        # Equal stacks, never scouted: the band says 0.7 vs 1.0 — odds exactly
+        # 0.7/(0.7+1.0), the legible number the table promises.
+        odds = resolve(5, 5, Rng(1), intel_staleness=Staleness.NEVER).odds
+        self.assertAlmostEqual(
+            odds,
+            INTEL_COMBAT_FACTOR[Staleness.NEVER]
+            / (INTEL_COMBAT_FACTOR[Staleness.NEVER] + 1.0),
+        )
+
+    def test_stale_intel_stacks_with_terrain_and_morale(self):
+        from hearthfall.engine.intel import Staleness
+        from hearthfall.engine.world import Terrain
+
+        fought, fresh = Rng(11), Rng(11)
+        outcome = resolve(
+            8,
+            6,
+            fought,
+            our_ground=Terrain.HILLS,
+            our_morale=7,
+            intel_staleness=Staleness.STALE,
+        )
+        self.assertEqual(outcome.roll, fresh.fraction())
+        self.assertGreater(
+            outcome.odds, 0.5
+        )  # hills + morale beat one band of staleness

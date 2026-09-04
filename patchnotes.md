@@ -1,3 +1,12 @@
+# v0.16.0 (2026-09-04)
+
+**SP 6, slice 3: intel quality as a combat input.** `resolve()` takes
+`intel_staleness`, priced by `balance.INTEL_COMBAT_FACTOR` — fresh 1.00, aging
+0.90, stale 0.80, never-scouted 0.70 — scaling our side before the share. The
+truth still wins fights on the numbers; this multiplier is the cost of
+committing against a read instead of a certainty. Stacks with terrain and
+morale; still exactly one draw. 4 new tests; suite at 333.
+
 # v0.15.0 (2026-09-04)
 
 **SP 6, slice 2: terrain and morale.** `resolve()` grows optional keyword

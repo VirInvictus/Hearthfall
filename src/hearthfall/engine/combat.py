@@ -23,10 +23,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from hearthfall.engine.balance import (
+    INTEL_COMBAT_FACTOR,
     MORALE_COMBAT_CEIL,
     MORALE_COMBAT_FLOOR,
     TERRAIN_COMBAT_WEIGHT,
 )
+from hearthfall.engine.intel import Staleness
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.world import Terrain
 
@@ -66,6 +68,7 @@ def resolve(
     their_ground: Terrain | None = None,
     our_morale: int | None = None,
     their_morale: int | None = None,
+    intel_staleness: Staleness | None = None,
 ) -> Outcome:
     """Resolve one fight: our strength against theirs, one roll.
 
@@ -73,7 +76,10 @@ def resolve(
     every one of them is optional — `None` means "not factored", which keeps
     slice 1's calls valid and the dumb version reachable. Terrain is the ground
     each side stands on (weighted per `balance.TERRAIN_COMBAT_WEIGHT`); morale
-    is the clan-wide 0-10 average (`balance`'s floor/ceiling band, parity at 5).
+    is the clan-wide 0-10 average (`balance`'s floor/ceiling band, parity at 5);
+    `intel_staleness` is how old our read of the enemy was when we committed
+    (slice 3: stale intel scales OUR side down — you positioned for the enemy
+    you read about, not the one across the field).
 
     Zero effective strength on our side loses without appeal; a fight against
     nothing is won without a roll being meaningful.
@@ -86,6 +92,7 @@ def resolve(
             else 1.0
         )
         * (_morale_factor(our_morale) if our_morale is not None else 1.0)
+        * (INTEL_COMBAT_FACTOR[intel_staleness] if intel_staleness is not None else 1.0)
     )
     theirs_eff = (
         theirs

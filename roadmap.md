@@ -535,7 +535,12 @@ commitment should show its arithmetic before you make it.
       parity at five. Every modifier is an optional keyword, so slice 1's calls
       are unchanged and the dumb version stays reachable. Same single draw,
       test-pinned; measured against a year-read once raiders make it visible.)*
-- [ ] Intel quality as a combat input; a stale fact should cost you
+- [x] Intel quality as a combat input; a stale fact should cost you
+      *(Shipped v0.16.0: `balance.INTEL_COMBAT_FACTOR` prices the read — fresh
+      1.00, aging 0.90, stale 0.80, never-scouted 0.70 — and
+      `resolve(intel_staleness=...)` scales our side by it. The truth still
+      wins on the numbers; this is the price of not knowing them. Slice 4
+      wires the ledger's staleness into the call at raid time.)*
 - [ ] Raiders that hit stores; the granary as a target
 - [ ] Real stakes: dead people, lost stores, ground gained
 

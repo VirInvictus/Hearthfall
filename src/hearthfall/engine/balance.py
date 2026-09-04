@@ -10,7 +10,7 @@ Rules live in `turn.py`. Numbers live here. Do not inline a constant into a rule
 
 from __future__ import annotations
 
-from hearthfall.engine.intel import FactKind
+from hearthfall.engine.intel import FactKind, Staleness
 from hearthfall.engine.state import Season
 from hearthfall.engine.world import Terrain
 
@@ -347,3 +347,15 @@ TERRAIN_COMBAT_WEIGHT: dict[Terrain, float] = {
 # "how far from even the mood swings take you".
 MORALE_COMBAT_FLOOR = 0.80
 MORALE_COMBAT_CEIL = 1.20
+
+# Acting on stale intel costs fighting strength: you positioned for the enemy you
+# read about, not the one across the field. Fresh reads cost nothing; the penalty
+# steps per staleness band; a fight against something we have never scouted is
+# the blindest and pays the most. The truth still wins fights on the numbers —
+# this multiplier is the price of not knowing them.
+INTEL_COMBAT_FACTOR: dict[Staleness, float] = {
+    Staleness.FRESH: 1.00,
+    Staleness.AGING: 0.90,
+    Staleness.STALE: 0.80,
+    Staleness.NEVER: 0.70,
+}
