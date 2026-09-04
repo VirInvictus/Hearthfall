@@ -1,3 +1,14 @@
+# v0.15.0 (2026-09-04)
+
+**SP 6, slice 2: terrain and morale.** `resolve()` grows optional keyword
+modifiers — `our_ground`/`their_ground` (each side's terrain, weighted by
+`balance.TERRAIN_COMBAT_WEIGHT`: hills 1.25, forest 1.10, plain 1.00, marsh
+0.90, water 0.50) and `our_morale`/`their_morale` (the clan-wide 0-10 average,
+linear on a 0.80-1.20 band with parity at five, clamped). Modifiers scale
+effective strength before the share is taken; the roll is still exactly one
+draw, and every modifier is optional so slice 1's calls are unchanged. 5 new
+tests; suite at 329. Same gate posture as slice 1: measured when player-visible.
+
 # v0.14.0 (2026-09-04)
 
 **SP 6, slice 1: abstract single-stack combat.** `engine/combat.py` — the dumb

@@ -324,3 +324,26 @@ FACT_HALFLIFE: dict[FactKind, int | None] = {
     FactKind.AGENT_MOOD: 4,
     FactKind.AGENT_INTENT: 1,
 }
+
+# --- Combat: terrain and morale (SP 6, slice 2) ---------------------------------
+
+# Terrain multiplies the fighting strength of whichever side stands on it. First
+# guesses aimed at slice 4's raider fights, to be measured like everything else:
+# high ground is worth a quarter again, forest gives a tenth, marsh is worse than
+# open ground (slow footing punishes the bigger stack), and fighting in water is
+# close to fighting half-naked. Ground not listed is neutral.
+TERRAIN_COMBAT_WEIGHT: dict[Terrain, float] = {
+    Terrain.HILLS: 1.25,
+    Terrain.FOREST: 1.10,
+    Terrain.PLAIN: 1.00,
+    Terrain.MARSH: 0.90,
+    Terrain.WATER: 0.50,
+}
+
+# Morale maps the clan-wide 0-10 average onto a strength factor, linear between
+# the floor and the ceiling: a broken clan fights at four-fifths of its numbers,
+# a jubilant one at a fifth again. Morale 5 sits at exactly parity, so the
+# healthy starting clan (6) carries a small edge and the number is legible as
+# "how far from even the mood swings take you".
+MORALE_COMBAT_FLOOR = 0.80
+MORALE_COMBAT_CEIL = 1.20

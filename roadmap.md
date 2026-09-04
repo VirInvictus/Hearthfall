@@ -528,7 +528,13 @@ commitment should show its arithmetic before you make it.
       so slice 5 grades stakes by it. Exactly one draw per fight, test-pinned. Engine-only
       slice: the standing-gate verdict accrues when the raiders make it player-visible,
       alongside the owed SP 3-5 combined read.)*
-- [ ] Terrain and morale modifiers
+- [x] Terrain and morale modifiers
+      *(Shipped v0.15.0: each side's strength is scaled by the ground it stands on
+      (`balance.TERRAIN_COMBAT_WEIGHT` — hills 1.25, forest 1.10, plain 1.00,
+      marsh 0.90, water 0.50) and by clan morale on a linear 0.80-1.20 band with
+      parity at five. Every modifier is an optional keyword, so slice 1's calls
+      are unchanged and the dumb version stays reachable. Same single draw,
+      test-pinned; measured against a year-read once raiders make it visible.)*
 - [ ] Intel quality as a combat input; a stale fact should cost you
 - [ ] Raiders that hit stores; the granary as a target
 - [ ] Real stakes: dead people, lost stores, ground gained

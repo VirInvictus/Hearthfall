@@ -80,3 +80,66 @@ class TestResolution(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTerrainAndMorale(unittest.TestCase):
+    """Slice 2: the modifiers scale effective strength before the share, and
+    every one of them is optional — defaults must reproduce slice 1 exactly."""
+
+    def test_defaults_reproduce_slice_one(self):
+        a = resolve(5, 5, Rng(42))
+        b = resolve(5, 5, Rng(42), our_ground=None, their_morale=None)
+        self.assertEqual(a, b)
+
+    def test_hills_favor_and_marsh_punishes(self):
+        from hearthfall.engine.world import Terrain
+
+        even = resolve(5, 5, Rng(1)).odds
+        hills = resolve(5, 5, Rng(1), our_ground=Terrain.HILLS).odds
+        marsh = resolve(5, 5, Rng(1), our_ground=Terrain.MARSH).odds
+        self.assertGreater(hills, even)
+        self.assertLess(marsh, even)
+        # Same ground on both sides cancels: the share is back to even.
+        both = resolve(
+            5, 5, Rng(1), our_ground=Terrain.HILLS, their_ground=Terrain.HILLS
+        )
+        self.assertAlmostEqual(both.odds, 0.5)
+
+    def test_terrain_weight_comes_from_balance(self):
+        from hearthfall.engine.balance import TERRAIN_COMBAT_WEIGHT
+        from hearthfall.engine.world import Terrain
+
+        p = resolve(5, 5, Rng(1), our_ground=Terrain.HILLS).odds
+        expected = (
+            5
+            * TERRAIN_COMBAT_WEIGHT[Terrain.HILLS]
+            / (5 * TERRAIN_COMBAT_WEIGHT[Terrain.HILLS] + 5)
+        )
+        self.assertAlmostEqual(p, expected)
+
+    def test_morale_shifts_the_odds_with_parity_at_five(self):
+        from hearthfall.engine.balance import (
+            MORALE_COMBAT_CEIL,
+            MORALE_COMBAT_FLOOR,
+        )
+
+        parity = resolve(5, 5, Rng(1), our_morale=5).odds
+        self.assertAlmostEqual(parity, 0.5)
+        jubilant = resolve(5, 5, Rng(1), our_morale=10).odds
+        broken = resolve(5, 5, Rng(1), our_morale=0).odds
+        self.assertGreater(jubilant, 0.5)
+        self.assertLess(broken, 0.5)
+        # The extremes are the balance band itself: 1.2 strength vs 0.8 is
+        # odds 0.6, the exact legible number the band promises.
+        both = resolve(5, 5, Rng(1), our_morale=10, their_morale=0).odds
+        self.assertAlmostEqual(
+            both, MORALE_COMBAT_CEIL / (MORALE_COMBAT_CEIL + MORALE_COMBAT_FLOOR)
+        )
+
+    def test_modified_fights_stay_deterministic_and_one_draw(self):
+        from hearthfall.engine.world import Terrain
+
+        fought, fresh = Rng(7), Rng(7)
+        outcome = resolve(6, 4, fought, our_ground=Terrain.HILLS, our_morale=8)
+        self.assertEqual(outcome.roll, fresh.fraction())
+        self.assertEqual(fought.fraction(), fresh.fraction())
