@@ -113,7 +113,7 @@ src/hearthfall/
     orders.py        #   NEW. per-season and standing orders as one type.
     chronicle.py     #   NEW. typed entries the skin renders.
     tiers.py         #   NEW. emergence conditions and the named moment.
-    combat.py        #   LATER. abstract resolution.
+    combat.py        #   single-stack resolution (slice 1 of SP 6).
   tui/               # thin skin over engine. Textual. throwaway-able.
   data/              # TOML. events, terrain, agents, peoples, names. no logic.
 tests/               # engine is tested. the skin is not.
@@ -237,11 +237,13 @@ There is no tier number in the fiction and no menu that says TIER 3. Systems sur
 world state makes them relevant, and the transition is a named narrative beat. The engine
 tracks a tier internally for pacing and content gating; the player experiences a moment.
 
-### Combat (later)
+### Combat (slice 1 shipped)
 
 Abstract, pre-committed, resolved not micro'd. Two stacks meet; the engine weighs composition,
 terrain, numbers, morale, and the quality of your intel, then reports an outcome with real
-stakes. Build the dumb version first: your strength vs. theirs, one roll. Earn the depth.
+stakes. The dumb version shipped: your strength vs. theirs, one roll (`combat.resolve`),
+with the recorded odds and margin left as the hooks the depth earns — composition, terrain,
+morale, and intel quality modify the odds; the stakes grade by the margin.
 
 ### The AoE2 layer (the reward, not the foundation)
 

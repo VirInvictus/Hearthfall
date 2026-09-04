@@ -1,3 +1,15 @@
+# v0.14.0 (2026-09-04)
+
+**SP 6, slice 1: abstract single-stack combat.** `engine/combat.py` — the dumb
+version `spec.md` calls for, kept dumb on purpose: our strength against theirs,
+one `Rng.fraction()` draw. The odds are our share of the strength on the field;
+`Outcome` records the pre-roll odds, the roll, and the margin (how far the draw
+landed from the decision boundary), which is the hook slices 2-5 hang terrain,
+morale, intel quality, and graded stakes on. Exactly one draw per fight,
+test-pinned, so a fight replays from the stream. 8 new tests; suite at 324.
+Engine-only slice: the standing-gate verdict accrues when the raiders make
+violence player-visible (see the roadmap's verdict-discipline note).
+
 # v0.13.1 (2026-09-04)
 
 **Hygiene release: the workspace audit's Stage 0 pass.** No behavior change.

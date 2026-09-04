@@ -517,11 +517,17 @@ commitment should show its arithmetic before you make it.
 > **more growth does not help either**. Both were tried and measured; see `spec.md` §7 and the
 > note on `STARTING_FOOD` in `balance.py`. Do not reach for either lever again.
 
-## Sub-project 6: violence (planned)
+## Sub-project 6: violence (slice 1 shipped)
 
 *Question: is losing people to a fight you misread painful in the right way?*
 
-- [ ] `engine/combat.py`: abstract single-stack resolution, your strength vs. theirs, one roll
+- [x] `engine/combat.py`: abstract single-stack resolution, your strength vs. theirs, one roll
+      *(Shipped v0.14.0: `resolve()` takes our strength, theirs, and the rng; the odds
+      are our share of the field and one `Rng.fraction()` draw decides. `Outcome` records
+      odds, roll, and the margin — how far the draw landed from the decision boundary —
+      so slice 5 grades stakes by it. Exactly one draw per fight, test-pinned. Engine-only
+      slice: the standing-gate verdict accrues when the raiders make it player-visible,
+      alongside the owed SP 3-5 combined read.)*
 - [ ] Terrain and morale modifiers
 - [ ] Intel quality as a combat input; a stale fact should cost you
 - [ ] Raiders that hit stores; the granary as a target

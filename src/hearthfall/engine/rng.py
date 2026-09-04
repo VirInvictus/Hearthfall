@@ -25,6 +25,11 @@ class Rng:
         """True with the given probability. `chance(0.0)` and `chance(1.0)` are absolute."""
         return self._random.random() < probability
 
+    def fraction(self) -> float:
+        """One draw in [0.0, 1.0). The shape combat resolution uses: a single
+        draw against the odds, kept as a value so the margin can be graded."""
+        return self._random.random()
+
     def randint(self, low: int, high: int) -> int:
         """An integer in [low, high], both ends inclusive."""
         return self._random.randint(low, high)
