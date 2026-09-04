@@ -39,8 +39,12 @@ class Agent:
     food: int = 0
     mood: int = 0
     intent: Intent | None = None
+    # Spears the band can field. Set when a raid intent forms (the range
+    # arrives as an argument — see the import-graph note on half-lives), and
+    # what the ledger's raider-strength fact is a read of.
+    strength: int = 0
 
-    def grow(self, rng: Rng) -> None:
+    def grow(self, rng: Rng, raid_strength: tuple[int, int] | None = None) -> None:
         """Process one season for this agent.
 
         They consume food. If they run out, mood drops. If mood drops low enough,
@@ -65,6 +69,11 @@ class Agent:
                     kind=IntentKind.RAID,
                     target_turn=0,
                 )
+                # The band musters its spears the season it decides to use
+                # them. The draw is seeded, so the band is reproducible.
+                if raid_strength is not None:
+                    low, high = raid_strength
+                    self.strength = rng.randint(low, high)
 
 
 def populate_agents(world: World, rng: Rng) -> dict[str, Agent]:

@@ -1,3 +1,21 @@
+# v0.17.0 (2026-09-04)
+
+**SP 6, slice 4: raiders, and the granary as a target.** Violence is
+player-visible. A miserable band masses: its spears are drawn (seeded) at
+intent formation, the ledger learns the band's strength that season, and the
+director holds the raid for two seasons — the window where the read ages and
+the player reassigns hands. When it comes, the raid resolves through
+`combat.resolve`: militia strength (spears per adult, a hand off the forage
+roll), home-ground terrain, clan morale, and the staleness of the read. Won,
+the band breaks; lost, the granary pays `RAID_STORE_LOSS` (15, clamped to the
+store) and morale takes `MORALE_LOSS_PER_RAID` (2). `Orders` gains the
+`militia` line, counting against the same hands as forage — the raid trade is
+the scarcity trade. The fight is pre-committed (the auto-resolution from the
+design brief, decision recorded in the roadmap); it is still exactly one
+draw. Raid wiring tests: repel keeps the granary (verified against a no-raid
+twin), an open granary pays exactly the loss, replays are exact. Suite at
+336; pyright strict zero.
+
 # v0.16.0 (2026-09-04)
 
 **SP 6, slice 3: intel quality as a combat input.** `resolve()` takes

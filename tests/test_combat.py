@@ -6,6 +6,8 @@ from __future__ import annotations
 import unittest
 
 from hearthfall.engine.combat import Outcome, resolve
+from hearthfall.engine.intel import FactKind
+from hearthfall.engine.orders import Orders
 from hearthfall.engine.rng import Rng
 
 
@@ -197,3 +199,90 @@ class TestIntelQuality(unittest.TestCase):
         self.assertGreater(
             outcome.odds, 0.5
         )  # hills + morale beat one band of staleness
+
+
+class TestRaidWiring(unittest.TestCase):
+    """Slice 4: the raid end-to-end. A miserable band masses, the militia
+    order was the decision, and the granary pays on a loss."""
+
+    def _state_with_band(self, strength: int):
+        from hearthfall.engine.agents import Agent, AgentType
+        from hearthfall.engine.turn import new_game
+
+        state = new_game(seed=42)
+        band = Agent(
+            id="band_1",
+            name="the Ashfang",
+            type=AgentType.NEIGHBOUR,
+            strength=strength,
+        )
+        # A one-band world: populate_agents seeds several, and every extra
+        # band shares the rng stream — their drift would confound any
+        # guarded-vs-twin food comparison.
+        state.agents = {"band_1": band}
+        # The band massed last season: the read is already aging, the raid
+        # matures this turn.
+        state.ledger.learn(
+            FactKind.RAIDER_STRENGTH, band.id, strength, max(0, state.turn - 2)
+        )
+        state.agents[band.id].intent = None
+        return state, band
+
+    def test_militia_repels_and_keeps_the_granary(self):
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        def run(with_raid: bool) -> tuple[int, str]:
+            state, band = self._state_with_band(strength=6)
+            if with_raid:
+                band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+                band.mood = 0
+            else:
+                # Content, and holding no intent: nothing raids the twin.
+                band.mood = 5
+            state.stores.food = 30
+            report = turn_resolve(state, Orders(forage=1, militia=5), Rng(7))
+            return state.stores.food, "\n".join(report.log)
+
+        guarded, guarded_log = run(with_raid=True)
+        twin_food, _ = run(with_raid=False)  # no band massing: no raid at all
+        self.assertIn("broke against the militia", guarded_log)
+        # A repelled raid costs the granary nothing: the guarded run ends
+        # exactly where the no-raid twin does.
+        self.assertEqual(guarded, twin_food)
+
+    def test_no_militia_loses_the_granary(self):
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.balance import RAID_STORE_LOSS
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        def run(militia: int) -> tuple[int, str]:
+            state, band = self._state_with_band(strength=6)
+            band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+            band.mood = 0
+            state.stores.food = 30
+            report = turn_resolve(state, Orders(forage=1, militia=militia), Rng(7))
+            return state.stores.food, "\n".join(report.log)
+
+        # Paired runs: identical everything but the guard. Same season economy,
+        # so the difference is exactly the raid's take.
+        guarded, guarded_log = run(militia=5)
+        open_granary, open_log = run(militia=0)
+        self.assertIn("broke against the militia", guarded_log)
+        self.assertIn("hit the granary", open_log)
+        self.assertGreater(open_granary, 0)  # the clamp held: raiders leave some
+        self.assertEqual(guarded - open_granary, RAID_STORE_LOSS)
+
+    def test_raid_is_replayable_from_the_seed(self):
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        def run():
+            state, band = self._state_with_band(strength=6)
+            band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+            band.mood = 0
+            state.stores.food = 30
+            report = turn_resolve(state, Orders(forage=1, militia=2), Rng(7))
+            return state.stores.food, "\n".join(report.log)
+
+        self.assertEqual(run(), run())

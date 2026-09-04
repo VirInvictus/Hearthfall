@@ -323,6 +323,7 @@ FACT_HALFLIFE: dict[FactKind, int | None] = {
     FactKind.AGENT_FOOD: 4,
     FactKind.AGENT_MOOD: 4,
     FactKind.AGENT_INTENT: 1,
+    FactKind.RAIDER_STRENGTH: 4,
 }
 
 # --- Combat: terrain and morale (SP 6, slice 2) ---------------------------------
@@ -359,3 +360,23 @@ INTEL_COMBAT_FACTOR: dict[Staleness, float] = {
     Staleness.STALE: 0.80,
     Staleness.NEVER: 0.70,
 }
+
+# --- Combat: raiders (SP 6, slice 4) ---------------------------------------------
+
+# A war-band's fighting strength, drawn at intent formation. Aimed at a starting
+# clan of six: a band at the top of the range beats any militia the clan can
+# field early, which is the point — some fights are avoided, not won.
+RAIDER_STRENGTH_RANGE = (4, 14)
+# Seasons a raid intent massing before it comes. The window is the read: the
+# band's strength is learned the season it masses, and it ages while the player
+# decides. Two seasons is one decision point between the massing and the blow.
+RAID_MATURITY_TURNS = 2
+# Spears per militiaman. A hand that carries two food carries two of fight; the
+# symmetry is the trade the player feels when they reassign.
+MILITIA_STRENGTH_PER_ADULT = 2
+# What a lost fight costs from the granary. Aimed at STARTING_FOOD=30: one lost
+# raid is half a store, two is a burial season.
+RAID_STORE_LOSS = 15
+# Mirrors MORALE_LOSS_PER_STARVATION: a raid that lands is as demoralising as a
+# season of hunger, without taking anyone.
+MORALE_LOSS_PER_RAID = 2

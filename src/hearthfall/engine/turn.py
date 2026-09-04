@@ -400,7 +400,8 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
     )
 
 
-from hearthfall.engine.agents import populate_agents
+from hearthfall.engine import combat
+from hearthfall.engine.agents import IntentKind, populate_agents
 
 
 def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
@@ -512,7 +513,7 @@ def resolve(
     _draw_event(state, rng, report, events)
     _grow(state, rng, report)
     _agents_tick(state, rng)
-    _director_tick(state, rng, report)
+    _director_tick(state, orders, rng, report)
     _leave(state, doomed, report)
     _advance(state, rng, report)
 
@@ -1242,13 +1243,66 @@ def run_until_interrupted(
 
 def _agents_tick(state: GameState, rng: Rng) -> None:
     for agent in state.agents.values():
-        agent.grow(rng)
+        had_intent = agent.intent is not None
+        agent.grow(rng, balance.RAIDER_STRENGTH_RANGE)
+        # A band massing for a raid is public — the spears are visible from the
+        # border. The ledger learns its strength the season it masses, and the
+        # read ages from there (the maturity window is the player's time to
+        # refresh it by scouting, or to fight on an old number and pay).
+        if (
+            not had_intent
+            and agent.intent is not None
+            and agent.intent.kind == IntentKind.RAID
+        ):
+            agent.intent.target_turn = state.turn + balance.RAID_MATURITY_TURNS
+            state.ledger.learn(
+                FactKind.RAIDER_STRENGTH, agent.id, agent.strength, state.turn
+            )
 
 
-def _director_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
+def _director_tick(
+    state: GameState, orders: Orders, rng: Rng, report: TurnReport
+) -> None:
     from hearthfall.engine.director import Director
 
     interrupt = Director().evaluate(state, rng)
     if interrupt:
         report.director_interrupt_cause = interrupt.cause
         report.note(interrupt.message)
+        if interrupt.agent_id is not None and interrupt.cause.startswith("raid_"):
+            _raid(state, orders, rng, report, interrupt.agent_id)
+
+
+def _raid(
+    state: GameState, orders: Orders, rng: Rng, report: TurnReport, agent_id: str
+) -> None:
+    """The band came over the border. The militia order was the decision; the
+    fight itself is pre-committed (`spec.md` §"Combat"): spears, ground, mood,
+    and the age of the read, resolved in one draw."""
+    agent = state.agents.get(agent_id)
+    if agent is None:
+        return
+    home = state.world.tiles[state.world.home]
+    staleness = state.ledger.staleness(FactKind.RAIDER_STRENGTH, agent_id, state.turn)
+    outcome = combat.resolve(
+        orders.militia * balance.MILITIA_STRENGTH_PER_ADULT,
+        agent.strength,
+        rng,
+        our_ground=home.terrain,
+        our_morale=state.population.morale,
+        intel_staleness=staleness,
+    )
+    if outcome.won:
+        report.note(
+            f"The {agent.name} broke against the militia and melted back into the fog."
+        )
+        return
+    lost = min(state.stores.food, balance.RAID_STORE_LOSS)
+    state.stores.food -= lost
+    state.population.shift_mood(
+        -balance.MORALE_LOSS_PER_RAID, balance.MORALE_MIN, balance.MORALE_MAX
+    )
+    report.note(
+        f"The {agent.name} hit the granary and carried off {lost} food. "
+        f"(read: {staleness.value}, odds {outcome.odds:.2f})"
+    )

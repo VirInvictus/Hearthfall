@@ -541,7 +541,18 @@ commitment should show its arithmetic before you make it.
       `resolve(intel_staleness=...)` scales our side by it. The truth still
       wins on the numbers; this is the price of not knowing them. Slice 4
       wires the ledger's staleness into the call at raid time.)*
-- [ ] Raiders that hit stores; the granary as a target
+- [x] Raiders that hit stores; the granary as a target
+      *(Shipped v0.17.0: a miserable band masses — strength drawn seeded at
+      formation, `FactKind.RAIDER_STRENGTH` learned the season it masses, and
+      the director holds it for `RAID_MATURITY_TURNS` (2) — then the raid
+      resolves at the season boundary: `combat.resolve(militia × spears-per-
+      adult, band strength, home terrain, clan morale, staleness of the read)`.
+      Won: the band breaks. Lost: the granary pays `RAID_STORE_LOSS` (15,
+      clamped to the store) and the clan takes a morale hit. The player
+      decision is the militia count in Orders, competing with foraging for the
+      same hands — the pre-committed auto-resolution from the design brief.*
+      *Decision taken 2026-09-04: auto-resolution, per the brief's
+      recommendation and Brandon's keep-moving directive.)*
       *(Design brief, written 2026-09-04 from a survey of `agents.py`,
       `director.py`, and `turn.py`; the surfaces all exist. **Where it hooks:**
       `IntentKind.RAID` and `Intent(target_turn, target)` already exist in

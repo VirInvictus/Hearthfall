@@ -16,6 +16,8 @@ class DirectorInterrupt:
 
     cause: str
     message: str
+    # The agent acting, when the interrupt is that agent's intent surfacing.
+    agent_id: str | None = None
 
 
 class Director:
@@ -64,7 +66,8 @@ class Director:
 
                 return DirectorInterrupt(
                     cause=f"raid_{agent.id}",
-                    message=f"The {agent.name} is massing on the border. (Combat not yet implemented).",
+                    message=f"The {agent.name} is massing on the border.",
+                    agent_id=agent.id,
                 )
 
         return None
