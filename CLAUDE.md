@@ -46,6 +46,10 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 - **Run the tools through `uv run`.** `ruff` and `pyright` are pinned in the `dev` dependency
   group and resolved from the committed lockfile, so `uv run ruff check src tests` is exactly
   what CI runs. A bare `ruff` is whatever is on `PATH` and has disagreed with CI before.
+- **Releases run `uv lock` alongside the version bump.** The lockfile records this project's
+  own version, CI syncs with `--locked`, and a bump without `uv lock` is an instant red run
+  (bit 2026-09-04 on the slice-2 release, fixed in `bf5ea4a`). Unlike cargo repos, where the
+  lock regenerates in-tree, uv needs the explicit command.
 - **Pyright is strict over `engine/` and gates the whole tree.** The four CI steps are
   `ruff check`, `ruff format --check`, `pyright src tests`, and the suite. Keep it at zero.
 - Engine dataclasses carry `slots=True`, and `frozen=True` too when they are value types.
