@@ -542,7 +542,31 @@ commitment should show its arithmetic before you make it.
       wins on the numbers; this is the price of not knowing them. Slice 4
       wires the ledger's staleness into the call at raid time.)*
 - [ ] Raiders that hit stores; the granary as a target
-- [ ] Real stakes: dead people, lost stores, ground gained
+      *(Design brief, written 2026-09-04 from a survey of `agents.py`,
+      `director.py`, and `turn.py`; the surfaces all exist. **Where it hooks:**
+      `IntentKind.RAID` and `Intent(target_turn, target)` already exist in
+      `agents.py`, and `Director.evaluate` surfaces a mature intent as a
+      `DirectorInterrupt` with a slack heuristic (food per household minus
+      worst resentment: doing well draws raids sooner). The raid fires at the
+      season boundary in `turn.resolve` when the director raises the RAID
+      interrupt. **The player decision:** a militia count in `Orders`,
+      competing with foraging for the same adults — the standing scarcity trade,
+      and the "real decision every season" the gate demands. **The read:** the
+      raider band's strength surfaces as a ledger fact (new `FactKind` or reuse
+      of `PRESENCE` keyed on the agent id); its `Staleness` prices the fight
+      through `resolve(intel_staleness=...)`, so ignoring scouting is the cost
+      slice 3 already built. **The fight:**
+      `combat.resolve(militia_strength, raider_strength, rng, our_ground=home
+      tile terrain, our_morale=clan morale, intel_staleness=...)`. **Slice 5
+      stakes:** losses graded by `Outcome.margin` — a rout costs the losers
+      less than a near-run thing — with dead people via
+      `Population.take_a_person`, lost `stores.food` (the granary as the
+      target), and ground: a lost fight exposes frontier tiles.
+      **Open for Brandon:** the raid as a pre-committed auto-resolution driven
+      by the militia order (recommended: keeps spec §"resolved not micro'd")
+      versus an interrupt event with fight/avoid/tribute choices. The
+      recommendation keeps the allocation as the decision and the fight as
+      consequence.)*
 
 ## Sub-project 7: composition (planned)
 
