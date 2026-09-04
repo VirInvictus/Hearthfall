@@ -578,6 +578,14 @@ commitment should show its arithmetic before you make it.
       versus an interrupt event with fight/avoid/tribute choices. The
       recommendation keeps the allocation as the decision and the fight as
       consequence.)*
+- [x] Real stakes: dead people, lost stores, ground gained
+      *(Shipped v0.18.0: losses grade by the margin — `combat.raid_deaths`
+      buries 1-3 of the clan (round-robin over the living hearths, children
+      first via `take_a_person`, each grave a morale hit on that hearth), and
+      a rout (`combat.is_rout`, |margin| >= 0.25) scatters the band far
+      enough to mark its camp on the map: `ledger.reveal` at the band's
+      location. Lost stores landed with slice 4. The SP 6 question is now
+      answerable in play; the year-read verdict is owed alongside SP 3-5's.)*
 
 ## Sub-project 7: composition (planned)
 

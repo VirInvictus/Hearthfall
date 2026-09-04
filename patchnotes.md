@@ -1,3 +1,15 @@
+# v0.18.0 (2026-09-04)
+
+**SP 6, slice 5: real stakes, graded by the margin.** `combat.raid_deaths`
+and `combat.is_rout` turn the fight's margin into consequences. A lost raid
+now buries the clan's dead — one grave for a near-run thing, up to three for
+a rout (`RAID_DEATHS_PER_MARGIN`/`RAID_DEATHS_MAX`), dealt round-robin over
+the living hearths with a morale hit per grave — and a decisive outcome
+marks ground: a rout scatters the band far enough that its camp shows on the
+map (`ledger.reveal` at the band's location). Won fights cost nothing but
+the season. The granary loss from slice 4 stands unchanged. The SP 6
+question is now answerable in play. Suite at 340; pyright strict zero.
+
 # v0.17.0 (2026-09-04)
 
 **SP 6, slice 4: raiders, and the granary as a target.** Violence is
