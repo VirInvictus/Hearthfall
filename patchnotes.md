@@ -1,4 +1,16 @@
-# v0.18.0 (2026-09-04)
+# Patch notes
+
+Newest at the top.
+
+> Correction (2026-09-05): the SP 6 entries below overstate the suite total by
+> exactly 8; the v0.14.0 commit message counted its 8 new tests twice (308 + 8
+> = 316, not 324), and the error carried through every later entry. The real
+> totals are 316 at v0.14.0 through 332 at v0.18.0 (verified by running the
+> suites at both tags). Each entry's "+N new tests" delta is correct; only the
+> running totals were wrong. The numbers in the tagged entries are left as
+> shipped; take future totals from the runner's own count line.
+
+## v0.18.0 (2026-09-04)
 
 **SP 6, slice 5: real stakes, graded by the margin.** `combat.raid_deaths`
 and `combat.is_rout` turn the fight's margin into consequences. A lost raid
@@ -10,7 +22,7 @@ map (`ledger.reveal` at the band's location). Won fights cost nothing but
 the season. The granary loss from slice 4 stands unchanged. The SP 6
 question is now answerable in play. Suite at 340; pyright strict zero.
 
-# v0.17.0 (2026-09-04)
+## v0.17.0 (2026-09-04)
 
 **SP 6, slice 4: raiders, and the granary as a target.** Violence is
 player-visible. A miserable band masses: its spears are drawn (seeded) at
@@ -28,7 +40,7 @@ draw. Raid wiring tests: repel keeps the granary (verified against a no-raid
 twin), an open granary pays exactly the loss, replays are exact. Suite at
 336; pyright strict zero.
 
-# v0.16.0 (2026-09-04)
+## v0.16.0 (2026-09-04)
 
 **SP 6, slice 3: intel quality as a combat input.** `resolve()` takes
 `intel_staleness`, priced by `balance.INTEL_COMBAT_FACTOR` — fresh 1.00, aging
@@ -37,7 +49,7 @@ truth still wins fights on the numbers; this multiplier is the cost of
 committing against a read instead of a certainty. Stacks with terrain and
 morale; still exactly one draw. 4 new tests; suite at 333.
 
-# v0.15.0 (2026-09-04)
+## v0.15.0 (2026-09-04)
 
 **SP 6, slice 2: terrain and morale.** `resolve()` grows optional keyword
 modifiers — `our_ground`/`their_ground` (each side's terrain, weighted by
@@ -48,7 +60,7 @@ effective strength before the share is taken; the roll is still exactly one
 draw, and every modifier is optional so slice 1's calls are unchanged. 5 new
 tests; suite at 329. Same gate posture as slice 1: measured when player-visible.
 
-# v0.14.0 (2026-09-04)
+## v0.14.0 (2026-09-04)
 
 **SP 6, slice 1: abstract single-stack combat.** `engine/combat.py` — the dumb
 version `spec.md` calls for, kept dumb on purpose: our strength against theirs,
@@ -60,7 +72,7 @@ test-pinned, so a fight replays from the stream. 8 new tests; suite at 324.
 Engine-only slice: the standing-gate verdict accrues when the raiders make
 violence player-visible (see the roadmap's verdict-discipline note).
 
-# v0.13.1 (2026-09-04)
+## v0.13.1 (2026-09-04)
 
 **Hygiene release: the workspace audit's Stage 0 pass.** No behavior change.
 
@@ -82,8 +94,6 @@ violence player-visible (see the roadmap's verdict-discipline note).
   verdict is owed before SP 6's first player-visible slice claims the gate.
 
 Suite unchanged and green.
-# Patch notes
-
 ## v0.13.0
 
 - **TUI Rebuild:** `tui/app.py` has been completely replaced with a responsive Textual UI built around the new `ChronicleEntry` spine.

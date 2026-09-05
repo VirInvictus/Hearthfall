@@ -517,7 +517,7 @@ commitment should show its arithmetic before you make it.
 > **more growth does not help either**. Both were tried and measured; see `spec.md` §7 and the
 > note on `STARTING_FOOD` in `balance.py`. Do not reach for either lever again.
 
-## Sub-project 6: violence (slice 1 shipped)
+## Sub-project 6: violence (slices 1-5 shipped)
 
 *Question: is losing people to a fight you misread painful in the right way?*
 

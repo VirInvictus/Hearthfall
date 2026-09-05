@@ -15,8 +15,8 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
 </p>
 
 > **Status: v0.18.0. Sub-project 5 of ten complete; SP 6 (violence) is the live front: raiders hit the granary and bury the dead, and a rout marks their camp on the map.** Playable start to finish, and
-> deliberately small: one map, three jobs, twenty seasons. There is no combat yet and no
-> enemy, so the later tiers of the spine below are designed but not built. See
+> deliberately small: one map, four jobs, twenty seasons. Combat arrived with SP 6 as raid
+> violence; the deeper war tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,
 > and for the standing rule that no slice ships until a year of it has been *played*.
 
@@ -41,7 +41,7 @@ that scouts ends with 6.5; one that also reads the seasons ends with 7.8.
 
 Time is seasonal, four turns to a year, and winter never negotiates. The tension is always
 the same shape: not enough hands, not enough food, and the dark is full of things you have
-not scouted yet. Each season you split a finite clan three ways:
+not scouted yet. Each season you split a finite clan four ways:
 
 - **Forage** brings in food, scaled by the season *and by the ground you have walked*. Each
   known tile supports only so many foragers; hands beyond that come back with nothing. Winter
@@ -56,6 +56,9 @@ not scouted yet. Each season you split a finite clan three ways:
   true the season it was made**, so a clan that stops looking is soon planning its seasons
   around a wood that is not what it remembers.
 - **Tend** slows the rot in the store, and can never quite stop it.
+- **Militia** meets a raid when one comes. Combat is single-stack with stated odds, and
+  the margin grades the cost: a lost raid buries the clan's dead, a rout scatters the
+  band far enough that its camp shows on the map.
 
 Then the season resolves, the world asks you something with no clean answer, and you live
 with it. Children eat and cannot work. Everyone eats regardless.
