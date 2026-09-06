@@ -800,6 +800,21 @@ thing being managed is a people rather than a household.*
       exactly the prosperous seasons where the allocation used to write
       itself. 9 new tests; suite at 403; pyright strict zero.)*
 
+**The arc: measured and refused, 2026-09-06.** The signed order put the arc
+last and conditional on the economy, and the precondition was tested rather
+than assumed: with the works shipped, `TURNS_PER_RUN` was measured at 28
+seasons against the shipped 20. Every activity signal got better and the
+game got worse: raids rose from 16 to 27 per 50 runs under the naive
+policy, works were built, doctrine forks fired - and endurance fell from 11
+to 5 of 50, with the builder policy at 3 of 50, below the suite floor, and
+survivors from 28 to 11. Twenty-eight seasons is not a longer game; it is a
+longer death, because the clan economy cannot feed the extra winters at
+current yields, and that is the shape problem the `STARTING_FOOD` note
+records, not a magnitude a constant can move. The arc stays refused until a
+dedicated economy campaign re-tunes yields, winters, and band pressure
+together; the pieces it will need - the works, doctrine, the rivals - are
+all shipped and waiting for it.
+
 - [x] Doctrine: the run's choices harden into character
       *(Shipped v0.25.0. The corpus gains the doctrine fork
       (`data/events/doctrine.toml`): after the graves have started, the clan
