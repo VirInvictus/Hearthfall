@@ -323,6 +323,60 @@ class TestTheShapeOfARun(unittest.TestCase):
         )
 
 
+class TestRaidersReachARun(unittest.TestCase):
+    """The 2026-09-06 finding, guarded: the shipped band economy could not
+    make a band miserable inside TURNS_PER_RUN. Bands gathered 9 against 10
+    eaten from a start of 20-50, mood only fell on an empty store, so the
+    earliest possible raid intent was turn 23 of a twenty-season run, and the
+    raiders of SP 6 slices 4 and 5 were dead content in real play: every fight
+    the suite exercised was fought by a hand-built state. A raid arc the game
+    never produces is worse than one it always produces, and two releases
+    passed with the suite green while the marquee violence was unreachable.
+
+    The same preparation found the maturity window dead: the director never
+    checked `intent.target_turn`, so the raid landed the season the band
+    massed, on orders committed before the band existed. `test_combat` pins
+    the window itself; this class pins that real runs walk through it.
+    """
+
+    def raids_seen(self) -> tuple[int, int, int]:
+        """Runs with a resolved raid, raids resolved, massings announced."""
+        raided = raids = massings = 0
+        for seed in range(50):
+            state = turn.new_game(seed)
+            rng = Rng(seed)
+            run_raided = False
+            while not state.is_over:
+                report = turn.resolve(state, steady_orders(state), rng, CORPUS)
+                seen = "\n".join(report.log)
+                if "massing on the border" in seen:
+                    massings += 1
+                if "granary" in seen or "broke against" in seen:
+                    raids += 1
+                    run_raided = True
+                if state.pending is not None:
+                    turn.apply_choice(state, 0)
+            raided += run_raided
+        return raided, raids, massings
+
+    def test_some_runs_meet_a_band_in_arms(self):
+        # Measured at 14 of 50 under the shipped economy; floored at 8 so a
+        # tuning pass has room before the raiders go quiet again.
+        raided, _raids, _ = self.raids_seen()
+        self.assertGreaterEqual(
+            raided,
+            8,
+            f"{raided} of 50 runs met a raid; the band economy has gone quiet",
+        )
+
+    def test_every_resolved_raid_was_announced_first(self):
+        # The window is the read: a massing is announced the season the band
+        # forms its intent, and the blow cannot land before the window closes.
+        # A raid without a prior massing would mean the window is dead again.
+        _, raids, massings = self.raids_seen()
+        self.assertGreaterEqual(massings, raids)
+
+
 class TestTheCorpusIsAlive(unittest.TestCase):
     """Dead content is the other half of the loader's job.
 

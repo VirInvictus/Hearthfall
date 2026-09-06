@@ -11,8 +11,16 @@ class TestAgents(unittest.TestCase):
         )
         rng = Rng(0)
 
-        # Season 1: Starts at 0. Forages 9, consumes 10. Reaches -1. Mood drops to 0. Intent forms.
-        agent.grow(rng)
+        # Season 1: starts empty. Whatever the band economy is, gathering less
+        # than it eats keeps the store at the floor and the mood falls with it.
+        # Intent forms the season mood hits zero.
+        from hearthfall.engine import balance
+
+        agent.grow(
+            rng,
+            forage=balance.BAND_FORAGE,
+            consumption=balance.BAND_CONSUMPTION,
+        )
         self.assertEqual(agent.food, 0)
         self.assertEqual(agent.mood, 0)
         assert agent.intent is not None

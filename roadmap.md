@@ -593,15 +593,29 @@ commitment should show its arithmetic before you make it.
       enough to mark its camp on the map: `ledger.reveal` at the band's
       location. Lost stores landed with slice 4. The SP 6 question is now
       answerable in play; the year-read verdict is owed alongside SP 3-5's.)*
-- [ ] **The band economy must be able to reach a raid (found 2026-09-06
-      while preparing the owed year-read).** No band can get miserable inside
-      a twenty-season run: bands start with 20-50 food and net one less per
-      season, and mood only falls once the store is empty, so the earliest
-      possible raid intent is turn 23 against a run that ends at 20. The
-      raiders of slices 4 and 5 are therefore dead content in real play;
-      only hand-built test states ever fight one. The fix is numbers, not
-      rules: the band's economy moves to `balance.py`, tuned until raids
-      land in a run's living years.
+- [x] **The band economy must be able to reach a raid (found 2026-09-06
+      while preparing the owed year-read; fixed v0.19.0).** Two dead spots,
+      found together. No band could get miserable inside a twenty-season run:
+      bands started with 20-50 food and net one less per season, and mood only
+      fell once the store was empty, so the earliest possible raid intent was
+      turn 23 against a run that ends at 20. And the director never checked an
+      intent's `target_turn`, so a raid landed the same season the band
+      massed, on orders committed before the band existed: the promised
+      window, the read aging while the player reassigns hands, had never
+      opened. The raiders of slices 4 and 5 were dead content in real play,
+      and only hand-built test states ever fought one.
+      *(Fixed v0.19.0: the band's economy moved to `balance.py` as
+      `BAND_FORAGE`/`BAND_CONSUMPTION` (8 against 10), `BAND_STARTING_FOOD`
+      (15-35), and `MORALE_AFTER_RAID` (6), which spaces a repeat raid two
+      years out instead of the inline 3 that made one band a siege; the
+      director holds a massing band until its intent matures, and the massing
+      itself is announced with the read. The raid constants were retuned for
+      a raid that can recur: band strength 4-14 to 3-8, granary loss 15 to 8,
+      deaths slope 6 to 4. Measured over the harness's fifty seeds: fourteen
+      runs meet a resolved raid, the naive no-militia policy endures 13 of 50
+      against roughly 20 before, and arming by the read wins some fights and
+      pays forage for them, which is the trade SP 7 now gets to price.
+      Reachability is a suite guard (`TestRaidersReachARun`), not a note.)*
 
 ## Sub-project 7: composition (planned)
 

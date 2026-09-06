@@ -10,6 +10,36 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.19.0 (2026-09-06)
+
+**The raiders arrive: the band economy reaches a run, and the massing
+window opens.** Preparing the owed year-read surfaced two dead spots that
+two green suites had hidden. First, no band could get miserable inside a
+twenty-season run: the shipped band economy (gather 9 against eat 10, from
+a start of 20-50) put the earliest possible raid intent at turn 23 of a
+run that ends at 20, so the raiders of v0.17.0 and v0.18.0 never fired in
+real play and every fight the suite exercised was hand-built. Second, the
+director never checked an intent's maturity, so a raid landed the same
+season the band massed, on orders committed before the band existed, and
+the militia was structurally zero: the window where the read ages while
+the player reassigns hands had never existed.
+
+Both are fixed. The band's economy is balance constants now: `BAND_FORAGE`
+8 against `BAND_CONSUMPTION` 10 from a start of 15-35, and
+`MORALE_AFTER_RAID` gives six seasons of grace after a raid instead of the
+inline 3 that made one starving band a siege. The director holds a massing
+band until `RAID_MATURITY_TURNS` closes; the massing itself is announced
+the season it happens ("The Ashen Clan is massing on the border. The read
+says 6 spears."), and the blow comes with its own line. The raid constants
+are retuned for a raid that can genuinely recur: band strength 4-14 to
+3-8, granary loss 15 to 8, the deaths slope 6 to 4. Measured over the
+harness's fifty seeds: 14 runs meet a resolved raid, the naive
+no-militia policy endures 13 of 50 against roughly 20 before, and a policy
+that arms by the read wins some fights and pays forage for them, which is
+the trade SP 7 gets to price. Reachability is a suite guard now
+(`TestRaidersReachARun`), not a note. 5 new tests; suite at 337; pyright
+strict zero.
+
 ## v0.18.0 (2026-09-04)
 
 **SP 6, slice 5: real stakes, graded by the margin.** `combat.raid_deaths`

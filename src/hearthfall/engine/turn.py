@@ -426,7 +426,7 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
     ledger.survey(world.home, true_yield(world.tile(world.home)), turn=0)
-    agents = populate_agents(world, rng)
+    agents = populate_agents(world, rng, balance.BAND_STARTING_FOOD)
     state = GameState(
         agents=agents,
         seed=seed,
@@ -512,7 +512,7 @@ def resolve(
     _scout(state, orders, rng, report)
     _draw_event(state, rng, report, events)
     _grow(state, rng, report)
-    _agents_tick(state, rng)
+    _agents_tick(state, rng, report)
     _director_tick(state, orders, rng, report)
     _leave(state, doomed, report)
     _advance(state, rng, report)
@@ -1241,14 +1241,21 @@ def run_until_interrupted(
             return InterruptReason.EVENT
 
 
-def _agents_tick(state: GameState, rng: Rng) -> None:
+def _agents_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
     for agent in state.agents.values():
         had_intent = agent.intent is not None
-        agent.grow(rng, balance.RAIDER_STRENGTH_RANGE)
+        agent.grow(
+            rng,
+            balance.RAIDER_STRENGTH_RANGE,
+            forage=balance.BAND_FORAGE,
+            consumption=balance.BAND_CONSUMPTION,
+        )
         # A band massing for a raid is public — the spears are visible from the
         # border. The ledger learns its strength the season it masses, and the
-        # read ages from there (the maturity window is the player's time to
-        # refresh it by scouting, or to fight on an old number and pay).
+        # read ages from there. The maturity window is the player's time to
+        # refresh it by scouting, or to fight on an old number and pay, which
+        # is why the massing itself is announced the season it happens: a
+        # window the player is never told is open is not a window.
         if (
             not had_intent
             and agent.intent is not None
@@ -1257,6 +1264,10 @@ def _agents_tick(state: GameState, rng: Rng) -> None:
             agent.intent.target_turn = state.turn + balance.RAID_MATURITY_TURNS
             state.ledger.learn(
                 FactKind.RAIDER_STRENGTH, agent.id, agent.strength, state.turn
+            )
+            report.note(
+                f"The {agent.name} is massing on the border. "
+                f"The read says {agent.strength} spears."
             )
 
 

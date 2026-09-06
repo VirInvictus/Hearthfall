@@ -361,33 +361,73 @@ INTEL_COMBAT_FACTOR: dict[Staleness, float] = {
     Staleness.NEVER: 0.70,
 }
 
-# --- Combat: raiders (SP 6, slice 4) ---------------------------------------------
+# --- Combat: raiders (SP 6, slice 4; retuned 2026-09-06) -------------------------
 
-# A war-band's fighting strength, drawn at intent formation. Aimed at a starting
-# clan of six: a band at the top of the range beats any militia the clan can
-# field early, which is the point — some fights are avoided, not won.
-RAIDER_STRENGTH_RANGE = (4, 14)
+# A war-band's fighting strength, drawn at intent formation. Tuned against a
+# clan of six that is really choosing: two or three of its adults can stand as
+# militia, which is strength 4-6 against a band of 3-8, so the mid bands are
+# winnable by a clan that pays for them and the top of the range still beats
+# anything a young clan can field. Some fights are avoided, not won, and
+# `RAID_MATURITY_TURNS` is what makes avoiding one a decision at all.
+RAIDER_STRENGTH_RANGE = (3, 8)
 # Seasons a raid intent massing before it comes. The window is the read: the
-# band's strength is learned the season it masses, and it ages while the player
-# decides. Two seasons is one decision point between the massing and the blow.
+# band's strength is learned the season it masses, and it ages while the
+# player reassigns hands. Two seasons is one real decision point between the
+# massing and the blow.
 RAID_MATURITY_TURNS = 2
 # Spears per militiaman. A hand that carries two food carries two of fight; the
 # symmetry is the trade the player feels when they reassign.
 MILITIA_STRENGTH_PER_ADULT = 2
-# What a lost fight costs from the granary. Aimed at STARTING_FOOD=30: one lost
-# raid is half a store, two is a burial season.
-RAID_STORE_LOSS = 15
+# What a lost fight costs from the granary. Was 15, aimed at a raid so rare it
+# would never actually happen (see the band economy below); at a raid a clan
+# can genuinely meet twice in a run, 15 was a burial season every time and the
+# marginal run could not carry it. Eight is the winter it causes rather than
+# the run it ends.
+RAID_STORE_LOSS = 8
 # Mirrors MORALE_LOSS_PER_STARVATION: a raid that lands is as demoralising as a
 # season of hunger, without taking anyone.
 MORALE_LOSS_PER_RAID = 2
+
+# --- The band economy (found 2026-09-06, preparing the owed year-read) -----------
+
+# What a band gathers and eats in a season, and the store it starts with. This
+# is the engine of the raid arc: a band forages less than it eats, its store
+# runs dry, its mood goes with the store, and the raid intent forms.
+#
+# Tuned against reachability, and the miss is worth recording: the shipped
+# inline numbers (forage 9 against eat 10, starting 20-50) could not produce a
+# miserable band inside TURNS_PER_RUN at all. Mood only falls on an empty
+# store, so the earliest possible intent was turn 23 of a twenty-season run,
+# and the raiders of slices 4 and 5 were dead content in real play: every
+# fight the suite exercised was fought by a hand-built state. At 8 against 10
+# starting 15-35, exhaustion arrives between seasons 8 and 18 and the intent
+# follows the band's mood: most runs meet no one, some meet a band once, a
+# few meet one twice, and the clan that reads the massing has one season to
+# decide what stands in the doorway.
+BAND_FORAGE = 8
+BAND_CONSUMPTION = 10
+# Drawn per band at placement, and kept wide so bands are born unequal: the
+# poor ones come hungry early, the rich ones buy the clan seasons of grace.
+BAND_STARTING_FOOD = (15, 35)
+# Mood a band is left with after its raid resolves, whichever way it went. The
+# grace period between raids: a band still starving falls one mood per season,
+# so this number is how many seasons pass before the same band forms its next
+# intent. The inline 3 it shipped with made a raiding band come again every
+# three seasons, which is a siege rather than a raid; six is a band that went
+# home to eat what it took and is starving again two years later.
+MORALE_AFTER_RAID = 6
 
 # --- Combat: graded stakes (SP 6, slice 5) ---------------------------------------
 
 # A raid's stakes grade by the margin (how far the roll landed from the decision
 # boundary). A near-run loss costs a grave; a rout costs the full band of them —
 # the militia that slowed the raiders saved the rest. Deaths per full unit of
-# lost margin, capped: a clan of ten cannot bury a legion.
-RAID_DEATHS_PER_MARGIN = 6
+# lost margin, capped: a clan of ten cannot bury a legion. Was 6, tuned when
+# raids could not happen and every one was a once-a-run catastrophe; at a raid
+# a clan can genuinely meet twice, the slope had the unguarded run bleeding out
+# on top of the granary, and 4 prices one bad exchange at a grave and a rout at
+# the cap.
+RAID_DEATHS_PER_MARGIN = 4
 RAID_DEATHS_MAX = 3
 # A win this decisive scattered the band far enough that its fleeing shape
 # marked the camp on the map. Ground gained, bought in blood.

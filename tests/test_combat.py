@@ -10,6 +10,7 @@ from hearthfall.engine.combat import Outcome, resolve
 from hearthfall.engine.intel import FactKind
 from hearthfall.engine.orders import Orders
 from hearthfall.engine.rng import Rng
+from hearthfall.engine.turn import TurnReport
 
 
 def _sweep(ours: int, theirs: int, seeds: int = 200) -> tuple[int, float]:
@@ -104,8 +105,82 @@ class TestResolution(unittest.TestCase):
             outcome.won = not outcome.won  # type: ignore[misc]
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestTheMassingWindow(unittest.TestCase):
+    """Found 2026-09-06: the director never checked the intent's maturity, so
+    a raid landed the same season the band massed, on orders committed before
+    the band existed. The militia was structurally zero and the promised
+    window — the read aging while the player reassigns hands — never opened.
+    These pin the window shut-side and open-side."""
+
+    def _run_three_turns(self):
+        from hearthfall.engine.agents import Agent, AgentType, Intent
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        state = new_game_state()
+        band = Agent(
+            id="band_1",
+            name="the Ashfang",
+            type=AgentType.NEIGHBOUR,
+            food=0,
+            mood=0,
+        )
+        state.agents = {"band_1": band}
+        # A real store: the militia line takes five of six adults off the
+        # forage roll, and the window must close on a clan that is still
+        # standing, not one the director's slack gate quietly shields.
+        state.stores.food = 60
+        turns: list[tuple[TurnReport, Intent | None]] = []
+        for _ in range(3):
+            report = turn_resolve(state, Orders(forage=1, militia=5), Rng(7))
+            turns.append((report, band.intent))
+        return state, band, turns
+
+    def test_the_massing_is_announced_and_the_raid_held(self):
+        from hearthfall.engine.agents import Intent, IntentKind
+
+        state, band, turns = self._run_three_turns()
+        first = "\n".join(turns[0][0].log)
+        # The band forms its intent this season: the massing is public, with
+        # the read on it, and the ledger holds the strength fact.
+        self.assertIn("massing on the border", first)
+        self.assertIn("The read says", first)
+        assert isinstance(turns[0][1], Intent)
+        self.assertEqual(turns[0][1].kind, IntentKind.RAID)
+        self.assertTrue(
+            state.ledger.knows(FactKind.RAIDER_STRENGTH, band.id),
+            "the band's strength was never learned",
+        )
+        # Held through the massing season and the one after: the intent is
+        # still on the band at the end of both, and no band has crossed.
+        self.assertIsInstance(turns[1][1], Intent)
+        self.assertNotIn("comes over the border", first)
+        self.assertNotIn("comes over the border", "\n".join(turns[1][0].log))
+
+    def test_the_band_crosses_when_the_window_closes(self):
+        _state, band, turns = self._run_three_turns()
+        # The window is RAID_MATURITY_TURNS; the third resolve is the blow.
+        third = "\n".join(turns[2][0].log)
+        self.assertIn("comes over the border", third)
+        self.assertIn("broke against the militia", third)
+        self.assertIsNone(band.intent)
+
+    def test_the_read_ages_across_the_window(self):
+        from hearthfall.engine.intel import Staleness
+
+        state, band, _turns = self._run_three_turns()
+        staleness = state.ledger.staleness(
+            FactKind.RAIDER_STRENGTH, band.id, state.turn
+        )
+        # The fight already happened, but the fact ages from the massing: two
+        # seasons on it is still fresh (halflife 4), which is the point — the
+        # read the clan acted on was true when it acted.
+        self.assertIs(staleness, Staleness.FRESH)
+
+
+def new_game_state():
+    from hearthfall.engine.turn import new_game
+
+    return new_game(seed=42)
 
 
 class TestTerrainAndMorale(unittest.TestCase):
@@ -294,11 +369,14 @@ class TestGradedStakes(unittest.TestCase):
     costs a grave; a rout costs the band and marks the map."""
 
     def test_raid_deaths_grade_by_margin(self):
-        # Near-run: one grave. Rout: the full band of them. Capped.
+        # Near-run: one grave. Rout: the full band of them. Capped. The slope
+        # is 4 deaths per full unit of lost margin (retuned 2026-09-06 with the
+        # band economy: at 6, an unguarded run bled out on top of the granary).
         self.assertEqual(combat.raid_deaths(0.0), 1)
         self.assertEqual(combat.raid_deaths(-0.1), 1)
-        self.assertEqual(combat.raid_deaths(-0.3), 2)
-        self.assertEqual(combat.raid_deaths(-0.5), 3)
+        self.assertEqual(combat.raid_deaths(-0.3), 1)
+        self.assertEqual(combat.raid_deaths(-0.5), 2)
+        self.assertEqual(combat.raid_deaths(-0.75), 3)
         self.assertEqual(combat.raid_deaths(-1.0), 3)  # capped
         self.assertEqual(combat.raid_deaths(0.4), 1)  # a won fight buries nobody
 
@@ -359,3 +437,7 @@ class TestRaidStakesWiring(unittest.TestCase):
         # 0.25 means roll <= 0.583), so the camp must have surfaced at least
         # once for the reveal wiring to count as proven.
         self.assertGreaterEqual(revealed_on_rout, 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

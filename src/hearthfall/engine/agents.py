@@ -44,17 +44,26 @@ class Agent:
     # what the ledger's raider-strength fact is a read of.
     strength: int = 0
 
-    def grow(self, rng: Rng, raid_strength: tuple[int, int] | None = None) -> None:
+    def grow(
+        self,
+        rng: Rng,
+        raid_strength: tuple[int, int] | None = None,
+        *,
+        forage: int,
+        consumption: int,
+    ) -> None:
         """Process one season for this agent.
 
-        They consume food. If they run out, mood drops. If mood drops low enough,
-        they may form a hostile intent (like RAID) if they don't already have one.
+        They gather less than they eat, so the store runs down; when it runs
+        out, mood drops; when mood drops low enough, they may form a hostile
+        intent (like RAID) if they don't already have one. The economy arrives
+        as an argument rather than being read from `balance`, for the same
+        reason the half-lives do: it keeps this module a leaf of the import
+        graph. The caller reads the numbers from `balance` and hands them over.
         """
         if self.type == AgentType.NEIGHBOUR:
-            # Abstract foraging: they find some food, but it might not be enough
-            foraged = 9
-            self.food += foraged
-            self.food -= 10  # Base consumption
+            self.food += forage
+            self.food -= consumption
 
             if self.food < 0:
                 self.food = 0
@@ -76,12 +85,17 @@ class Agent:
                     self.strength = rng.randint(low, high)
 
 
-def populate_agents(world: World, rng: Rng) -> dict[str, Agent]:
+def populate_agents(
+    world: World, rng: Rng, band_food: tuple[int, int]
+) -> dict[str, Agent]:
     """Seed the map with neighbours and wildlife.
 
-    This replaces an empty world with one that has actors in it.
+    This replaces an empty world with one that has actors in it. The range the
+    bands start with arrives as an argument, like every number this module
+    uses; the caller reads it from `balance`.
     """
     agents: dict[str, Agent] = {}
+    low, high = band_food
 
     # Generate 1-2 neighbour clans somewhere not at home.
     num_neighbours = rng.randint(1, 2)
@@ -103,7 +117,7 @@ def populate_agents(world: World, rng: Rng) -> dict[str, Agent]:
                 name=f"{name} Clan",
                 type=AgentType.NEIGHBOUR,
                 location=coord,
-                food=rng.randint(20, 50),
+                food=rng.randint(low, high),
                 mood=rng.randint(3, 7),
             )
             placed_neighbours += 1

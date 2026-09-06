@@ -14,7 +14,7 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.18.0. Sub-project 5 of ten complete; SP 6 (violence) is the live front: raiders hit the granary and bury the dead, and a rout marks their camp on the map.** Playable start to finish, and
+> **Status: v0.19.0. Sub-project 5 of ten complete; SP 6 (violence) is the live front: bands mass on the border with a read of their strength, the window ages while you reassign hands, and a raid that lands costs grain, graves, or both.** Playable start to finish, and
 > deliberately small: one map, four jobs, twenty seasons. Combat arrived with SP 6 as raid
 > violence; the deeper war tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,

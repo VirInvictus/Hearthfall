@@ -3,7 +3,7 @@
 > A hearth is what you gather around and what you defend. A fall is what happens to most
 > of them. The name holds both halves of the arc: grow a fire into a people, or bury them.
 
-**Status:** v0.18.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is the live front: slices 1 through 5 have shipped (single-stack combat through raid stakes graded by the margin).
+**Status:** v0.19.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is the live front: slices 1 through 5 are shipped and, since v0.19.0, reachable in play (bands mass with a readable strength, the window opens, and the raid costs grain, graves, or both).
 
 **This document was rewritten on 2026-08-08.** The original is in git history and should be
 read by anyone who wants to know what was given up. It was a knife aimed at scope creep, and

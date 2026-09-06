@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from hearthfall.engine import balance
 from hearthfall.engine.agents import IntentKind
 
 if TYPE_CHECKING:
@@ -46,6 +47,17 @@ class Director:
         # Look for the most mature intent
         for agent in state.agents.values():
             if agent.intent and agent.intent.kind == IntentKind.RAID:
+                # The window is the read. A band is held until its intent
+                # matures (`balance.RAID_MATURITY_TURNS`): the player gets the
+                # massing, one season to act on it, then the blow. Without
+                # this check the raid landed the same season the band formed,
+                # with orders that had been committed before the band
+                # existed, so the militia was structurally zero and the
+                # promised window never opened. A target of zero is a
+                # hand-built intent and is ripe now.
+                if agent.intent.target_turn and state.turn < agent.intent.target_turn:
+                    continue
+
                 # Does the player know about this intent?
                 # The honesty guarantee says the intent must be learnable. It exists on the agent,
                 # so the ledger COULD have it. We don't strictly require the player to have
@@ -56,17 +68,18 @@ class Director:
                 if slack_score < 5 and state.turn % 2 == 0:
                     continue
 
-                # If we surface it, we clear the intent (it has executed) and return an interrupt.
-                # In a full combat resolution (Sub-project 6), this would initiate combat.
-                # For now, it interrupts the chronicle and robs food.
+                # If we surface it, the raid has executed: the intent is
+                # spent, and `turn._raid` resolves the fight this interrupt
+                # hands back to the driver.
                 agent.intent = None
-                # The raid steals food based on the agent's desperation
-                # (Sub-project 6 will make this real combat. For now, it's just a pacing interrupt)
-                agent.mood = 3  # Reset mood slightly so they don't chain-raid
+                # Whatever the raid's outcome, the band went home. How long it
+                # stays quiet while still starving is a balance number, not a
+                # rule: see `balance.MORALE_AFTER_RAID`.
+                agent.mood = balance.MORALE_AFTER_RAID
 
                 return DirectorInterrupt(
                     cause=f"raid_{agent.id}",
-                    message=f"The {agent.name} is massing on the border.",
+                    message=f"The {agent.name} comes over the border.",
                     agent_id=agent.id,
                 )
 
