@@ -409,9 +409,10 @@ again. Two corollaries follow, and both are load-bearing:
 - **The engine takes no dependencies at all.**
 - **Data: TOML**, read with stdlib `tomllib`.
 - **Determinism: seeded RNG, one source, injectable.** Repeated for weight.
-- **Tests: the engine is tested; the skin is not.** Stdlib `unittest`, with `hypothesis`
-  available for the invariants that are genuinely properties rather than examples (forecast
-  parity, determinism, no order sequence driving a store negative).
+- **Tests: the engine is tested; the skin is not.** Stdlib `unittest`. The property-shaped
+  invariants (forecast parity, determinism, no order sequence driving a store negative) are
+  pinned by example tests in the suite; `hypothesis` was pruned in v0.23.1 after zero
+  imports across the project's life.
 - **Dev tooling is pinned in the lockfile, not by CI.** `ruff` and `pyright` are dependency-group
   entries, so `uv run ruff check` locally is the exact binary CI runs. They drifted once, with
   CI on a ruff whose default rule set was narrower than the developer's, which meant a working

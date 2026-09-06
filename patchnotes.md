@@ -10,6 +10,17 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.23.1 (2026-09-06)
+
+**Maintenance: hypothesis pruned.** The dev dependency group carried
+`hypothesis` for the property invariants `spec.md` §8 names, and it sat
+at zero imports across the project's life; those invariants (forecast
+parity, determinism, no order sequence driving a store negative) are
+pinned by example tests in the suite and have been since they were
+written. Gone from pyproject and the lockfile, and the spec sentence now
+says what is actually true. No engine, skin, or content changes; the
+suite is untouched at 381; pyright strict zero.
+
 ## v0.23.0 (2026-09-06)
 
 **SP 7, slice 4: scout intel driving pre-battle assembly.** The read

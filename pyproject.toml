@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hearthfall"
-version = "0.23.0"
+version = "0.23.1"
 description = "A grimdark clan-survival game for the terminal"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -21,7 +21,9 @@ dependencies = [
 hearthfall = "hearthfall.tui.app:main"
 
 # Tooling only. None of this is imported by the engine, by the skin, or by the shipped wheel;
-# `hypothesis` is reached for from tests and `textual-dev` is a command-line devtool.
+# `textual-dev` is a command-line devtool. `hypothesis` was pruned in v0.23.1 after zero
+# imports across the project's life; the property-shaped invariants it was kept for are
+# pinned by example tests.
 #
 # ruff and pyright are pinned here rather than installed by CI, and the lockfile is committed,
 # so `uv run ruff check` locally is the exact binary CI runs. They drifted once: CI pinned
@@ -29,7 +31,6 @@ hearthfall = "hearthfall.tui.app:main"
 # failed on a working tree that CI called clean.
 [dependency-groups]
 dev = [
-  "hypothesis>=6.100",
   "pyright==1.1.411",
   "ruff==0.16.2",
   "textual-dev>=1.7",
