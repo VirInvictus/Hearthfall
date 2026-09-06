@@ -10,6 +10,28 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.20.0 (2026-09-06)
+
+**SP 7, slice 1: unit types with strengths and weaknesses.** The AoE2
+layer begins, and it begins as data. `data/units.toml` declares the three
+types of the coming counter-triangle: spear (strength 2, guard 2), bow
+(3, 1), axe (4, 1). `engine/units.py` parses that table with the event
+loader's strictness (unknown keys, missing names, and negative or
+fractional stats fail at load), and a `Composition` is a frozen value of
+counts per type. `combat.resolve` grows `our_units`/`their_units`, and
+the game's grammar decides which stat prices them: the first side is the
+line that holds and is weighed by its guard, the second is the side that
+presses and is weighed by its strength. That grammar is what makes both
+numbers real in a one-draw fight: a bow wall of five holds at guard 5
+where a spear wall of five holds at 10, and an axe band of three presses
+at 12 where spears press at 6. It is also why nothing shipped changes:
+the spear's two stats are both `MILITIA_STRENGTH_PER_ADULT`, so an
+untyped militia line of N and a spear line of N are the same wall, and
+every existing call prices identically. No caller ships a composition
+yet, so the raid still resolves on the scalar read; assembly becomes the
+player's decision in slice 2. Engine-only slice, and the standing-gate
+verdict accrues to it. 24 new tests; suite at 361; pyright strict zero.
+
 ## v0.19.0 (2026-09-06)
 
 **The raiders arrive: the band economy reaches a run, and the massing

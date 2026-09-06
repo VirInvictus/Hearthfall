@@ -1,0 +1,31 @@
+# The unit types a clan can put in a line, and what one of each is worth.
+#
+# Two numbers each, and the tension between them is the point: `strength` is
+# what the type contributes when its side presses (a raiding band's offense),
+# `guard` is what it contributes when its side holds (the militia wall a band
+# must break). A type good at one thing is deliberately not good at the other,
+# which is what makes composition a decision rather than a bigger number.
+#
+# `spear` carries the continuity of the scalar militia: one spear is worth
+# exactly `balance.MILITIA_STRENGTH_PER_ADULT`, so an order of N untyped
+# militiamen and a line of N spears are the same wall. The counter-web that
+# makes the types a puzzle is sub-project 7 slice 3; these three are its
+# triangle, and the counters table will hang off the same ids.
+
+[unit.spear]
+name = "spear"
+strength = 2
+guard = 2
+about = "The wall. Holds because the points face outward."
+
+[unit.bow]
+name = "bow"
+strength = 3
+guard = 1
+about = "Looses hard from behind something. Is not, itself, something."
+
+[unit.axe]
+name = "axe"
+strength = 4
+guard = 1
+about = "Comes apart shields. Comes apart just as fast when it is the one waiting."

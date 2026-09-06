@@ -621,7 +621,23 @@ commitment should show its arithmetic before you make it.
 
 *Question: is assembling the right stack against a read enemy the best decision in the game?*
 
-- [ ] Unit types with strengths and weaknesses
+- [x] Unit types with strengths and weaknesses
+      *(Shipped v0.20.0: `data/units.toml` declares the three types of the
+      coming counter-triangle (spear 2/2, bow 3/1, axe 4/1: strength then
+      guard), parsed by `engine/units.py` with the event loader's strictness,
+      and a `Composition` is a frozen value of counts per type. `resolve`
+      grows `our_units`/`their_units` with the game's grammar attached: the
+      first side is the line that holds and is weighed by its guard, the
+      second is the side that presses and is weighed by its strength. That is
+      what makes both numbers real in a one-draw fight: a bow wall of five
+      holds at guard 5 where a spear wall of five holds at 10, and an axe
+      band of three presses at 12 where spears press at 6. The spear's two
+      stats are both `MILITIA_STRENGTH_PER_ADULT`, so the scalar militia and
+      a spear line of the same count are the same wall and every shipped
+      call prices identically. Engine-only slice: no caller ships a
+      composition yet, so the standing-gate verdict accrues to slice 2,
+      when assembly becomes the player's decision. 24 new tests; suite at
+      361; pyright strict zero.)*
 - [ ] Groups assembled from types
 - [ ] The counter-web that makes composition a puzzle
 - [ ] Scout intel driving pre-battle assembly

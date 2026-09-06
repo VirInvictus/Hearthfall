@@ -30,6 +30,7 @@ from hearthfall.engine.balance import (
 )
 from hearthfall.engine.intel import Staleness
 from hearthfall.engine.rng import Rng
+from hearthfall.engine.units import Composition, UnitDefs
 from hearthfall.engine.world import Terrain
 
 
@@ -69,6 +70,9 @@ def resolve(
     our_morale: int | None = None,
     their_morale: int | None = None,
     intel_staleness: Staleness | None = None,
+    our_units: Composition | None = None,
+    their_units: Composition | None = None,
+    unit_defs: UnitDefs | None = None,
 ) -> Outcome:
     """Resolve one fight: our strength against theirs, one roll.
 
@@ -81,11 +85,31 @@ def resolve(
     (slice 3: stale intel scales OUR side down — you positioned for the enemy
     you read about, not the one across the field).
 
+    A composition replaces its side's scalar number, and the game's grammar
+    decides which stat prices it: the first side is the line that holds, so
+    `our_units` is weighed by its *guard* — what a band must break to reach
+    the granary. The second side is the one that presses, so `their_units` is
+    weighed by its *strength* — what presses. The scalars keep playing both
+    roles, which is why a scalar call and a spear line of the same count are
+    the same wall. Both compositions together require `unit_defs`; one alone
+    prices against the scalars on the other side.
+
     Zero effective strength on our side loses without appeal; a fight against
     nothing is won without a roll being meaningful.
     """
+    our_number: int = ours
+    their_number: int = theirs
+    if our_units is not None or their_units is not None:
+        if unit_defs is None:
+            raise ValueError(
+                "a composition needs the declared unit types to be priced against"
+            )
+        if our_units is not None:
+            our_number = our_units.guard(unit_defs)
+        if their_units is not None:
+            their_number = their_units.strength(unit_defs)
     ours_eff = (
-        ours
+        our_number
         * (
             TERRAIN_COMBAT_WEIGHT.get(our_ground, 1.0)
             if our_ground is not None
@@ -95,7 +119,7 @@ def resolve(
         * (INTEL_COMBAT_FACTOR[intel_staleness] if intel_staleness is not None else 1.0)
     )
     theirs_eff = (
-        theirs
+        their_number
         * (
             TERRAIN_COMBAT_WEIGHT.get(their_ground, 1.0)
             if their_ground is not None
