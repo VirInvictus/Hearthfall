@@ -70,3 +70,11 @@ dug often enough answers questions differently.
 [[tally]]
 name = "ring_formed"
 about = "Whether the ring has emerged"
+
+[[tally]]
+name = "doctrine"
+about = """
+Which of the two things the clan chose to be when the question was asked: one keeps people,
+two keeps ground. Zero means the question never came, or was never answered. Nothing reads
+it but the epilogue, and the player is never told it exists.
+"""

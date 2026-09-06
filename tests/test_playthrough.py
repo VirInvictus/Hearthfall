@@ -404,6 +404,11 @@ class TestTheCorpusIsAlive(unittest.TestCase):
             seen.update(play_with(seed, season_aware_orders).events)
             seen.update(play_with(seed, season_aware_orders, choice=1).events)
             seen.update(play_with(seed, surveying_orders).events)
+            # Choice 1 on a surveying policy is what doctrine 2 needs: the
+            # kept-ground payoffs are gated on surveys, and a doctrine-2 run
+            # that never surveys is unreachable by construction of the ladder,
+            # which is exactly how content looks dead that is only untested.
+            seen.update(play_with(seed, surveying_orders, choice=1).events)
             seen.update(play_with(seed, watchful_orders).events)
             seen.update(play_with(seed, unequal_orders).events)
             seen.update(play_with(seed, unequal_orders, choice=1).events)

@@ -178,5 +178,56 @@ class TestItOnlySpeaksFromTheLedger(unittest.TestCase):
         self.assertEqual(reports.ground_worked(a_world(), []), "nowhere")
 
 
+class TestTheEpilogue(unittest.TestCase):
+    """SP 8 slice 2: the run's last entry, assembled from the tallies. Two
+    clans that endure are not the same clan, and the base line alone would
+    say they were."""
+
+    def test_no_earned_lines_means_a_single_sentence_epilogue(self):
+        self.assertEqual(reports.epilogue_lines({}, 0, endured=True), [])
+        self.assertEqual(reports.epilogue_lines({}, 0, endured=False), [])
+
+    def test_doctrine_speaks_first_when_it_was_declared(self):
+        tallies = {"doctrine": 1, "graves": 9}
+        lines = reports.epilogue_lines(tallies, 0, endured=True)
+        self.assertEqual(lines[0], "They were, by the end, the clan that kept people.")
+        self.assertIn(
+            "The burying ground is the largest clearing the clan leaves behind.",
+            lines,
+        )
+
+    def test_each_doctrine_has_its_own_sentence(self):
+        self.assertEqual(
+            reports.epilogue_lines({"doctrine": 2}, 0, endured=True),
+            ["They were, by the end, the clan that kept ground."],
+        )
+
+    def test_the_earned_lines_fire_in_a_fixed_order(self):
+        tallies = {
+            "graves": 6,
+            "strangers_taken_in": 4,
+            "hungry_winters": 3,
+            "debts_owed_to_you": 2,
+            "elder_resentment": 5,
+        }
+        lines = reports.epilogue_lines(tallies, 0, endured=True)
+        self.assertEqual(
+            [line.split()[1] for line in lines],
+            ["burying", "still", "will", "are", "elder"],
+        )
+
+    def test_the_walked_out_line_depends_on_how_the_run_ended(self):
+        endured = reports.epilogue_lines({}, 1, endured=True)
+        buried = reports.epilogue_lines({}, 1, endured=False)
+        self.assertIn(
+            "Not everyone warm at the fire, at the end, set out with the clan.", endured
+        )
+        self.assertIn("Some walked out early enough to mourn the rest.", buried)
+
+    def test_shy_tallies_stay_silent(self):
+        tallies = {"graves": 4, "strangers_taken_in": 2, "elder_resentment": 3}
+        self.assertEqual(reports.epilogue_lines(tallies, 0, endured=True), [])
+
+
 if __name__ == "__main__":
     unittest.main()

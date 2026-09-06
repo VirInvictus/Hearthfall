@@ -782,6 +782,31 @@ thing being managed is a people rather than a household.*
 > first: research progressed by processing scouted facts, and buildings as a spent,
 > permanent sink (their warning stands: nothing passive, or scarcity dies).
 
+- [x] Doctrine: the run's choices harden into character
+      *(Shipped v0.25.0. The corpus gains the doctrine fork
+      (`data/events/doctrine.toml`): after the graves have started, the clan
+      is asked once what it is - keep people, or keep ground - and the
+      answer is the `doctrine` tally, which nothing shows and only the
+      ending reads. The payoffs are years later, gated on the choice plus
+      the thing the choice was about: kept people meets kin of the fed
+      strangers at the crossings; kept ground finds the marked stones have
+      held. And the run's last entry is assembled from the tallies
+      (`reports.epilogue_lines`): doctrine first, then the burying ground,
+      the fed strangers, the hungry winters, the inherited debts, the elder
+      who no longer argues, and the walked-out hearths, each line earned.*
+
+      *Standing-gate verdict: **ships.** Gate-read in real play: the fork
+      lands mid-run and the ending reads differently clan to clan ("Five
+      winters. The fire is still lit. / They were, by the end, the clan
+      that kept ground. / There are steads that owe the clan grain, and the
+      debt is inherited."). Prose and small payoffs only, so the economy is
+      untouched. The liveness guard earned its keep again: the kept-ground
+      payoff was unreachable by construction of the policy ladder - doctrine
+      2 needs a choice-1 run, surveys happen on surveying policies, and the
+      spread never combined the two - and the fix was extending the ladder
+      (surveying runs now answer both ways) rather than loosening the
+      content. 6 new tests; suite at 394; pyright strict zero.)*
+
 - [x] Rivals: the walked-out hearth returns
       *(Shipped v0.24.0: both halves of the promise live in `_leave` now.
       The hearth that walks out camps in the dark as an ordinary band — id

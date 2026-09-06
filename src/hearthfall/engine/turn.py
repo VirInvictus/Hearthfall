@@ -1262,8 +1262,18 @@ def _advance(state: GameState, rng: Rng, report: TurnReport) -> None:
     report.pending = state.pending
     if state.outcome is Outcome.BURIED:
         report.note("No one is left to keep the fire. The hearth goes out.")
+        report.log.extend(
+            reports.epilogue_lines(
+                state.tallies, state.hearths_walked_out, endured=False
+            )
+        )
     elif state.outcome is Outcome.ENDURED:
         report.note("Five winters. The fire is still lit.")
+        report.log.extend(
+            reports.epilogue_lines(
+                state.tallies, state.hearths_walked_out, endured=True
+            )
+        )
 
 
 # --- Helpers -----------------------------------------------------------------------------

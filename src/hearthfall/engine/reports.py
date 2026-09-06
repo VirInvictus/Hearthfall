@@ -15,7 +15,7 @@ Prose only. If a rule wants to know whether ground is good, it asks `balance`, n
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from hearthfall.engine import balance
 from hearthfall.engine.intel import FactKind, Ledger
@@ -227,3 +227,48 @@ def ground_worked(world: World, worked: Sequence[tuple[Coord, Terrain, int]]) ->
     if not others:
         return best
     return f"{best} and {others} place{'s' if others > 1 else ''} besides"
+
+
+def epilogue_lines(
+    tallies: Mapping[str, int], hearths_walked_out: int, *, endured: bool
+) -> list[str]:
+    """The run's last entry, assembled from what the clan remembers.
+
+    Two clans that endure are not the same clan, and the base line alone would say they
+    were. Every line here is gated on a tally or on the walked-out count, all of them
+    earned across the run, and the order is fixed so the reading is deterministic. Doctrine
+    speaks first when it was ever declared, because what the clan chose to be is the sentence
+    the rest of the entry illustrates. Nothing here is a meter; it is what the chronicle
+    would say at the fire the night after the last winter.
+    """
+    lines: list[str] = []
+    doctrine = tallies.get("doctrine", 0)
+    if doctrine == 1:
+        lines.append("They were, by the end, the clan that kept people.")
+    elif doctrine == 2:
+        lines.append("They were, by the end, the clan that kept ground.")
+
+    if tallies.get("graves", 0) >= 5:
+        lines.append(
+            "The burying ground is the largest clearing the clan leaves behind."
+        )
+    if tallies.get("strangers_taken_in", 0) >= 3:
+        lines.append(
+            "Strangers still come to the crossings, because strangers were always fed."
+        )
+    if tallies.get("hungry_winters", 0) >= 2:
+        lines.append("They will taste these winters for the rest of their lives.")
+    if tallies.get("debts_owed_to_you", 0) >= 2:
+        lines.append(
+            "There are steads that owe the clan grain, and the debt is inherited."
+        )
+    if tallies.get("elder_resentment", 0) >= 4:
+        lines.append("The elder no longer argues. He arranges.")
+    if hearths_walked_out >= 1:
+        if endured:
+            lines.append(
+                "Not everyone warm at the fire, at the end, set out with the clan."
+            )
+        else:
+            lines.append("Some walked out early enough to mourn the rest.")
+    return lines

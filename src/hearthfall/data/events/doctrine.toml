@@ -1,0 +1,68 @@
+# Doctrine: what the clan chose to be, and what that choice pays.
+#
+# Sub-project 8 slice 2. The fork asks once, after the graves have started, and the answer
+# is a tally like every other memory. The payoffs are years later and gated on the choice
+# plus the thing the choice was about, so what arrives is earned twice: once by answering,
+# once by living the answer. Two choices, like every other fork in this corpus; the third
+# shape a designer is imagining is the event DSL the spec refuses.
+#
+# Rarity comes from conditions. None of these are rare because a die came up short.
+
+[[event]]
+id = "doctrine.the_question"
+weight = 6
+once = true
+when = ["tally_graves >= 2", "year >= 2"]
+title = "What the Clan Is"
+body = """
+Two graves inside two years, and the argument at the fire is about what the answer was. A
+clan can be a door or a wall, and nobody chooses out loud, which means it gets chosen by
+habit. Say it once, in front of everyone, and the saying holds.
+"""
+
+[[event.choice]]
+text = "We keep people. Strangers, widows, the lost: the fire is for whoever needs it."
+[event.choice.effect]
+morale = 1
+[event.choice.effect.tally]
+doctrine = 1
+
+[[event.choice]]
+text = "We keep ground. Every tile held is a tile the winters cannot take."
+[event.choice.effect]
+[event.choice.effect.tally]
+doctrine = 2
+
+[[event]]
+id = "doctrine.the_crossings"
+weight = 5
+once = true
+when = ["tally_doctrine == 1", "tally_strangers_taken_in >= 2", "year >= 3"]
+title = "The Crossings Remember"
+body = """
+They come at dusk and they come armed, but they come with grain rather than grievance: kin
+of the people this clan once fed, walking out of the fog with what they could carry. This is
+what keeping people buys. It was bought years before anyone knew there would be a payment.
+"""
+
+[event.effect]
+food = 10
+morale = 2
+[event.effect.tally]
+strangers_taken_in = 1
+
+[[event]]
+id = "doctrine.the_stones"
+weight = 5
+once = true
+when = ["tally_doctrine == 2", "tiles_known >= 5", "year >= 3"]
+title = "Where the Stones Were Set"
+body = """
+The marked stones went in seasons ago, one at each corner of the ground the clan decided was
+its own. Nobody has crossed them since. The wolves have, and turned back; the neighbours
+have not needed to. What is kept is kept, and the granary sits where the measuring said to
+put it.
+"""
+
+[event.effect]
+food = 8

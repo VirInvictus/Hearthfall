@@ -10,6 +10,29 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.25.0 (2026-09-06)
+
+**SP 8, slice 2: doctrine.** Two clans that endure are not the same clan,
+and the ending says so now. The corpus gains the doctrine fork
+(`doctrine.toml`): after the graves have started, the clan is asked once
+what it is - keep people, or keep ground - and the answer is a tally like
+every other memory. The payoffs come years later and are gated on the
+choice plus the thing the choice was about: a clan that kept people meets
+kin of the strangers it fed at the crossings; a clan that kept ground
+finds the marked stones have held. And the run's last entry is assembled
+from the tallies (`reports.epilogue_lines`): what the doctrine was, the
+burying ground, the fed strangers, the hungry winters, the inherited
+debts, the elder who no longer argues, the hearths that walked out. Two
+clans that survive five winters now end with different sentences.
+
+Gate-read in real play: the fork lands mid-run, the epilogue names the
+clan. Prose and payoffs only, so the economy is untouched. The liveness
+guard earned its keep again: the kept-ground payoff was unreachable by
+construction of the policy ladder (doctrine 2 needs a choice-1 run, surveys
+happen on surveying policies, and the spread never combined them), fixed
+by extending the ladder rather than loosening the content. 6 new tests;
+suite at 394; pyright strict zero.
+
 ## v0.24.0 (2026-09-06)
 
 **SP 8, slice 1: rivals, the walked-out hearth returns.** The oldest
