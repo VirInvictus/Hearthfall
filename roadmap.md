@@ -782,7 +782,11 @@ thing being managed is a people rather than a household.*
 > first: research progressed by processing scouted facts, and buildings as a spent,
 > permanent sink (their warning stands: nothing passive, or scarcity dies).
 >
-> None of this is promised until signed by Brandon.
+> **Signed 2026-09-06, Brandon:** the order below is the plan. Rivals first, doctrine
+> second, the arc last (and only when the economy can carry it). The candidates ride with
+> the retired sub-project 9's survivors: research progressed by processing scouted facts,
+> and buildings as a spent, permanent sink (their warning stands: nothing passive, or
+> scarcity dies).
 
 ## Sub-projects 9 and 10: retired 2026-09-06, the ideas triaged
 
