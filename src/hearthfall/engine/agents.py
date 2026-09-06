@@ -89,19 +89,22 @@ class Agent:
 
 
 def populate_agents(
-    world: World, rng: Rng, band_food: tuple[int, int]
+    world: World,
+    rng: Rng,
+    band_food: tuple[int, int],
+    band_count: tuple[int, int],
 ) -> dict[str, Agent]:
     """Seed the map with neighbours and wildlife.
 
-    This replaces an empty world with one that has actors in it. The range the
-    bands start with arrives as an argument, like every number this module
-    uses; the caller reads it from `balance`.
+    This replaces an empty world with one that has actors in it. The range
+    the bands start with and how many of them there are arrive as arguments,
+    like every number this module uses; the caller reads them from `balance`.
     """
     agents: dict[str, Agent] = {}
     low, high = band_food
+    count_low, count_high = band_count
 
-    # Generate 1-2 neighbour clans somewhere not at home.
-    num_neighbours = rng.randint(1, 2)
+    num_neighbours = rng.randint(count_low, count_high)
     placed_neighbours = 0
     attempts = 0
 

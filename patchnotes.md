@@ -10,6 +10,22 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.23.2 (2026-09-06)
+
+**The raid-frequency raise was measured and refused.** The year-read
+verdict named raid rarity as a fun gap, so the pass was tried: more
+bands, hungrier bands, earlier bands, and softer per-raid costs
+alongside. Every shape lifted contact (up to 28 runs in 50 met a raid)
+and every shape drove the naive policy's endurance to 1-8 of 50, against
+a suite floor of 5 and a verdict that had just called 13 of 50 the floor
+of brutal. The frequency ceiling is the clan's slack, which is the
+mid-game economy's to fix, not the band constants'; more bands is a siege
+of the same wall. Refused, with the numbers in the roadmap. What ships
+instead is the constant's extraction: the band count now lives at
+`balance.BAND_COUNT_RANGE` (1, 2) through `populate_agents`, identical in
+behavior, so the next attempt is one constant rather than a hunt. 1 new
+test; suite at 382; pyright strict zero.
+
 ## v0.23.1 (2026-09-06)
 
 **Maintenance: hypothesis pruned.** The dev dependency group carried

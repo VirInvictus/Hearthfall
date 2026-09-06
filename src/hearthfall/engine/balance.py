@@ -435,6 +435,14 @@ BAND_CONSUMPTION = 10
 # Drawn per band at placement, and kept wide so bands are born unequal: the
 # poor ones come hungry early, the rich ones buy the clan seasons of grace.
 BAND_STARTING_FOOD = (15, 35)
+# How many bands roam the map, drawn per run. Kept at one or two, and the
+# raise was tried and refused: measured 2026-09-06, moving to (2, 3) lifted
+# contact from 14 to 19 runs in 50 but drove the naive policy's endurance
+# from 13 to 8, and earlier or hungrier bands dropped it to 1-6 against a
+# suite floor of 5. The frequency ceiling is the clan's slack, not the band
+# economy's; more bands is a siege of the same wall. Revisit only when the
+# mid-game economy gives a run somewhere to absorb the blows.
+BAND_COUNT_RANGE = (1, 2)
 # Mood a band is left with after its raid resolves, whichever way it went. The
 # grace period between raids: a band still starving falls one mood per season,
 # so this number is how many seasons pass before the same band forms its next

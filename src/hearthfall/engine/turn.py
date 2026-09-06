@@ -432,7 +432,9 @@ def new_game(
     ledger = Ledger(halflives=balance.FACT_HALFLIFE)
     ledger.reveal(world, world.home, turn=0)
     ledger.survey(world.home, true_yield(world.tile(world.home)), turn=0)
-    agents = populate_agents(world, rng, balance.BAND_STARTING_FOOD)
+    agents = populate_agents(
+        world, rng, balance.BAND_STARTING_FOOD, balance.BAND_COUNT_RANGE
+    )
     state = GameState(
         agents=agents,
         seed=seed,

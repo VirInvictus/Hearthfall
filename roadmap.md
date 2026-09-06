@@ -55,8 +55,9 @@ run.
       *Fun:* not yet, and the two reasons are named rather than tuned away: the mid-run
       allocation still writes itself (the plateau, still SP 8's to fix), and raids visit
       only about a third of runs, so the best new decision is rarely on stage. The named
-      fix is a frequency pass, shipped as v0.24.0; a year is to be re-read against it
-      before the gate is claimed for anything built on top.
+      fix was tried the same day and **refused on measurement** (see the sub-project 6
+      note): every shape of the frequency raise drove the naive run past the brutal floor
+      the verdict had just recorded, so the fun gap waits on the economy, not the bands.
 
 **Why this exists.** Slice 2's first measurement passed every automated guard while year one
 killed half the clan under good play and left the store at zero for the rest of the run. The
@@ -630,6 +631,21 @@ commitment should show its arithmetic before you make it.
       against roughly 20 before, and arming by the read wins some fights and
       pays forage for them, which is the trade SP 7 now gets to price.
       Reachability is a suite guard (`TestRaidersReachARun`), not a note.)*
+- [ ] **The frequency ceiling is the clan's slack (measured and refused,
+      2026-09-06, following the year-read verdict).** The verdict named raid
+      rarity as one of the two fun gaps and a frequency pass as the fix. The
+      pass was measured and refused. Raising `BAND_COUNT_RANGE` to (2, 3)
+      lifted contact from 14 to 19 runs in 50 but dropped the naive policy's
+      endurance from 13 to 8; hungrier or earlier bands (starting food 10-25,
+      or 8-20) reached 25-28 runs contacted and collapsed endurance to 1-6,
+      against a suite floor of 5. Softening the per-raid costs alongside
+      (granary 6, deaths capped at 2) did not rescue it: 3-8 of 50 endured.
+      The naive run has no slack to absorb a second blow, so the frequency
+      ceiling is set by the mid-game economy and not by the band constants;
+      more bands is a siege of the same wall. The raise is refused until the
+      economy gives a run somewhere to absorb it. The count moved to
+      `balance.BAND_COUNT_RANGE = (1, 2)` unchanged in behavior, so the next
+      attempt is one constant, not a hunt.
 
 ## Sub-project 7: composition (complete, 2026-09-06)
 
