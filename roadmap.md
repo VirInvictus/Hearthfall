@@ -804,6 +804,24 @@ not quietly built either.
   a second thing to compute. It reopens `spec.md` §4 and every slice so far sits on the
   one-order-per-season shape, so it needs a design conversation first. **Currently the most
   promising unbuilt idea.**
+
+  **Design brief, drafted 2026-09-06: a proposal to be designed, not a decision.** The
+  strongest shape merges this ask with the retired sub-project 9's best idea: **spending
+  surplus into permanence.** A labour order (hands, or hands and goods, committed for the
+  season) that works toward a permanent, modest improvement: a palisade that prices the
+  next raid's granary loss down, a smokehouse that trims spoilage, a shrine that steadies
+  morale. What it buys: prosperous seasons get a real allocation choice, which is exactly
+  when the game currently stops asking, and the effect is *spent* rather than passive, so
+  scarcity is not deleted. The invariants a design must keep: a full store never makes the
+  choice irrelevant, because there is always a next thing worth building; the condition
+  evaluator does not grow (an improvement is one `snapshot()` key, the way
+  `forage_capacity` is); the TUI gains no new screen, because a work order is a labour
+  line (`spec.md` §9.9); and the band economy is tuned against whatever the palisade
+  multiplies, or raids stop mattering. Open questions for the conversation: which three
+  improvements earn their place, what they cost in hands against the forage trade, whether
+  a raid can burn what was built (the grimdark answer is probably yes, and it makes the
+  decision seasonal instead of ratcheting), and whether improvements belong to the clan or
+  to a hearth (household ownership would feed the resentment layer).
 - **An attraction web: compatibility meters and characteristics deciding which households
   pair.** Lands in sub-project 2 slice 3. Belongs at the household layer rather than the named
   cast, because `spec.md` §5 says a household is what marries. *(Landed there: traits,
