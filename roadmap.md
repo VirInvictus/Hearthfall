@@ -749,7 +749,7 @@ rather than a hunt.
 against a read enemy the best decision in the game?", is answerable in
 play: the read exists, it ages, it lies, and the wall is yours to aim.)*
 
-## Sub-project 8: the long game (planned)
+## Sub-project 8: the long game (slice 1 shipped)
 
 *Doctrine, borders, attrition, the endgame. The campaign arc: runs long enough that the
 thing being managed is a people rather than a household.*
@@ -781,6 +781,31 @@ thing being managed is a people rather than a household.*
 > Riding along from the retired sub-project 9, as candidates for whichever front opens
 > first: research progressed by processing scouted facts, and buildings as a spent,
 > permanent sink (their warning stands: nothing passive, or scarcity dies).
+
+- [x] Rivals: the walked-out hearth returns
+      *(Shipped v0.24.0: both halves of the promise live in `_leave` now.
+      The hearth that walks out camps in the dark as an ordinary band — id
+      `rival_N`, named by its trait ("the Ironkin Clan"), holding the food
+      it took and the mood it left in, camped on the nearest ground that is
+      not the hearth and not water, and no random draw spent at creation.
+      From there nothing is special-cased: the band economy starves it, the
+      SP 7 muster gives it a mix, the massing is announced, and the fight is
+      priced by the web and the read. The chronicle line lands with the
+      walkout: "They are raising a fire of their own. The Ironkin Clan is
+      camped in the dark, and it knows what it is owed."*
+
+      *Standing-gate verdict: **ships, as a story weight rather than a
+      balance weight.** Walkouts happen in 9 of 120 runs under the harshest
+      rationing the game offers, and paired runs over those nine seeds count
+      7 survivors with rivals against 6 without: the punishment is legible,
+      not yet punishing, because a hearth that starved out of the clan
+      leaves weak and the calibrated band costs cap what any one band can
+      do. That is the correct shape for a slice whose job was closing the
+      promise, and the lever if the grudge should weigh more is the rival's
+      starting food and mood, not new rules. Read in real play: walkout at
+      turn six, massing at eleven with a mixed band, the blow at fourteen;
+      the clan that buried the hearth met it again across the granary. 6
+      new tests; suite at 388; pyright strict zero.)*
 >
 > **Signed 2026-09-06, Brandon:** the order below is the plan. Rivals first, doctrine
 > second, the arc last (and only when the economy can carry it). The candidates ride with

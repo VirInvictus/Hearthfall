@@ -402,7 +402,7 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
 
 
 from hearthfall.engine import combat
-from hearthfall.engine.agents import Agent, IntentKind, populate_agents
+from hearthfall.engine.agents import Agent, AgentType, IntentKind, populate_agents
 
 
 def new_game(
@@ -1164,8 +1164,13 @@ def _leave(state: GameState, doomed: list[Household], report: TurnReport) -> Non
     """The hearths that are done with this clan go, and take their share with them.
 
     `spec.md` §5 has promised since the replan that a starved household is where a rival comes
-    from. This is the first half of that: they stop being yours. The second half is sub-project
-    4, where what walked out is somewhere on the map with a grudge and a grain store.
+    from. Both halves live here now: they stop being yours, and they stop being nowhere. The
+    hearth that walks out camps in the dark as an agent of its own, with the food it took and
+    the mood it left in, and from there the ordinary band arc drives the revenge: it starves,
+    it musters, the massing is announced, and the fight is priced by everything SP 6 and 7
+    built. Nothing about the rival is special-cased after the moment of leaving, because the
+    punishment was never supposed to be a new mechanic; it was supposed to be the same war,
+    wearing a name the clan remembers.
 
     They take food in proportion to the mouths that leave, which is the only division anybody
     could call fair, and is not offered as a choice: a hearth that has reached this point is not
@@ -1188,6 +1193,54 @@ def _leave(state: GameState, doomed: list[Household], report: TurnReport) -> Non
     report.people_left = gone
     report.food_taken = taken
     report.log.extend(reports.walkout_lines(len(leaving), gone, taken))
+    _raise_rivals(state, leaving, taken, gone, report)
+
+
+def _raise_rivals(
+    state: GameState,
+    leaving: list[Household],
+    taken: int,
+    gone: int,
+    report: TurnReport,
+) -> None:
+    """Raise what walked out as a band with a name the clan remembers.
+
+    The id is the deterministic incremental count of walked-out hearths. The
+    camp is the engine's call, not a choice in anyone's orders: the nearest
+    ground that is not the hearth and not water, nearest first, coordinate
+    order breaking ties. The food is the walkout's own proportional share,
+    split by the mouths each hearth carried, and the mood is the one it left
+    in. No random draw is spent here; the rival's arc spends draws soon
+    enough.
+    """
+    home = state.world.home
+    camp = min(
+        (
+            coord
+            for coord, tile in state.world.tiles.items()
+            if coord != home and tile.terrain is not Terrain.WATER
+        ),
+        key=lambda coord: (
+            abs(coord[0] - home[0]) + abs(coord[1] - home[1]),
+            coord,
+        ),
+    )
+    for counted, household in enumerate(leaving, start=1):
+        share = taken * household.size // gone if gone else 0
+        name = f"{household.trait.value.title()}kin Clan"
+        rival_id = f"rival_{state.hearths_walked_out - len(leaving) + counted}"
+        state.agents[rival_id] = Agent(
+            id=rival_id,
+            name=name,
+            type=AgentType.NEIGHBOUR,
+            location=camp,
+            food=share,
+            mood=household.mood,
+        )
+        report.note(
+            f"They are raising a fire of their own. The {name} is camped in "
+            f"the dark, and it knows what it is owed."
+        )
 
 
 def _advance(state: GameState, rng: Rng, report: TurnReport) -> None:

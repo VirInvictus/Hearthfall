@@ -10,6 +10,27 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.24.0 (2026-09-06)
+
+**SP 8, slice 1: rivals, the walked-out hearth returns.** The oldest
+promise in the repo is kept. A hearth that walks out over a grudge no
+longer vanishes: it camps in the dark as an ordinary band, under a name
+its trait gives it, holding the food it took and the mood it left in.
+From the moment of leaving nothing is special-cased - the band economy
+starves it, the SP 7 muster gives it a mix, the massing is announced,
+and the fight is priced by the web and the read. The chronicle line
+lands with the walkout: "They are raising a fire of their own. The
+Ironkin Clan is camped in the dark, and it knows what it is owed."
+
+The standing gate, read in real play and paired: walkout at turn six,
+massing at eleven with a mixed band, the blow at fourteen. Walkouts
+happen in 9 of 120 runs under the harshest rationing the game offers,
+and paired runs over those nine seeds count 7 survivors with rivals
+against 6 without, so the slice ships as a story weight rather than a
+balance weight: legible, not yet punishing, with the lever (the rival's
+starting food and mood) named in the roadmap. 6 new tests; suite at
+388; pyright strict zero.
+
 ## v0.23.2 (2026-09-06)
 
 **The raid-frequency raise was measured and refused.** The year-read
