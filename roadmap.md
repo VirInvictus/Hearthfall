@@ -631,21 +631,18 @@ commitment should show its arithmetic before you make it.
       against roughly 20 before, and arming by the read wins some fights and
       pays forage for them, which is the trade SP 7 now gets to price.
       Reachability is a suite guard (`TestRaidersReachARun`), not a note.)*
-- [ ] **The frequency ceiling is the clan's slack (measured and refused,
-      2026-09-06, following the year-read verdict).** The verdict named raid
-      rarity as one of the two fun gaps and a frequency pass as the fix. The
-      pass was measured and refused. Raising `BAND_COUNT_RANGE` to (2, 3)
-      lifted contact from 14 to 19 runs in 50 but dropped the naive policy's
-      endurance from 13 to 8; hungrier or earlier bands (starting food 10-25,
-      or 8-20) reached 25-28 runs contacted and collapsed endurance to 1-6,
-      against a suite floor of 5. Softening the per-raid costs alongside
-      (granary 6, deaths capped at 2) did not rescue it: 3-8 of 50 endured.
-      The naive run has no slack to absorb a second blow, so the frequency
-      ceiling is set by the mid-game economy and not by the band constants;
-      more bands is a siege of the same wall. The raise is refused until the
-      economy gives a run somewhere to absorb it. The count moved to
-      `balance.BAND_COUNT_RANGE = (1, 2)` unchanged in behavior, so the next
-      attempt is one constant, not a hunt.
+**The frequency ceiling is the clan's slack: measured and refused, 2026-09-06.** The
+year-read verdict named raid rarity as one of the two fun gaps and a frequency pass as the
+fix. The pass was measured and refused. Raising `BAND_COUNT_RANGE` to (2, 3) lifted
+contact from 14 to 19 runs in 50 but dropped the naive policy's endurance from 13 to 8;
+hungrier or earlier bands (starting food 10-25, or 8-20) reached 25-28 runs contacted and
+collapsed endurance to 1-6, against a suite floor of 5. Softening the per-raid costs
+alongside (granary 6, deaths capped at 2) did not rescue it: 3-8 of 50 endured. The naive
+run has no slack to absorb a second blow, so the frequency ceiling is set by the mid-game
+economy and not by the band constants; more bands is a siege of the same wall. The count
+now lives at `balance.BAND_COUNT_RANGE = (1, 2)` unchanged in behavior, so the next
+attempt, once the economy gives a run somewhere to absorb the blows, is one constant
+rather than a hunt.
 
 ## Sub-project 7: composition (complete, 2026-09-06)
 
