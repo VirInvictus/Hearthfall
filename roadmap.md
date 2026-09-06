@@ -37,12 +37,26 @@ verdicts are owed a single combined year-read before SP 6's first player-visible
 (the raiders) can claim the gate, and every SP 6 slice records its verdict here when it is
 run.
 
-- [ ] **The owed combined year-read (SP 3 through SP 6).** One annotated year, printed from
+- [x] **The owed combined year-read (SP 3 through SP 6).** One annotated year, printed from
       the `test_playthrough.py` harness and read start to finish: allocation, forecast,
       outcome, and every event with the choice taken. Judged fun, interesting, and
-      survivable. The judgment is Brandon's; the print is agent-prepared. The verdict
-      lands here when he has read it. (Preparing it on 2026-09-06 is what surfaced the
-      raid-economy finding in sub-project 6 below.)
+      survivable. (Preparing it on 2026-09-06 is what surfaced the raid-economy finding in
+      sub-project 6 below.)
+
+      **Verdict, recorded 2026-09-06, read against v0.23.0: interesting and survivable,
+      fun not yet.** The input is `audit/Hearthfall/year-read-input-2026-09-06.md` (two
+      annotated runs, one carrying the full raid arc); the reading below was proposed by
+      the agent and accepted by Brandon the same day. *Interesting:* yes. The raid arc is
+      the best story in the game, the massing line names what is coming, and 40 percent of
+      resolved raids are fought on a read that has silently gone wrong. *Survivable:* yes,
+      for a player who reads the seasons and fields a wall; the naive policy at 13 of 50
+      endured is the floor of brutal rather than past it, and the raid layer's costs
+      (8 grain, the margin's graves) sit at bad-season weight, not burial-season weight.
+      *Fun:* not yet, and the two reasons are named rather than tuned away: the mid-run
+      allocation still writes itself (the plateau, still SP 8's to fix), and raids visit
+      only about a third of runs, so the best new decision is rarely on stage. The named
+      fix is a frequency pass, shipped as v0.24.0; a year is to be re-read against it
+      before the gate is claimed for anything built on top.
 
 **Why this exists.** Slice 2's first measurement passed every automated guard while year one
 killed half the clan under good play and left the store at zero for the rest of the run. The
