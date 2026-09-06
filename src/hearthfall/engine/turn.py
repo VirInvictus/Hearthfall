@@ -28,6 +28,7 @@ from hearthfall.engine.state import (
     Season,
     Stores,
 )
+from hearthfall.engine.units import Composition, UnitDefs, load_units
 from hearthfall.engine.world import Coord, Terrain, Tile, World
 
 
@@ -404,13 +405,18 @@ from hearthfall.engine import combat
 from hearthfall.engine.agents import IntentKind, populate_agents
 
 
-def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
+def new_game(
+    seed: int,
+    tallies: Sequence[str] | None = None,
+    unit_defs: UnitDefs | None = None,
+) -> GameState:
     """A fresh run. Everything downstream of this is a function of the seed.
 
     Every declared tally starts at zero and is present from the first turn, so `snapshot()`
     has a stable key set and the loader can validate both conditions and effects against it.
     The registry is read from `data/tallies.toml` unless a caller injects one, which is how a
-    test builds a state without depending on shipped content.
+    test builds a state without depending on shipped content. The unit table rides the same
+    way: the shipped `data/units.toml` unless a caller hands over its own.
     """
     rng = Rng(seed)
     world = World.generate(
@@ -439,6 +445,7 @@ def new_game(seed: int, tallies: Sequence[str] | None = None) -> GameState:
         tallies={
             name: 0 for name in (load_tallies() if tallies is None else tuple(tallies))
         },
+        unit_defs=load_units() if unit_defs is None else unit_defs,
     )
     _refresh_ground(state)
     return state
@@ -493,6 +500,14 @@ def resolve(
             "an event choice is outstanding; call apply_choice before the next turn"
         )
     orders.validate(state.population.adults)
+    # A line naming a type nobody declared would field nothing and say
+    # nothing. Failing at the top of the tick is loud at the moment the order
+    # was given, not two steps later inside a fight the player cannot see.
+    unknown = set(orders.militia_lines) - set(state.unit_defs)
+    if unknown:
+        raise ValueError(
+            f"militia lines name undeclared unit type(s) {sorted(unknown)}"
+        )
 
     season = state.season
     report = TurnReport(turn=state.turn, season=season)
@@ -1289,12 +1304,23 @@ def _raid(
 ) -> None:
     """The band came over the border. The militia order was the decision; the
     fight itself is pre-committed (`spec.md` §"Combat"): spears, ground, mood,
-    and the age of the read, resolved in one draw."""
+    and the age of the read, resolved in one draw.
+
+    The wall is the clan's assembly: the untyped militia line is spears, and
+    any typed lines stand beside it. A wall of nothing — no militia ordered —
+    prices at guard zero and loses without appeal, which is the same place an
+    order of zero always landed.
+    """
     agent = state.agents.get(agent_id)
     if agent is None:
         return
     home = state.world.tiles[state.world.home]
     staleness = state.ledger.staleness(FactKind.RAIDER_STRENGTH, agent_id, state.turn)
+    # The untyped militia line IS the spear line, so a declared spear line
+    # adds to it rather than replacing it; any other line stands beside it.
+    wall_counts = dict(orders.militia_lines)
+    wall_counts["spear"] = wall_counts.get("spear", 0) + orders.militia
+    wall = Composition.of(wall_counts)
     outcome = combat.resolve(
         orders.militia * balance.MILITIA_STRENGTH_PER_ADULT,
         agent.strength,
@@ -1302,10 +1328,22 @@ def _raid(
         our_ground=home.terrain,
         our_morale=state.population.morale,
         intel_staleness=staleness,
+        our_units=wall,
+        unit_defs=state.unit_defs,
     )
+    line_note = ""
+    if wall.total():
+        # Biggest line first: the wall is read as what stood where, not as an
+        # alphabet. Key order breaks ties so the prose is deterministic.
+        named = sorted(wall.counts, key=lambda item: (-item[1], item[0]))
+        names = ", ".join(
+            f"{count} {state.unit_defs[key].name}" for key, count in named
+        )
+        line_note = f" The line: {names}."
     if outcome.won:
         note = (
-            f"The {agent.name} broke against the militia and melted back into the fog."
+            f"The {agent.name} broke against the militia and melted back into "
+            f"the fog.{line_note}"
         )
         # A rout scatters the band far enough that its fleeing shape marks the
         # camp on the map: ground gained, bought in blood.
@@ -1341,5 +1379,5 @@ def _raid(
     grave_note = f", and {buried} of the clan are dead" if buried else ""
     report.note(
         f"The {agent.name} hit the granary and carried off {lost} food{grave_note}. "
-        f"(read: {staleness.value}, odds {outcome.odds:.2f})"
+        f"(read: {staleness.value}, odds {outcome.odds:.2f}){line_note}"
     )

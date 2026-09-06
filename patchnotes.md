@@ -10,6 +10,32 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.21.0 (2026-09-06)
+
+**SP 7, slice 2: groups assembled from types.** The militia order is an
+assembly now. The untyped militia count is the spear line it always was,
+and `Orders.militia_lines` stands other lines beside it:
+`militia_lines = {"bow": 2}` puts two bows in the wall, each hand
+competing for the same adults as every other order. The declared types
+price the wall through the slice-1 grammar (a line that holds is weighed
+by its guard), a declared spear line adds to the untyped one rather than
+replacing it, an undeclared type fails at the top of the tick with its
+name in the error, and the chronicle names what stood: "The line: 3
+spear, 2 bow." The unit registry rides on `GameState` (`unit_defs`), read
+from `data/units.toml` in `new_game` and injectable like the tallies. The
+band still presses as its scalar strength, and exactly one draw resolves
+the fight.
+
+The standing gate, read over annotated years: the window makes a real
+seasonal decision, but only for a clan with hands to pull (the naive
+policy's years one and two often leave a clan too small to arm when the
+massing comes), and the composition choice is dormant in favor of spears
+until the counter-web prices a bow line against what it counters.
+Measured over 40 seeds with a policy that reserves its wall from the
+forage line before filling it: armed in 9 of 40 runs, endured 13 of 40
+against the naive policy's 10, survivors 38 against 23. Ships. 5 new
+tests; suite at 366; pyright strict zero.
+
 ## v0.20.0 (2026-09-06)
 
 **SP 7, slice 1: unit types with strengths and weaknesses.** The AoE2

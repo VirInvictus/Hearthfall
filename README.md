@@ -14,7 +14,7 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.20.0. SP 6 (violence) is live and reachable in play: bands mass with a readable strength and a raid costs grain, graves, or both. SP 7 (composition) is the front: unit types with strengths and weaknesses exist in the engine now, and who holds the line is becoming a decision.** Playable start to finish, and
+> **Status: v0.21.0. SP 6 (violence) is live and reachable in play: bands mass with a readable strength and a raid costs grain, graves, or both. SP 7 (composition) is the front: the militia is an assembly now (a spear line by default, other lines beside it), and the counter-web that makes the mix a puzzle is next.** Playable start to finish, and
 > deliberately small: one map, four jobs, twenty seasons. Combat arrived with SP 6 as raid
 > violence; the deeper war tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,
@@ -58,7 +58,8 @@ not scouted yet. Each season you split a finite clan four ways:
 - **Tend** slows the rot in the store, and can never quite stop it.
 - **Militia** meets a raid when one comes. Combat is single-stack with stated odds, and
   the margin grades the cost: a lost raid buries the clan's dead, a rout scatters the
-  band far enough that its camp shows on the map.
+  band far enough that its camp shows on the map. The untyped count is a spear line,
+  and other lines can stand beside it: what the wall is made of changes what it holds.
 
 Then the season resolves, the world asks you something with no clean answer, and you live
 with it. Children eat and cannot work. Everyone eats regardless.

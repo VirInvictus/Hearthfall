@@ -638,7 +638,33 @@ commitment should show its arithmetic before you make it.
       composition yet, so the standing-gate verdict accrues to slice 2,
       when assembly becomes the player's decision. 24 new tests; suite at
       361; pyright strict zero.)*
-- [ ] Groups assembled from types
+- [x] Groups assembled from types
+      *(Shipped v0.21.0: the untyped militia count is the spear line it
+      always was, and `Orders.militia_lines` stands other declared lines
+      beside it, every hand competing for the same adults as every other
+      order. The wall is priced through slice 1's grammar; a declared spear
+      line adds to the untyped one rather than replacing it; an undeclared
+      type fails at the top of the tick with its name in the error; and the
+      chronicle names what stood ("The line: 3 spear, 2 bow."). The unit
+      registry rides on `GameState` (`unit_defs`), read from
+      `data/units.toml` in `new_game` and injectable like the tallies. The
+      band still presses as its scalar strength, and the fight is still one
+      draw.*
+
+      *Standing-gate verdict, read over annotated years: **ships, with the
+      decision half-alive.** (1) The window makes a real seasonal decision,
+      but only for a clan with hands to pull: the naive policy's years one
+      and two often leave a clan too small to arm when the massing comes, so
+      under weak play the blow lands on nobody who could answer it. (2)
+      Slack is unchanged; the granary loss is a bad season, not a burial
+      one. (3) Worth telling: the massing line with its read, then the blow
+      two seasons later with the line named, is the best raid beat in the
+      game. Measured over 40 seeds, a policy that reserves its wall from the
+      forage line before filling it armed in 9 of 40 runs, endured 13 of 40
+      against the naive policy's 10, survivors 38 against 23. The
+      composition choice itself is dormant in favor of spears until the
+      counter-web prices a bow line against what it counters; that is slice
+      3's debt, named here so it does not pass silently.)*
 - [ ] The counter-web that makes composition a puzzle
 - [ ] Scout intel driving pre-battle assembly
 

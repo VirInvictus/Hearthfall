@@ -364,6 +364,84 @@ class TestRaidWiring(unittest.TestCase):
         self.assertEqual(run(), run())
 
 
+class TestAssemblyWiring(unittest.TestCase):
+    """Slice 2: the clan assembles a group from types. The untyped militia
+    line is the spear line; typed lines stand beside it and pay for their
+    stats in the same hands every other order spends."""
+
+    def test_the_untyped_militia_line_is_a_spear_line(self):
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        def run(lines: dict[str, int], militia: int) -> tuple[int, str]:
+            state, band = _state_with_band(strength=6)
+            band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+            band.mood = 0
+            state.stores.food = 30
+            orders = Orders(forage=1, militia=militia, militia_lines=lines)
+            report = turn_resolve(state, orders, Rng(7))
+            return state.stores.food, "\n".join(report.log)
+
+        untyped = run({}, militia=5)
+        split = run({"spear": 2}, militia=3)
+        self.assertEqual(untyped, split)
+
+    def test_a_bow_line_holds_worse_than_a_spear_line_of_the_same_count(self):
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        def run(lines: dict[str, int]) -> int:
+            # Paired against the same seed: the season economy is identical,
+            # so the difference is exactly what each wall let through.
+            food = 0
+            for seed in range(20):
+                state, band = _state_with_band(strength=6)
+                band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+                band.mood = 0
+                state.stores.food = 30
+                turn_resolve(state, Orders(forage=1, militia_lines=lines), Rng(seed))
+                food += state.stores.food
+            return food
+
+        spear_wall = run({"spear": 5})
+        bow_wall = run({"bow": 5})
+        self.assertGreater(
+            spear_wall,
+            bow_wall,
+            "the bow line held as well as spears; the stats are not real",
+        )
+
+    def test_the_line_is_named_in_the_chronicle(self):
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        state, band = _state_with_band(strength=2)
+        band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+        band.mood = 0
+        state.stores.food = 30
+        orders = Orders(forage=1, militia=3, militia_lines={"bow": 2})
+        report = turn_resolve(state, orders, Rng(7))
+        self.assertIn("broke against the militia", "\n".join(report.log))
+        self.assertIn("The line: 3 spear, 2 bow.", "\n".join(report.log))
+
+    def test_an_undeclared_line_is_refused_at_the_top_of_the_tick(self):
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        state, _band = _state_with_band(strength=6)
+        orders = Orders(forage=4, militia_lines={"sling": 2})
+        with self.assertRaises(ValueError) as ctx:
+            turn_resolve(state, orders, Rng(7))
+        self.assertIn("sling", str(ctx.exception))
+
+    def test_typed_lines_compete_for_the_same_hands(self):
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        state, _band = _state_with_band(strength=6)
+        over = Orders(forage=1, militia=4, militia_lines={"bow": 2})
+        with self.assertRaises(ValueError):
+            turn_resolve(state, over, Rng(7))
+
+
 class TestGradedStakes(unittest.TestCase):
     """Slice 5: the dead and the ground grade by the margin. A near-run raid
     costs a grave; a rout costs the band and marks the map."""

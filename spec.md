@@ -3,7 +3,7 @@
 > A hearth is what you gather around and what you defend. A fall is what happens to most
 > of them. The name holds both halves of the arc: grow a fire into a people, or bury them.
 
-**Status:** v0.20.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is built and reachable in play: bands mass with a readable strength, the massing window opens, and the raid costs grain, graves, or both. Sub-project 7, composition, is the live front: unit types with strengths and weaknesses shipped in v0.20.0, and assembly, the counter-web, and intel-driven assembly follow.
+**Status:** v0.21.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is built and reachable in play: bands mass with a readable strength, the massing window opens, and the raid costs grain, graves, or both. Sub-project 7, composition, is the live front: unit types shipped in v0.20.0 and the militia assembly (groups assembled from types) in v0.21.0; the counter-web and intel-driven assembly follow.
 
 **This document was rewritten on 2026-08-08.** The original is in git history and should be
 read by anyone who wants to know what was given up. It was a knife aimed at scope creep, and

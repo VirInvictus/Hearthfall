@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 Coord = tuple[int, int]
 from hearthfall.engine.people import Rationing
@@ -12,18 +12,28 @@ class Orders:
     scout: int = 0
     tend: int = 0
     # Adults standing guard instead of working. Every spear is a hand not
-    # foraging: the raid trade is the scarcity trade.
+    # foraging: the raid trade is the scarcity trade. This is the spear line;
+    # other lines stand beside it in `militia_lines`.
     militia: int = 0
+    # Extra militia lines assembled from declared unit types, as type id ->
+    # hands. The ids are checked against the state's unit registry when a raid
+    # resolves, so a misspelled line fails loudly rather than fielding
+    # nothing. Each hand here competes for the same adults as every other
+    # order; what differs is what the line is worth when the band comes.
+    militia_lines: dict[str, int] = field(default_factory=dict[str, int])
     scout_target: Coord | None = None
     rationing: Rationing = Rationing.EQUAL
     is_standing: bool = False
 
     @property
     def assigned(self) -> int:
-        return self.forage + self.scout + self.tend + self.militia
+        lines = sum(self.militia_lines.values())
+        return self.forage + self.scout + self.tend + self.militia + lines
 
     def validate(self, adults: int) -> None:
         if self.assigned > adults:
             raise ValueError(f"orders require {self.assigned} hands, clan has {adults}")
         if self.forage < 0 or self.scout < 0 or self.tend < 0 or self.militia < 0:
+            raise ValueError("orders cannot assign negative hands")
+        if any(count < 0 for count in self.militia_lines.values()):
             raise ValueError("orders cannot assign negative hands")

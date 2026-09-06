@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.people import Household
+from hearthfall.engine.units import UnitDef, UnitDefs
 from hearthfall.engine.world import Terrain, World
 
 
@@ -402,6 +403,11 @@ class GameState:
     # `snapshot()` has a stable key set and a condition naming a tally that does not exist
     # fails when the corpus loads rather than silently never matching. See `data/tallies.toml`.
     tallies: dict[str, int] = field(default_factory=dict[str, int])
+    # The declared unit types, as the registry a militia line is priced
+    # against (SP 7). Carried on the state for the same reason the tallies
+    # are: the rules read what they are handed, and `new_game` hands them the
+    # shipped table unless a caller injects one.
+    unit_defs: UnitDefs = field(default_factory=dict[str, UnitDef])
 
     @property
     def season(self) -> Season:
