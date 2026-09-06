@@ -6,26 +6,45 @@
 # must break). A type good at one thing is deliberately not good at the other,
 # which is what makes composition a decision rather than a bigger number.
 #
+# `counters` is the web (sub-project 7 slice 3). One direction each, and the
+# three make a cycle: spear closes on bow before the loosing tells, bow breaks
+# an axe rush at range, axe comes apart a spear wall that has stood too long.
+# When my type counters a type across the field, MY side's number carries the
+# bonus (`balance.COUNTER_BONUS`); the countered side gets nothing. That is
+# what retires the all-spear wall: a band of axes punishes it, and the massing
+# line tells you so two seasons before the blow.
+#
+# `band_weight` is how likely a war-band is to muster one more of the type
+# when its composition is drawn. Bands lean on the fighters: spears are the
+# rare body in a raiding band, bows and axes are what a band travels with.
+# That lean is also what makes the web worth reading: a band of spear-and-bow
+# is answered by spears, a band with axes in it is not, and the massing line
+# tells you which one is coming. Zero means the type never musters into a band.
+#
 # `spear` carries the continuity of the scalar militia: one spear is worth
 # exactly `balance.MILITIA_STRENGTH_PER_ADULT`, so an order of N untyped
-# militiamen and a line of N spears are the same wall. The counter-web that
-# makes the types a puzzle is sub-project 7 slice 3; these three are its
-# triangle, and the counters table will hang off the same ids.
+# militiamen and a line of N spears are the same wall.
 
 [unit.spear]
 name = "spear"
 strength = 2
 guard = 2
+counters = ["bow"]
+band_weight = 1
 about = "The wall. Holds because the points face outward."
 
 [unit.bow]
 name = "bow"
 strength = 3
 guard = 1
+counters = ["axe"]
+band_weight = 2
 about = "Looses hard from behind something. Is not, itself, something."
 
 [unit.axe]
 name = "axe"
 strength = 4
 guard = 1
+counters = ["spear"]
+band_weight = 2
 about = "Comes apart shields. Comes apart just as fast when it is the one waiting."

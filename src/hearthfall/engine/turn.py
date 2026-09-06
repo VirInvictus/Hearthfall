@@ -402,7 +402,7 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
 
 
 from hearthfall.engine import combat
-from hearthfall.engine.agents import IntentKind, populate_agents
+from hearthfall.engine.agents import Agent, IntentKind, populate_agents
 
 
 def new_game(
@@ -1261,7 +1261,6 @@ def _agents_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
         had_intent = agent.intent is not None
         agent.grow(
             rng,
-            balance.RAIDER_STRENGTH_RANGE,
             forage=balance.BAND_FORAGE,
             consumption=balance.BAND_CONSUMPTION,
         )
@@ -1277,13 +1276,49 @@ def _agents_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
             and agent.intent.kind == IntentKind.RAID
         ):
             agent.intent.target_turn = state.turn + balance.RAID_MATURITY_TURNS
+            _muster_band(state, agent, rng)
             state.ledger.learn(
                 FactKind.RAIDER_STRENGTH, agent.id, agent.strength, state.turn
             )
+            mix = ""
+            if agent.composition is not None:
+                named = sorted(
+                    agent.composition.counts, key=lambda item: (-item[1], item[0])
+                )
+                names = ", ".join(
+                    f"{count} {state.unit_defs[key].name}" for key, count in named
+                )
+                mix = f": {names}"
             report.note(
-                f"The {agent.name} is massing on the border. "
+                f"The {agent.name} is massing on the border{mix}. "
                 f"The read says {agent.strength} spears."
             )
+
+
+def _muster_band(state: GameState, agent: Agent, rng: Rng) -> None:
+    """Draw a mustering band's mix of types, one body at a time.
+
+    The draw is seeded, so a band is reproducible from the run's seed. Types
+    with no `band_weight` never muster; a table that declares no weights at
+    all leaves the band scalar, pressing with a plain strength draw, which is
+    the shape the hand-built fixtures of the older tests rely on.
+    """
+    weights = [
+        (key, unit.band_weight)
+        for key, unit in state.unit_defs.items()
+        if unit.band_weight > 0
+    ]
+    if not weights:
+        low, high = balance.RAIDER_STRENGTH_RANGE
+        agent.strength = rng.randint(low, high)
+        return
+    low, high = balance.BAND_SIZE_RANGE
+    counts: dict[str, int] = {}
+    for _ in range(rng.randint(low, high)):
+        key = rng.weighted(weights)
+        counts[key] = counts.get(key, 0) + 1
+    agent.composition = Composition.of(counts)
+    agent.strength = agent.composition.strength(state.unit_defs)
 
 
 def _director_tick(
@@ -1329,6 +1364,7 @@ def _raid(
         our_morale=state.population.morale,
         intel_staleness=staleness,
         our_units=wall,
+        their_units=agent.composition,
         unit_defs=state.unit_defs,
     )
     line_note = ""

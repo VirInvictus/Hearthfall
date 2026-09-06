@@ -23,7 +23,7 @@ from typing import cast
 
 DATA_PACKAGE = "hearthfall.data"
 UNITS_FILE = "units.toml"
-UNIT_KEYS = frozenset({"name", "strength", "guard", "about"})
+UNIT_KEYS = frozenset({"name", "strength", "guard", "about", "counters", "band_weight"})
 
 # A registry of declared types, keyed by type id. Injected wherever a
 # composition is priced, the way half-lives are injected into a ledger: the
@@ -37,13 +37,21 @@ class UnitError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class UnitDef:
-    """One declared type. A value: two numbers, a name, and a line of prose."""
+    """One declared type. A value: two numbers, a name, and a line of prose.
+
+    `counters` is the web: the type ids this one fights above, one direction
+    only (the countered side gets nothing for being countered). `band_weight`
+    is how likely a mustering war-band is to take one more of this type; zero
+    means it never does.
+    """
 
     key: str
     name: str
     strength: int
     guard: int
     about: str = ""
+    counters: tuple[str, ...] = ()
+    band_weight: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,7 +154,42 @@ def parse_units(text: str, source: str) -> dict[str, UnitDef]:
         about = fields.get("about", "")
         if not isinstance(about, str):
             raise UnitError(f"{source}: [unit.{key}] about must be prose")
+        raw_counters = fields.get("counters", ())
+        counters: list[str] = []
+        if isinstance(raw_counters, list):
+            for target in cast("list[object]", raw_counters):
+                if not isinstance(target, str):
+                    raise UnitError(
+                        f"{source}: [unit.{key}] counters must name declared types"
+                    )
+                counters.append(target)
+        elif raw_counters != ():
+            raise UnitError(f"{source}: [unit.{key}] counters must be a list")
+        raw_band_weight = fields.get("band_weight", 0)
+        if not isinstance(raw_band_weight, int) or isinstance(raw_band_weight, bool):
+            raise UnitError(
+                f"{source}: [unit.{key}] band_weight must be a whole number"
+            )
+        if raw_band_weight < 0:
+            raise UnitError(f"{source}: [unit.{key}] band_weight cannot be negative")
         defs[key] = UnitDef(
-            key=key, name=name, strength=strength, guard=guard, about=about
+            key=key,
+            name=name,
+            strength=strength,
+            guard=guard,
+            about=about,
+            counters=tuple(counters),
+            band_weight=raw_band_weight,
         )
+
+    # The web is validated once every type exists: a counter naming a type the
+    # table never declares would silently never fire, which reads exactly like
+    # a balance problem rather than like the typo it is.
+    for unit in defs.values():
+        dangling = [target for target in unit.counters if target not in defs]
+        if dangling:
+            raise UnitError(
+                f"{source}: [unit.{unit.key}] counters name undeclared type(s) "
+                f"{sorted(dangling)}"
+            )
     return defs

@@ -235,5 +235,106 @@ class TestCompositionCombat(unittest.TestCase):
         self.assertEqual(fought.fraction(), fresh.fraction())
 
 
+class TestTheWeb(unittest.TestCase):
+    """Slice 3: the counter-web. One direction per pair, three in a cycle:
+    spear closes on bow, bow breaks the axe rush, axe comes apart the wall."""
+
+    def test_the_shipped_web_is_a_cycle(self):
+        self.assertEqual(DEFS["spear"].counters, ("bow",))
+        self.assertEqual(DEFS["bow"].counters, ("axe",))
+        self.assertEqual(DEFS["axe"].counters, ("spear",))
+
+    def test_a_dangling_counter_is_rejected_at_load(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_units(
+                """
+                [unit.spear]
+                name = "spear"
+                strength = 2
+                guard = 2
+                counters = ["sling"]
+                """,
+                "test.toml",
+            )
+        self.assertIn("sling", str(ctx.exception))
+
+    def test_band_weight_parses_and_never_goes_negative(self):
+        defs = parse_units(
+            """
+            [unit.spear]
+            name = "spear"
+            strength = 2
+            guard = 2
+            band_weight = 2
+            """,
+            "test.toml",
+        )
+        self.assertEqual(defs["spear"].band_weight, 2)
+        with self.assertRaises(ValueError):
+            parse_units(
+                """
+                [unit.spear]
+                name = "spear"
+                strength = 2
+                guard = 2
+                band_weight = -1
+                """,
+                "test.toml",
+            )
+
+    def test_the_countered_side_gets_nothing(self):
+        # Spears face axes: the axes counter the spears, so the axe side's
+        # press carries the bonus and the spear wall's guard does not.
+        band = Composition.of({"axe": 3})
+        wall = Composition.of({"spear": 5})
+        punished = resolve(
+            10, 12, Rng(1), our_units=wall, their_units=band, unit_defs=DEFS
+        ).odds
+        expected_theirs = 3 * 4 * (1 + balance.COUNTER_BONUS)
+        self.assertAlmostEqual(punished, (5 * 2) / (5 * 2 + expected_theirs))
+
+    def test_the_right_read_beats_the_safe_wall(self):
+        # An all-axe band. The bow wall counters it; the spear wall is
+        # countered by it. The read says axes, and the read had better pay.
+        band = Composition.of({"axe": 3})
+        spears = resolve(
+            10,
+            12,
+            Rng(1),
+            our_units=Composition.of({"spear": 5}),
+            their_units=band,
+            unit_defs=DEFS,
+        ).odds
+        bows = resolve(
+            10,
+            12,
+            Rng(1),
+            our_units=Composition.of({"bow": 5}),
+            their_units=band,
+            unit_defs=DEFS,
+        ).odds
+        self.assertGreater(bows, spears)
+
+    def test_the_bonus_scales_with_the_countered_share(self):
+        # Two bows against one axe among three spears: the bow line counters a
+        # quarter of the band, so its guard carries a quarter of the bonus.
+        band = Composition.of({"axe": 1, "spear": 3})
+        wall = Composition.of({"bow": 2})
+        odds = resolve(
+            10, 12, Rng(1), our_units=wall, their_units=band, unit_defs=DEFS
+        ).odds
+        ours = 2 * 1 * (1 + balance.COUNTER_BONUS * 1 / 4)
+        # Their spears counter our bows outright: every bow is countered.
+        theirs = 3 * 2 * (1 + balance.COUNTER_BONUS) + 1 * 4
+        self.assertAlmostEqual(odds, ours / (ours + theirs))
+
+    def test_a_scalar_enemy_offers_nothing_to_counter(self):
+        plain = resolve(10, 12, Rng(1))
+        walled = resolve(
+            10, 12, Rng(1), our_units=Composition.of({"spear": 5}), unit_defs=DEFS
+        )
+        self.assertEqual(plain, walled)
+
+
 if __name__ == "__main__":
     unittest.main()

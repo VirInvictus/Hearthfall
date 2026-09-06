@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from hearthfall.engine.units import Composition
 from hearthfall.engine.world import Coord
 
 if TYPE_CHECKING:
@@ -39,15 +40,18 @@ class Agent:
     food: int = 0
     mood: int = 0
     intent: Intent | None = None
-    # Spears the band can field. Set when a raid intent forms (the range
-    # arrives as an argument — see the import-graph note on half-lives), and
-    # what the ledger's raider-strength fact is a read of.
+    # Spears the band can field: what it presses with, and what the ledger's
+    # raider-strength fact is a read of. With a composition (below) this is
+    # the mix's press total; without one it is the scalar draw, which is what
+    # a hand-built band still carries.
     strength: int = 0
+    # The band's mix of types, drawn the season the intent forms. None for a
+    # band assembled by hand, whose scalar strength stands alone.
+    composition: Composition | None = None
 
     def grow(
         self,
         rng: Rng,
-        raid_strength: tuple[int, int] | None = None,
         *,
         forage: int,
         consumption: int,
@@ -60,6 +64,10 @@ class Agent:
         as an argument rather than being read from `balance`, for the same
         reason the half-lives do: it keeps this module a leaf of the import
         graph. The caller reads the numbers from `balance` and hands them over.
+
+        The band's composition is not drawn here: mustering is the tick's job
+        (`turn._agents_tick`), which owns the seeded draws and the ledger
+        moment the read is learned.
         """
         if self.type == AgentType.NEIGHBOUR:
             self.food += forage
@@ -78,11 +86,6 @@ class Agent:
                     kind=IntentKind.RAID,
                     target_turn=0,
                 )
-                # The band musters its spears the season it decides to use
-                # them. The draw is seeded, so the band is reproducible.
-                if raid_strength is not None:
-                    low, high = raid_strength
-                    self.strength = rng.randint(low, high)
 
 
 def populate_agents(

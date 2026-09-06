@@ -23,6 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from hearthfall.engine.balance import (
+    COUNTER_BONUS,
     INTEL_COMBAT_FACTOR,
     MORALE_COMBAT_CEIL,
     MORALE_COMBAT_FLOOR,
@@ -58,6 +59,35 @@ def _morale_factor(morale: int) -> float:
     the extreme mood, not an exploding multiplier."""
     span = MORALE_COMBAT_CEIL - MORALE_COMBAT_FLOOR
     return MORALE_COMBAT_FLOOR + span * (morale / 10)
+
+
+def _side_number(
+    units: Composition, enemy: Composition | None, stat: str, defs: UnitDefs
+) -> float:
+    """A composition's number on its side of the share, web included.
+
+    Each line contributes count × stat, multiplied by the counter bonus where
+    the line counters what it faces: the share of the enemy composition made
+    of types this line has under its `counters`, times
+    `balance.COUNTER_BONUS`. One direction only: the countered side gets
+    nothing, which is what makes reading the massing matter. A scalar enemy
+    (no composition) offers nothing to counter, so a wall facing a hand-built
+    band fights at its plain stats.
+    """
+    enemy_total = enemy.total() if enemy is not None else 0
+    number = 0.0
+    for key, count in units.counts:
+        unit = defs.get(key)
+        if unit is None:
+            raise ValueError(
+                f"composition names {key!r}, which no declared unit type answers"
+            )
+        weight = 1.0
+        if enemy is not None and enemy_total:
+            countered = sum(enemy.count(target) for target in unit.counters)
+            weight += COUNTER_BONUS * countered / enemy_total
+        number += count * getattr(unit, stat) * weight
+    return number
 
 
 def resolve(
@@ -97,17 +127,17 @@ def resolve(
     Zero effective strength on our side loses without appeal; a fight against
     nothing is won without a roll being meaningful.
     """
-    our_number: int = ours
-    their_number: int = theirs
+    our_number: float = float(ours)
+    their_number: float = float(theirs)
     if our_units is not None or their_units is not None:
         if unit_defs is None:
             raise ValueError(
                 "a composition needs the declared unit types to be priced against"
             )
         if our_units is not None:
-            our_number = our_units.guard(unit_defs)
+            our_number = _side_number(our_units, their_units, "guard", unit_defs)
         if their_units is not None:
-            their_number = their_units.strength(unit_defs)
+            their_number = _side_number(their_units, our_units, "strength", unit_defs)
     ours_eff = (
         our_number
         * (

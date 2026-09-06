@@ -665,7 +665,31 @@ commitment should show its arithmetic before you make it.
       composition choice itself is dormant in favor of spears until the
       counter-web prices a bow line against what it counters; that is slice
       3's debt, named here so it does not pass silently.)*
-- [ ] The counter-web that makes composition a puzzle
+- [x] The counter-web that makes composition a puzzle
+      *(Shipped v0.22.0: `counters` on the unit table, one direction per
+      pair, three in a cycle: spear closes on bow, bow breaks the axe rush,
+      axe comes apart the wall. When my type counters what it faces, my
+      side's number carries `COUNTER_BONUS` (1.5) scaled by the countered
+      share of the enemy; the countered side gets nothing, which is what
+      makes the mix worth reading. Bands muster a mix now too: bodies drawn
+      by `band_weight` (spear 1, bow 2, axe 2: raiders travel with fighters),
+      pressed as what the mix totals, announced in the massing line ("2 bow,
+      1 axe. The read says 10 spears."), and resolved against the wall's
+      composition. Hand-built scalar bands still fight the old way, and the
+      fight stays one draw.*
+
+      *Standing-gate verdict: **ships, with the payoff narrow and the lever
+      named.** In the pure matchup the read is worth a lot: a bow wall
+      against a pure-axe band holds at 0.38 odds where the spear wall,
+      countered by those same axes, holds at 0.17. In mixed bands the bonus
+      dilutes toward noise, and bands of one to three bodies are usually
+      mixed, so measured over 150 seeds the crude counter-reading policy
+      only edges the spear default in the engagements that matter (4
+      repelled to 3, against axe-carrying bands, walls armed). That is the
+      honest shape of a puzzle whose pieces are this small: real, legible,
+      sharp at the edges, rare in the middle. The levers if Brandon wants it
+      louder: `COUNTER_BONUS`, the band weights, and `BAND_SIZE_RANGE`. 12
+      new tests; suite at 377; pyright strict zero.)*
 - [ ] Scout intel driving pre-battle assembly
 
 ## Sub-project 8: the long game (planned)

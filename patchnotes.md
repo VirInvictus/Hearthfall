@@ -10,6 +10,31 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.22.0 (2026-09-06)
+
+**SP 7, slice 3: the counter-web.** The unit table grows `counters`: one
+direction per pair, three in a cycle. Spear closes on bow before the
+loosing tells; bow breaks the axe rush at range; axe comes apart a spear
+wall that has stood too long. When my type counters what it faces, my
+side's number carries `COUNTER_BONUS` (1.5) scaled by the countered share
+of the enemy; the countered side gets nothing, which is what retires the
+all-spear wall and makes the mix worth reading. Bands muster a mix of
+their own now: bodies drawn by `band_weight` (spear 1, bow 2, axe 2, so a
+raiding band travels with fighters), pressed as what the mix totals,
+announced in the massing line ("2 bow, 1 axe. The read says 10
+spears."), and resolved against the wall's composition. A hand-built
+scalar band still fights the old way, and the fight is still exactly one
+draw.
+
+The standing gate, read honestly: in the pure matchup the read is worth
+a lot (a bow wall against a pure-axe band holds at 0.38 odds where a
+countered spear wall holds at 0.17), but mixed bands dilute the bonus
+toward noise and small bands are usually mixed, so over 150 seeds a
+counter-reading policy only edges the spear default in the engagements
+that matter (4 repelled to 3). Real, legible, sharp at the edges, rare
+in the middle; the levers are `COUNTER_BONUS`, the band weights, and
+`BAND_SIZE_RANGE`. 12 new tests; suite at 377; pyright strict zero.
+
 ## v0.21.0 (2026-09-06)
 
 **SP 7, slice 2: groups assembled from types.** The militia order is an

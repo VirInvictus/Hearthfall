@@ -369,7 +369,22 @@ INTEL_COMBAT_FACTOR: dict[Staleness, float] = {
 # winnable by a clan that pays for them and the top of the range still beats
 # anything a young clan can field. Some fights are avoided, not won, and
 # `RAID_MATURITY_TURNS` is what makes avoiding one a decision at all.
+#
+# Since the counter-web (SP 7 slice 3) the draw is a *composition*: the band
+# musters `BAND_SIZE_RANGE` bodies, each drawn by the type's `band_weight`,
+# and its strength is what that mix presses with. The shipped weights land the
+# press in the same 3-8 window the scalar draw aimed at.
 RAIDER_STRENGTH_RANGE = (3, 8)
+# Bodies a band musters, each typed by `band_weight`.
+BAND_SIZE_RANGE = (1, 3)
+# What the counter-web is worth. When my type counters a type across the
+# field, my side's number carries this much again, scaled by the share of the
+# enemy my line counters: an all-bow wall against an all-axe band holds at two
+# and a half per bow where three spears hold at two and are punished for it
+# (the axes counter back). At 1.0 or below the bow line never beats the spear
+# default and the web is dead; at 2.0 a caught mismatch is a rout on rails.
+# 1.5 makes the right read worth a quarter again over the safe wall.
+COUNTER_BONUS = 1.5
 # Seasons a raid intent massing before it comes. The window is the read: the
 # band's strength is learned the season it masses, and it ages while the
 # player reassigns hands. Two seasons is one real decision point between the

@@ -442,6 +442,92 @@ class TestAssemblyWiring(unittest.TestCase):
             turn_resolve(state, over, Rng(7))
 
 
+class TestBandComposition(unittest.TestCase):
+    """Slice 3 wiring: a mustering band draws a mix of types, announces it,
+    and presses with it. The web only bites when both sides have types."""
+
+    def _state_with_mustering_band(self):
+        from hearthfall.engine.agents import Agent, AgentType
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        state = new_game_state()
+        band = Agent(id="band_1", name="the Ashfang", type=AgentType.NEIGHBOUR)
+        state.agents = {"band_1": band}
+        state.stores.food = 60
+        report = turn_resolve(state, Orders(forage=6), Rng(7))
+        return state, band, report
+
+    def test_mustering_draws_a_mix_and_presses_with_it(self):
+        from hearthfall.engine.units import Composition
+
+        state, band, _report = self._state_with_mustering_band()
+        assert band.intent is not None
+        self.assertIsInstance(band.composition, Composition)
+        assert band.composition is not None
+        self.assertEqual(band.strength, band.composition.strength(state.unit_defs))
+        # The same seed musters the same band.
+        _twin, twin_band, _ = self._state_with_mustering_band()
+        assert twin_band.composition is not None
+        self.assertEqual(band.composition, twin_band.composition)
+
+    def test_the_massing_line_names_the_mix(self):
+        _state, _band, report = self._state_with_mustering_band()
+        log = "\n".join(report.log)
+        self.assertIn("massing on the border:", log)
+        self.assertIn("The read says", log)
+
+    def test_an_axe_band_punishes_a_spear_wall_and_fears_a_bow_wall(self):
+        from hearthfall.engine.agents import Agent, AgentType, Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+        from hearthfall.engine.units import Composition
+
+        def run(wall: dict[str, int]) -> int:
+            food = 0
+            for seed in range(20):
+                state = new_game_state()
+                band = Agent(
+                    id="band_1",
+                    name="the Ashfang",
+                    type=AgentType.NEIGHBOUR,
+                    strength=8,
+                )
+                band.composition = Composition.of({"axe": 2})
+                band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+                state.agents = {"band_1": band}
+                state.stores.food = 60
+                orders = Orders(forage=1, militia_lines=wall)
+                turn_resolve(state, orders, Rng(seed))
+                food += state.stores.food
+            return food
+
+        spear_wall = run({"spear": 5})
+        bow_wall = run({"bow": 5})
+        self.assertGreater(
+            bow_wall,
+            spear_wall,
+            "the web did not bite: spears held an axe band as well as bows",
+        )
+
+    def test_a_scalar_band_fights_the_old_way(self):
+        # The hand-built fixtures of slices 4 and 5 set strength and no
+        # composition; the raid must resolve exactly as it did before the web.
+        from hearthfall.engine.agents import Intent, IntentKind
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        def run() -> tuple[int, str]:
+            state, band = _state_with_band(strength=6)
+            band.intent = Intent(kind=IntentKind.RAID, target_turn=state.turn)
+            band.mood = 0
+            state.stores.food = 30
+            report = turn_resolve(state, Orders(forage=1, militia=5), Rng(7))
+            return state.stores.food, "\n".join(report.log)
+
+        self.assertEqual(run(), run())
+        food, log = run()
+        self.assertIn("broke against the militia", log)
+        self.assertGreater(food, 0)
+
+
 class TestGradedStakes(unittest.TestCase):
     """Slice 5: the dead and the ground grade by the margin. A near-run raid
     costs a grave; a rout costs the band and marks the map."""
