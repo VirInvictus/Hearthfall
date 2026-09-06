@@ -867,7 +867,43 @@ def _walk(
             learned.append(
                 state.ledger.learn(FactKind.PRESENCE, target, agent.name, state.turn)
             )
+            learned.extend(_refresh_band_reads(state, agent, report))
     return tuple(learned)
+
+
+def _refresh_band_reads(
+    state: GameState, agent: Agent, report: TurnReport
+) -> tuple[Fact, ...]:
+    """A party at a band's camp takes a fresh read, and says what it saw.
+
+    The massing read was public once; everything since is silent, so this is
+    the one moment a wrong read can be caught before the blow. When the mix
+    has not changed the party says nothing: prose that cannot fire is worse
+    than no prose. Only a band still massing is worth reading; a band whose
+    raid has resolved has gone home.
+    """
+    from hearthfall.engine.agents import IntentKind
+
+    if (
+        agent.intent is None
+        or agent.intent.kind is not IntentKind.RAID
+        or agent.composition is None
+    ):
+        return ()
+    fresh = _named_mix(state, agent.composition)
+    previous = state.ledger.value(FactKind.RAIDER_COMPOSITION, agent.id)
+    facts = (
+        state.ledger.learn(
+            FactKind.RAIDER_STRENGTH, agent.id, agent.strength, state.turn
+        ),
+        state.ledger.learn(FactKind.RAIDER_COMPOSITION, agent.id, fresh, state.turn),
+    )
+    if previous is not None and previous != fresh:
+        report.note(
+            f"The {agent.name}'s camp has changed: {fresh} now, "
+            f"where the read said {previous}."
+        )
+    return facts
 
 
 @dataclass(frozen=True, slots=True)
@@ -993,6 +1029,7 @@ def _survey(state: GameState, report: TurnReport) -> tuple[Fact, ...]:
             agent_facts.append(
                 ledger.learn(FactKind.AGENT_INTENT, agent.id, intent_str, state.turn)
             )
+            agent_facts.extend(_refresh_band_reads(state, agent, report))
     return learned + (ground, worth) + tuple(agent_facts)
 
 
@@ -1265,11 +1302,12 @@ def _agents_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
             consumption=balance.BAND_CONSUMPTION,
         )
         # A band massing for a raid is public — the spears are visible from the
-        # border. The ledger learns its strength the season it masses, and the
-        # read ages from there. The maturity window is the player's time to
-        # refresh it by scouting, or to fight on an old number and pay, which
-        # is why the massing itself is announced the season it happens: a
-        # window the player is never told is open is not a window.
+        # border. The ledger learns its strength and its mix the season it
+        # masses, and the reads age from there. The maturity window is the
+        # player's time to refresh them by scouting, or to fight on an old
+        # read and pay, which is why the massing itself is announced the
+        # season it happens: a window the player is never told is open is not
+        # a window.
         if (
             not had_intent
             and agent.intent is not None
@@ -1282,17 +1320,34 @@ def _agents_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
             )
             mix = ""
             if agent.composition is not None:
-                named = sorted(
-                    agent.composition.counts, key=lambda item: (-item[1], item[0])
+                mix = f": {_named_mix(state, agent.composition)}"
+                state.ledger.learn(
+                    FactKind.RAIDER_COMPOSITION,
+                    agent.id,
+                    _named_mix(state, agent.composition),
+                    state.turn,
                 )
-                names = ", ".join(
-                    f"{count} {state.unit_defs[key].name}" for key, count in named
-                )
-                mix = f": {names}"
             report.note(
                 f"The {agent.name} is massing on the border{mix}. "
                 f"The read says {agent.strength} spears."
             )
+        elif (
+            had_intent
+            and agent.intent is not None
+            and agent.intent.kind == IntentKind.RAID
+            and agent.composition is not None
+            and rng.chance(balance.RAID_RESHUFFLE_CHANCE)
+        ):
+            # Reinforcements: the camp behind the border grew, silently. The
+            # reads the clan holds do not follow — a party at the camp is
+            # what refreshes them, which is what makes the walk worth hands.
+            _muster_band(state, agent, rng)
+
+
+def _named_mix(state: GameState, composition: Composition) -> str:
+    """A band's mix in words, biggest line first, ties in key order."""
+    named = sorted(composition.counts, key=lambda item: (-item[1], item[0]))
+    return ", ".join(f"{count} {state.unit_defs[key].name}" for key, count in named)
 
 
 def _muster_band(state: GameState, agent: Agent, rng: Rng) -> None:
@@ -1369,17 +1424,12 @@ def _raid(
     )
     line_note = ""
     if wall.total():
-        # Biggest line first: the wall is read as what stood where, not as an
-        # alphabet. Key order breaks ties so the prose is deterministic.
-        named = sorted(wall.counts, key=lambda item: (-item[1], item[0]))
-        names = ", ".join(
-            f"{count} {state.unit_defs[key].name}" for key, count in named
-        )
-        line_note = f" The line: {names}."
+        line_note = f" The line: {_named_mix(state, wall)}."
     if outcome.won:
         note = (
             f"The {agent.name} broke against the militia and melted back into "
-            f"the fog.{line_note}"
+            f"the fog. (read: {staleness.value}, odds {outcome.odds:.2f})"
+            f"{line_note}"
         )
         # A rout scatters the band far enough that its fleeing shape marks the
         # camp on the map: ground gained, bought in blood.

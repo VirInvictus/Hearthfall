@@ -10,6 +10,30 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.23.0 (2026-09-06)
+
+**SP 7, slice 4: scout intel driving pre-battle assembly.** The read
+becomes a proper fact loop, and the loop has teeth. A massing band
+learns its strength and its mix into the ledger: the new
+`RAIDER_COMPOSITION` fact rots faster than the strength read (halflife 2
+against 4), because bodies come and go behind the border. And they do
+come and go: each season a band waits, `RAID_RESHUFFLE_CHANCE` (0.3)
+reinforces it in silence. The massing announcement was public once;
+everything after that, the clan does not know. A scouting party that
+walks or surveys the camp refreshes both reads and says what it saw when
+the mix has changed: "The Ashen Clan's camp has changed: 2 axe now,
+where the read said 1 axe, 1 bow." The raid prices the strength read
+through the staleness bands as before; the mix read is priced by the web
+itself, in the wall you aimed at what you believed. The raid note now
+carries the read and the odds on a win as well as a loss.
+
+Measured over 80 seeds of the naive policy: 30 raids resolved and 12 of
+them (40 percent) were fought on a mix read that had silently gone
+wrong. Re-reading a camp costs a party out for a season and is gated by
+geography, so the informed wall is a paid wall. That closes SP 7: unit
+types, assembly, the counter-web, and intel-driven assembly, shipped as
+v0.20.0 through v0.23.0. 4 new tests; suite at 381; pyright strict zero.
+
 ## v0.22.0 (2026-09-06)
 
 **SP 7, slice 3: the counter-web.** The unit table grows `counters`: one

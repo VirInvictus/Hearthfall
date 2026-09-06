@@ -324,6 +324,10 @@ FACT_HALFLIFE: dict[FactKind, int | None] = {
     FactKind.AGENT_MOOD: 4,
     FactKind.AGENT_INTENT: 1,
     FactKind.RAIDER_STRENGTH: 4,
+    # A band's mix rots faster than its size: bodies come and go behind the
+    # border, and the wall you fielded against "mostly axes" is wrong the
+    # season they are not there any more.
+    FactKind.RAIDER_COMPOSITION: 2,
 }
 
 # --- Combat: terrain and morale (SP 6, slice 2) ---------------------------------
@@ -377,6 +381,13 @@ INTEL_COMBAT_FACTOR: dict[Staleness, float] = {
 RAIDER_STRENGTH_RANGE = (3, 8)
 # Bodies a band musters, each typed by `band_weight`.
 BAND_SIZE_RANGE = (1, 3)
+# The chance a massing band reshapes itself each season it waits behind the
+# border: reinforcements arrive, the mix shifts, and nothing announces it.
+# The massing read is public once; after that it ages like any fact, and a
+# party sent to the camp is what refreshes it. At 0.3 a two-season window
+# leaves roughly half the reads still true at the blow, which is the price
+# that makes the walk out and look worth the hands.
+RAID_RESHUFFLE_CHANCE = 0.3
 # What the counter-web is worth. When my type counters a type across the
 # field, my side's number carries this much again, scaled by the share of the
 # enemy my line counters: an all-bow wall against an all-axe band holds at two

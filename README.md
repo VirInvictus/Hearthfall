@@ -14,7 +14,7 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.22.0. SP 6 (violence) is live and reachable in play: bands mass with a readable mix and a raid costs grain, graves, or both. SP 7 (composition) is the front: the militia is an assembly, the counter-web prices the mix (spears close on bows, bows break axes, axes come apart spear walls), and intel-driven assembly is next.** Playable start to finish, and
+> **Status: v0.23.0. SP 7 (composition) is complete: the militia is an assembly, the counter-web prices the mix, and a band's read goes stale behind its border: a camp that has quietly reinforced is caught only by walking out to look. The granary trade is now a reading trade.** Playable start to finish, and
 > deliberately small: one map, four jobs, twenty seasons. Combat arrived with SP 6 as raid
 > violence; the deeper war tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,

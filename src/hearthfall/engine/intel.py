@@ -35,6 +35,7 @@ class FactKind(StrEnum):
     AGENT_MOOD = "agent_mood"
     AGENT_INTENT = "agent_intent"
     RAIDER_STRENGTH = "raider_strength"  # how many spears the band fields. rots fast.
+    RAIDER_COMPOSITION = "raider_composition"  # what the band is made of. rots faster.
 
 
 class Staleness(StrEnum):

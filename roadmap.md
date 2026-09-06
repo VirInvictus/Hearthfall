@@ -617,7 +617,7 @@ commitment should show its arithmetic before you make it.
       pays forage for them, which is the trade SP 7 now gets to price.
       Reachability is a suite guard (`TestRaidersReachARun`), not a note.)*
 
-## Sub-project 7: composition (planned)
+## Sub-project 7: composition (complete, 2026-09-06)
 
 *Question: is assembling the right stack against a read enemy the best decision in the game?*
 
@@ -690,7 +690,37 @@ commitment should show its arithmetic before you make it.
       sharp at the edges, rare in the middle. The levers if Brandon wants it
       louder: `COUNTER_BONUS`, the band weights, and `BAND_SIZE_RANGE`. 12
       new tests; suite at 377; pyright strict zero.)*
-- [ ] Scout intel driving pre-battle assembly
+- [x] Scout intel driving pre-battle assembly
+      *(Shipped v0.23.0: the read became a proper fact loop. A massing band
+      learns its strength and its mix into the ledger (`RAIDER_COMPOSITION`,
+      halflife 2, faster than its size: bodies come and go behind the
+      border); while it waits, `RAID_RESHUFFLE_CHANCE` (0.3 a season)
+      reinforces it in silence, so the held read goes wrong without a
+      word; and a scouting party that walks or surveys the camp refreshes
+      both reads and says what it saw when the mix has changed ("The
+      Ashen Clan's camp has changed: 2 axe now, where the read said 1 axe,
+      1 bow."). The fight prices the strength read through the staleness
+      bands as before; the mix read is priced by the web itself, the wall
+      you aimed at what you believed. The raid note carries the read and
+      the odds on a win as well as a loss.)*
+
+      *Standing-gate verdict: **ships.** The loop closes end to end: the
+      massing tells you once, the camp lies to you after that, and walking
+      out to look is the only thing that un-lies it. Measured over 80 seeds
+      of the naive policy: 30 raids resolved and 12 of them (40 percent)
+      were fought on a mix read that had silently gone wrong, which is the
+      exact shape of "you positioned for the enemy you read about, not the
+      one across the field". The cost side is real too: re-reading a camp
+      is a party out for a season, gated by geography (the camp must be
+      reachable ground), so the informed wall is a paid wall. SP 7's
+      question is now answerable in play, and the answer is waiting on
+      Brandon's year-read alongside the others. 4 new tests; suite at 381;
+      pyright strict zero.)*
+
+*(SP 7 complete: the four boxes shipped as v0.20.0 through v0.23.0 on
+2026-09-06. The sub-project's question, "is assembling the right stack
+against a read enemy the best decision in the game?", is answerable in
+play: the read exists, it ages, it lies, and the wall is yours to aim.)*
 
 ## Sub-project 8: the long game (planned)
 

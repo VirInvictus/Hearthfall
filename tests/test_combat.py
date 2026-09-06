@@ -528,6 +528,128 @@ class TestBandComposition(unittest.TestCase):
         self.assertGreater(food, 0)
 
 
+class TestScoutIntelDrivesAssembly(unittest.TestCase):
+    """Slice 4: the read is a fact that ages, bands reinforce in silence, and
+    a party at the camp is what refreshes it. The massing read is public
+    once; everything after that is the scouts' job."""
+
+    def _massing_state(self):
+        from hearthfall.engine.agents import Agent, AgentType
+
+        state = new_game_state()
+        band = Agent(id="band_1", name="the Ashfang", type=AgentType.NEIGHBOUR)
+        band.location = min(state.ledger.frontier(state.world))
+        state.agents = {"band_1": band}
+        state.stores.food = 60
+        return state, band
+
+    def test_the_massing_learns_strength_and_mix_as_facts(self):
+        from hearthfall.engine import balance
+        from hearthfall.engine.intel import FactKind
+        from hearthfall.engine.turn import _named_mix
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        old = balance.RAID_RESHUFFLE_CHANCE
+        balance.RAID_RESHUFFLE_CHANCE = 0.0
+        try:
+            state, band = self._massing_state()
+            turn_resolve(state, Orders(forage=6), Rng(7))
+            assert band.composition is not None
+            self.assertEqual(
+                state.ledger.value(FactKind.RAIDER_STRENGTH, band.id),
+                band.strength,
+            )
+            self.assertEqual(
+                state.ledger.value(FactKind.RAIDER_COMPOSITION, band.id),
+                _named_mix(state, band.composition),
+            )
+        finally:
+            balance.RAID_RESHUFFLE_CHANCE = old
+
+    def test_a_reinforcement_breaks_the_read_in_silence(self):
+        from hearthfall.engine import balance
+        from hearthfall.engine.intel import FactKind
+        from hearthfall.engine.turn import _named_mix
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        old = balance.RAID_RESHUFFLE_CHANCE
+        balance.RAID_RESHUFFLE_CHANCE = 1.0
+        try:
+            state, band = self._massing_state()
+            turn_resolve(state, Orders(forage=6), Rng(7))
+            assert band.intent is not None
+            # The band keeps massing while the director waits.
+            band.intent.target_turn = state.turn + 10
+            turn_resolve(state, Orders(forage=6), Rng(7))
+            # The camp grew behind the border and nothing announced it: the
+            # fact the clan holds is not the band that is there now.
+            assert band.composition is not None
+            self.assertNotEqual(
+                state.ledger.value(FactKind.RAIDER_COMPOSITION, band.id),
+                _named_mix(state, band.composition),
+                "the reshuffle never diverged on seed 42; pick another seed",
+            )
+        finally:
+            balance.RAID_RESHUFFLE_CHANCE = old
+
+    def test_a_party_at_the_camp_refreshes_the_read_and_says_so(self):
+        from hearthfall.engine import balance
+        from hearthfall.engine.intel import FactKind
+        from hearthfall.engine.turn import _named_mix
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        old = balance.RAID_RESHUFFLE_CHANCE
+        balance.RAID_RESHUFFLE_CHANCE = 1.0
+        try:
+            state, band = self._massing_state()
+            turn_resolve(state, Orders(forage=6), Rng(7))
+            assert band.intent is not None
+            band.intent.target_turn = state.turn + 10
+            turn_resolve(state, Orders(forage=6), Rng(7))
+            report = turn_resolve(
+                state,
+                Orders(forage=1, scout=3, scout_target=band.location),
+                Rng(7),
+            )
+            log = "\n".join(report.log)
+            self.assertIn("camp has changed", log)
+            assert band.composition is not None
+            self.assertEqual(
+                state.ledger.value(FactKind.RAIDER_COMPOSITION, band.id),
+                _named_mix(state, band.composition),
+                "the party stood in the camp and the read did not refresh",
+            )
+        finally:
+            balance.RAID_RESHUFFLE_CHANCE = old
+
+    def test_the_raid_prices_a_stale_read(self):
+        from hearthfall.engine import balance
+        from hearthfall.engine.turn import resolve as turn_resolve
+
+        old = balance.RAID_RESHUFFLE_CHANCE
+        balance.RAID_RESHUFFLE_CHANCE = 1.0
+        try:
+            state, band = self._massing_state()
+            # A deep store: the director holds the band six seasons and the
+            # clan must still be standing when the blow falls.
+            state.stores.food = 600
+            turn_resolve(state, Orders(forage=6), Rng(7))
+            assert band.intent is not None
+            band.intent.target_turn = state.turn + 6
+            report = None
+            while band.intent is not None and not state.is_over:
+                adults = state.population.adults
+                report = turn_resolve(
+                    state, Orders(forage=1, militia=adults - 1), Rng(7)
+                )
+            assert report is not None
+            log = "\n".join(report.log)
+            self.assertIn("comes over the border", log)
+            self.assertIn("(read: aging", log)
+        finally:
+            balance.RAID_RESHUFFLE_CHANCE = old
+
+
 class TestGradedStakes(unittest.TestCase):
     """Slice 5: the dead and the ground grade by the margin. A near-run raid
     costs a grave; a rout costs the band and marks the map."""
