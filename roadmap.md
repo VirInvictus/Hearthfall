@@ -37,6 +37,13 @@ verdicts are owed a single combined year-read before SP 6's first player-visible
 (the raiders) can claim the gate, and every SP 6 slice records its verdict here when it is
 run.
 
+- [ ] **The owed combined year-read (SP 3 through SP 6).** One annotated year, printed from
+      the `test_playthrough.py` harness and read start to finish: allocation, forecast,
+      outcome, and every event with the choice taken. Judged fun, interesting, and
+      survivable. The judgment is Brandon's; the print is agent-prepared. The verdict
+      lands here when he has read it. (Preparing it on 2026-09-06 is what surfaced the
+      raid-economy finding in sub-project 6 below.)
+
 **Why this exists.** Slice 2's first measurement passed every automated guard while year one
 killed half the clan under good play and left the store at zero for the rest of the run. The
 guards are shaped to catch a broken loop, not a joyless one, and nothing in the suite can tell
@@ -586,6 +593,15 @@ commitment should show its arithmetic before you make it.
       enough to mark its camp on the map: `ledger.reveal` at the band's
       location. Lost stores landed with slice 4. The SP 6 question is now
       answerable in play; the year-read verdict is owed alongside SP 3-5's.)*
+- [ ] **The band economy must be able to reach a raid (found 2026-09-06
+      while preparing the owed year-read).** No band can get miserable inside
+      a twenty-season run: bands start with 20-50 food and net one less per
+      season, and mood only falls once the store is empty, so the earliest
+      possible raid intent is turn 23 against a run that ends at 20. The
+      raiders of slices 4 and 5 are therefore dead content in real play;
+      only hand-built test states ever fight one. The fix is numbers, not
+      rules: the band's economy moves to `balance.py`, tuned until raids
+      land in a run's living years.
 
 ## Sub-project 7: composition (planned)
 
@@ -658,7 +674,9 @@ not quietly built either.
   promising unbuilt idea.**
 - **An attraction web: compatibility meters and characteristics deciding which households
   pair.** Lands in sub-project 2 slice 3. Belongs at the household layer rather than the named
-  cast, because `spec.md` §5 says a household is what marries.
+  cast, because `spec.md` §5 says a household is what marries. *(Landed there: traits,
+  `TRAIT_COMPATIBILITY`, and the attraction meters shipped with sub-project 2 slice 3,
+  v0.11.0.)*
 - **Events that are rare *and* game-altering.** Half-answered: rarity-by-condition is in and
   demonstrated by the elder chain. What is missing is an effect vocabulary big enough for
   "game-altering" (revealing ground, granting capacity, a modifier that lasts the run). That is
