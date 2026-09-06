@@ -317,7 +317,7 @@ of this document and it should be read as such.
 
 ## 7. Build order: nothing is ever fully broken
 
-Ten sub-projects. Each is playable, each answers a question, each gets its own spec and
+Eight sub-projects. Each is playable, each answers a question, each gets its own spec and
 plan. `roadmap.md` holds the detail. The order is load-bearing.
 
 1. **The fact ledger.** Scouts, reports, staleness. **Holds the kill switch.**
@@ -328,6 +328,16 @@ plan. `roadmap.md` holds the detail. The order is load-bearing.
 6. **Violence.** Abstract combat, raiders, real stakes.
 7. **Composition.** Unit types, the counter-web, intel driving assembly.
 8. **The long game.** Doctrine, borders, attrition, the endgame.
+
+**The count said ten until 2026-09-06; the two extras are resolved now, not pending.**
+Sub-projects 9 and 10 entered the roadmap on 2026-08-21 out of the `report.md` analysis,
+and this list was never grown to match them. Examined against what has shipped and what
+the measurements say, the count is eight and the ideas went where they belong. The
+endgame clause folds into sub-project 8, where the same words already lived. Research
+driven by processed facts, and buildings as a permanent sink for surplus, ride
+sub-project 8's design conversation as candidates, not commitments. The calendar flow was
+sub-project 3, shipped. Races, asymmetric starts, and the macro transition are parked in
+the roadmap's "Raised, not yet designed": the game after sub-project 8's game.
 
 **The kill switch moved earlier, from the old Phase 2 to sub-project 1.** Scouts and reports
 used to be a map feature scheduled after a content phase. Under this design they are the

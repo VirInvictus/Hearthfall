@@ -724,29 +724,37 @@ play: the read exists, it ages, it lies, and the wall is yours to aim.)*
 
 ## Sub-project 8: the long game (planned)
 
-## Sub-project 9: Infrastructure and Upgrades (planned)
+*Doctrine, borders, attrition, the endgame. The campaign arc: runs long enough that the
+thing being managed is a people rather than a household.*
 
-*Question: does investing a season's surplus into a permanent upgrade or building feel earned?*
+> **Proposed shape, 2026-09-06: unsigned, riding the SP 9/10 triage conversation, and
+> therefore not commitments.** Candidate boxes for whenever this front opens: the campaign
+> arc itself (what a long run is winning and losing); doctrine, meaning the tallies and
+> choices hardening into a people's character; borders and neighbours at scale, with the
+> walked-out hearths and rival camps as polities; attrition and the endgame. Candidates
+> riding along from the retired sub-project 9: research progressed by processing scouted
+> facts, and buildings as a spent, permanent sink. None of this is promised until signed.
 
-*(See `report.md` for the analysis on buildings, passive yields, and research scaling)*
+## Sub-projects 9 and 10: retired 2026-09-06, the ideas triaged
 
-- [ ] **City Planning:** Building infrastructure to greatly increase output and provide passive baseline resources.
-- [ ] Seasonal upgrades to make the civ more powerful over time.
-- [ ] **Research Integration:** Tech progression driven by the fact ledger, processed by educational buildings.
+These two sections stood as planned boxes since August without ever entering `spec.md` §7's
+list, and the ten-versus-eight drift has been resolved against them: the count is eight.
+Where each idea went:
 
-## Sub-project 10: The City and Power (planned)
-
-*Question: does playing a different race make you value the map differently?*
-
-*(See `report.md` for the macro-stage transition and time compression)*
-
-- [ ] Races with distinct benefits and weaknesses
-- [ ] Variance and replayability through asymmetric starting conditions
-- [ ] Multiple peoples with distinct doctrines and group structures
-- [ ] Resource variance across terrain
-- [ ] **The Macro Transition:** The arc from hearth to city to power, retiring manual individual placement for population-wide assignment.
-- [ ] **The Calendar Flow:** Extensive standing orders allowing time to compress, acting like real-time without breaking the turn-based engine.
-- [ ] Grimdark endgame: attrition, hard borders, a people that endures or is buried
+- **The grimdark endgame** (attrition, hard borders, a people that endures or is buried)
+  folds into sub-project 8, where the same clause already lived.
+- **Research Integration** (tech progression driven by the fact ledger, processed by
+  educational buildings) and **buildings as a permanent sink for surplus** ride
+  sub-project 8's design conversation as candidates. Research is the strongest idea either
+  section had: it makes paying to look the prerequisite for progress, which is `spec.md` §1.
+  Buildings carry a warning: *passive baseline resources* would delete scarcity, and
+  scarcity is the game.
+- **Seasonal upgrades** were too vague to keep as a commitment; folded into the buildings
+  candidate.
+- **The Calendar Flow** is sub-project 3, shipped: standing orders and
+  `run_until_interrupted` are exactly the time compression it asked for.
+- **Races, asymmetric starts, and the macro transition** move to "Raised, not yet designed"
+  below: real ideas for the game after sub-project 8's game, parked so they stop asking.
 
 ---
 
@@ -791,6 +799,15 @@ not quietly built either.
   demonstrated by the elder chain. What is missing is an effect vocabulary big enough for
   "game-altering" (revealing ground, granting capacity, a modifier that lasts the run). That is
   a real engine question and should be designed against `spec.md` §6's warning, not around it.
+- **Peoples with distinct doctrines and asymmetric starts.** From the retired sub-project 10.
+  A different people should make the map worth reading differently. It needs the long game
+  first: doctrine without a campaign to express it is a menu.
+- **The macro transition: retiring manual allocation for population-wide assignment at
+  scale.** `spec.md` §9.9 done right, and only reachable once there is a scale to abstract.
+- **Research driven by processed facts, and buildings as a spent, permanent sink.** The
+  surviving candidates from the retired sub-project 9. They ride sub-project 8's design
+  conversation: research makes paying to look the prerequisite for progress; buildings must
+  never yield passively, or they delete scarcity.
 
 **Settled without code, for the record:** everything already randomises per new game, including
 the map, terrain, and event order. `main()` and the new-run action both draw a fresh seed.

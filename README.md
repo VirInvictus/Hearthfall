@@ -130,7 +130,7 @@ Hit `Ctrl+P` to open the command palette, where you can set standing orders, adv
 ## Documentation
 
 - [`spec.md`](spec.md): the contract. Read it before changing semantics.
-- [`roadmap.md`](roadmap.md): the ten sub-projects, their kill gates, and what playing
+- [`roadmap.md`](roadmap.md): the sub-projects, their kill gates, and what playing
   each one actually revealed.
 - [`patchnotes.md`](patchnotes.md): release notes.
 
