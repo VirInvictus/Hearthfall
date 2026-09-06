@@ -844,6 +844,36 @@ not quietly built either.
   demonstrated by the elder chain. What is missing is an effect vocabulary big enough for
   "game-altering" (revealing ground, granting capacity, a modifier that lasts the run). That is
   a real engine question and should be designed against `spec.md` §6's warning, not around it.
+
+  **Design brief, drafted 2026-09-06: a proposal to be designed, not a decision.** The
+  finding from walking the engine: every "game-altering" shape already has an in-engine
+  precedent, so the vocabulary costs one structured effect table each and the evaluator
+  never grows. Three shapes, in the order they should be built:
+
+  1. **Revealing ground.** Precedent: a rout's flight already marks the band's camp on the
+     map (`ledger.reveal` in `turn._raid`). Effect: `[event.effect.reveal]` with a count
+     (`tiles = 2`); the engine picks which frontier tiles, ranked the way `survey_plan`
+     ranks ground, because a target named in the TOML is the selector the spec refuses.
+     The corpus story writes itself: floods cut paths, refugees describe vales, a dying
+     man trades what he saw.
+  2. **Granting capacity.** Precedent: `forage_capacity` is already cached on the state
+     and already a snapshot key; the grant is one state counter that `_refresh_ground`
+     adds in, written by `[event.effect.improvement]` as a named pair (`clearings = 1`).
+     Readable back by content through that one key. Improvements are named in code and
+     never selected in TOML, which is the same rule the household effect already lives by.
+  3. **A modifier that lasts the run.** The honest home for "the granary wall held" is a
+     *charge*: a state counter that a rule reads and spends. The raid path would halve its
+     granary take once and decrement; what remains is visible in the snapshot. Effects
+     write charges as structured pairs. What is deliberately out: timed modifiers ("for
+     the next four seasons"), because a timer is a hidden state machine the corpus cannot
+     see and the chronicle cannot render; a charge is spent or it endures, and both are
+     legible.
+
+  Rarity stays condition-based, per the elder chain. A worked sketch to prove the corpus
+  is ready: "the mason of the fallen stead", gated on `hearths_walked_out > 0` and
+  `tally_graves > 2` (both keys exist today), offers the granary wall at a cost in food;
+  the refusal branches through a tally, and somewhere years later a band finds the
+  granary unguarded. Nothing in the sketch needs a new grammar.
 - **Peoples with distinct doctrines and asymmetric starts.** From the retired sub-project 10.
   A different people should make the map worth reading differently. It needs the long game
   first: doctrine without a campaign to express it is a menu.
