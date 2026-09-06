@@ -782,6 +782,24 @@ thing being managed is a people rather than a household.*
 > first: research progressed by processing scouted facts, and buildings as a spent,
 > permanent sink (their warning stands: nothing passive, or scarcity dies).
 
+- [x] The works: surplus raised into permanence
+      *(Shipped v0.26.0, applying the extra-decision brief under the
+      keep-moving directive. `Orders.work` is a labour line like any other;
+      what the hands raise is the ladder's next entry, the engine's call
+      (`balance.WORKS`: palisade, smokehouse, shrine), each spent once and
+      modest forever - 6 grain the next raid does not carry off, half a
+      tender's worth of rot trimmed every season, one point of standing
+      cheer. Completions are announced; a finished ladder says so; and the
+      works read into `snapshot()` as three flat keys. The spoil arithmetic
+      moved into `_spoil_rate` so the forecast cannot drift from the rule.*
+
+      *Standing-gate verdict: **ships.** Gate-read over 50 seeds: a builder
+      policy (two hands on the works whenever the store is healthy) finishes
+      two works a run, endures 14 of 50 against the naive 11, and cuts what
+      raiders carry off - the decision is paid for in forage hands, in
+      exactly the prosperous seasons where the allocation used to write
+      itself. 9 new tests; suite at 403; pyright strict zero.)*
+
 - [x] Doctrine: the run's choices harden into character
       *(Shipped v0.25.0. The corpus gains the doctrine fork
       (`data/events/doctrine.toml`): after the graves have started, the clan

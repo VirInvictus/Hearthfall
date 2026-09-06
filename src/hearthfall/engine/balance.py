@@ -414,6 +414,34 @@ RAID_STORE_LOSS = 8
 # season of hunger, without taking anyone.
 MORALE_LOSS_PER_RAID = 2
 
+# --- The works (SP 8, slice 3) -----------------------------------------------------
+
+# The things surplus hands can raise, in the order the engine builds them.
+# Each entry is (name, hand-seasons to raise). The ladder is fixed and the
+# player chooses only how many hands: the works are a labour line, not a
+# menu, and what gets built next is the engine's call the same way the
+# survey's tile is. Hand-seasons were aimed at a rich clan of eight putting
+# two hands on the works from year two: the palisade closes in early year
+# three, which is before the raids the guard was asked for.
+WORKS: tuple[tuple[str, int], ...] = (
+    ("palisade", 6),
+    ("smokehouse", 6),
+    ("shrine", 8),
+)
+# What a raised palisade is worth: that much less grain carried off when a
+# raid lands. Chosen against RAID_STORE_LOSS (8): a walled granary still
+# bleeds, and the dead still grade by the margin, but the blow stops being
+# the whole store. This is the multiplier the band economy was tuned against;
+# if raids ever get retuned, start here.
+PALISADE_GRANARY_GUARD = 6
+# What a raised smokehouse is worth: that much off the season's spoil rate,
+# down to the same floor tending obeys. Half a tender's worth of rot, every
+# season, forever.
+SMOKEHOUSE_SPOIL_TRIM = 0.02
+# What a raised shrine is worth: the mood the clan drifts back toward when
+# nothing pushes it. One point of standing cheer, bought once.
+SHRINE_DRIFT_TARGET = 6
+
 # --- The band economy (found 2026-09-06, preparing the owed year-read) -----------
 
 # What a band gathers and eats in a season, and the store it starts with. This

@@ -162,6 +162,31 @@ def _terrain(ledger: Ledger, coord: Coord) -> Terrain | None:
     return Terrain(value) if isinstance(value, str) else None
 
 
+# Said once each, when the works are finished. A completion is a season the
+# clan did something that outlives it, which is the one piece of news the
+# chronicle should not stay quiet about.
+WORKS_PROSE = {
+    "palisade": (
+        "The palisade is closed. The granary has walls now, and the next band "
+        "that comes will find less to carry."
+    ),
+    "smokehouse": (
+        "The smokehouse is raised. The meat keeps, and the seasons take less "
+        "than they did."
+    ),
+    "shrine": (
+        "The shrine is raised. It is nothing anyone can point to, and the "
+        "camp stands straighter for it."
+    ),
+}
+
+WORKS_FINISHED_LINE = "There is nothing left to raise. The works are finished."
+
+
+def work_completed_line(name: str) -> str:
+    return WORKS_PROSE[name]
+
+
 def walkout_lines(hearths: int, people: int, food: int) -> list[str]:
     """A hearth leaving, said the way the clan would find out about it.
 

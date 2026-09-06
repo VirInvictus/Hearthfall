@@ -10,6 +10,28 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.26.0 (2026-09-06)
+
+**SP 8, slice 3: the works.** Surplus hands become permanent, modest
+things, and prosperous seasons get a real decision. `Orders.work` is a
+labour line like any other - hands against the same adults - and what the
+hands raise is the ladder's next entry, the engine's call the same way the
+survey's tile is (`balance.WORKS`: palisade, 6 hand-seasons; smokehouse,
+6; shrine, 8). A closed palisade is worth 6 grain the next raid does not
+carry off; a smokehouse trims the season's spoil by half a tender's worth
+forever; a shrine lifts the morale drift target one point. Completions are
+announced in the chronicle; a finished ladder says so rather than eating
+hands silently; and the works read into `snapshot()` as three flat keys,
+so content can gate on a clan that has walls.
+
+The forecast shares the spoil arithmetic through one function
+(`_spoil_rate`), because the smokehouse touches the one place the forecast
+duplicates on purpose. Gate-read over 50 seeds: a builder policy (two
+hands on the works whenever the store is healthy) finishes two works a
+run, endures 14 of 50 against the naive 11, and cuts what raiders carry
+off - the decision is paid for in forage hands, exactly where the brief
+wanted it. 9 new tests; suite at 403; pyright strict zero.
+
 ## v0.25.0 (2026-09-06)
 
 **SP 8, slice 2: doctrine.** Two clans that endure are not the same clan,

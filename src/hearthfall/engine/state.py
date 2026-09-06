@@ -408,6 +408,11 @@ class GameState:
     # are: the rules read what they are handed, and `new_game` hands them the
     # shipped table unless a caller injects one.
     unit_defs: UnitDefs = field(default_factory=dict[str, UnitDef])
+    # The works (SP 8): hand-seasons banked toward the next improvement, and
+    # the improvements raised so far, as name -> 1. The ladder itself lives
+    # in `balance.WORKS`; the state holds only what has been earned.
+    work_progress: int = 0
+    improvements: dict[str, int] = field(default_factory=dict[str, int])
 
     @property
     def season(self) -> Season:
@@ -464,6 +469,11 @@ class GameState:
             "hands_without_ground": max(
                 0, self.population.adults - self.forage_capacity
             ),
+            # The works, as flat scalars content can gate on (SP 8). A clan
+            # that has raised the palisade answers questions differently.
+            "works_palisade": self.improvements.get("palisade", 0),
+            "works_smokehouse": self.improvements.get("smokehouse", 0),
+            "works_shrine": self.improvements.get("shrine", 0),
             "terrain_home": str(self.world.tile(self.world.home).terrain),
             "terrain_revealed": str(self.last_revealed)
             if self.last_revealed

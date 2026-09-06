@@ -379,10 +379,7 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
             )
 
     after_eat = after_produce - eaten
-    rate = max(
-        balance.SPOIL_RATE_FLOOR,
-        balance.SPOIL_RATE[season] - orders.tend * balance.SPOIL_REDUCTION_PER_TENDER,
-    )
+    rate = _spoil_rate(state, orders, season)
     spoiled = int(after_eat * rate)
 
     return Forecast(
@@ -526,6 +523,7 @@ def resolve(
     _produce(state, orders, season, report)
     _consume(state, orders, report)
     _spoil(state, orders, season, report)
+    _work(state, orders, report)
     _scout(state, orders, rng, report)
     _draw_event(state, rng, report, events)
     _grow(state, rng, report)
@@ -798,18 +796,55 @@ def _divide(
     return shares
 
 
+def _spoil_rate(state: GameState, orders: Orders, season: Season) -> float:
+    """The season's spoil rate after tending and the smokehouse.
+
+    One function because the forecast duplicates this arithmetic on purpose,
+    and duplication without a shared definition would drift the first time
+    anyone touched either side. The smokehouse is worth half a tender, every
+    season, forever.
+    """
+    trim = state.improvements.get("smokehouse", 0) * balance.SMOKEHOUSE_SPOIL_TRIM
+    return max(
+        balance.SPOIL_RATE_FLOOR,
+        balance.SPOIL_RATE[season]
+        - orders.tend * balance.SPOIL_REDUCTION_PER_TENDER
+        - trim,
+    )
+
+
 def _spoil(
     state: GameState, orders: Orders, season: Season, report: TurnReport
 ) -> None:
-    rate = max(
-        balance.SPOIL_RATE_FLOOR,
-        balance.SPOIL_RATE[season] - orders.tend * balance.SPOIL_REDUCTION_PER_TENDER,
-    )
+    rate = _spoil_rate(state, orders, season)
     spoiled = int(state.stores.food * rate)
     state.stores.food -= spoiled
     report.spoiled = spoiled
     if spoiled:
         report.note(f"{spoiled} food rotted in the store.")
+
+
+def _work(state: GameState, orders: Orders, report: TurnReport) -> None:
+    """Hands on the works, banked toward the ladder's next improvement.
+
+    The player chose how many hands; the engine chooses what they raise, the
+    way it chooses the survey's tile (`spec.md` §9.9). When the ladder is
+    finished, a work order says so: hands with nothing to raise is the
+    player's mistake to notice, not the engine's to hide.
+    """
+    if orders.work <= 0:
+        return
+    for name, cost in balance.WORKS:
+        if not state.improvements.get(name):
+            break
+    else:
+        report.note(reports.WORKS_FINISHED_LINE)
+        return
+    state.work_progress += orders.work
+    if state.work_progress >= cost:
+        state.work_progress = 0
+        state.improvements[name] = 1
+        report.note(reports.work_completed_line(name))
 
 
 def _scout(state: GameState, orders: Orders, rng: Rng, report: TurnReport) -> None:
@@ -1152,11 +1187,16 @@ def _grow(state: GameState, rng: Rng, report: TurnReport) -> None:
 
     # Morale drifts back toward the middle when nothing pushes it, so one bad winter does
     # not flatten the clan for the rest of the run and leave every later event landing on
-    # the floor.
+    # the floor. A raised shrine is worth one point of standing cheer.
+    drift_target = (
+        balance.SHRINE_DRIFT_TARGET
+        if state.improvements.get("shrine")
+        else balance.MORALE_DRIFT_TARGET
+    )
     for household in population.households:
-        if household.mood < balance.MORALE_DRIFT_TARGET:
+        if household.mood < drift_target:
             household.mood += 1
-        elif household.mood > balance.MORALE_DRIFT_TARGET:
+        elif household.mood > drift_target:
             household.mood -= 1
 
 
@@ -1503,7 +1543,10 @@ def _raid(
             note += " Their flight marks the camp on the map."
         report.note(note)
         return
-    lost = min(state.stores.food, balance.RAID_STORE_LOSS)
+    # A raised palisade is worth that much less carried off. The raid still
+    # lands, the dead still grade; the wall is grain the clan keeps.
+    guard = state.improvements.get("palisade", 0) * balance.PALISADE_GRANARY_GUARD
+    lost = min(state.stores.food, max(0, balance.RAID_STORE_LOSS - guard))
     state.stores.food -= lost
     state.population.shift_mood(
         -balance.MORALE_LOSS_PER_RAID, balance.MORALE_MIN, balance.MORALE_MAX

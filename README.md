@@ -14,7 +14,7 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.25.0. SP 8 (the long game) is the front: a hearth that walks out comes back as a rival band, and the clan is asked once what it is - the answer shapes the payoffs and the epilogue your ending reads. The militia is an assembly, the counter-web prices the mix, and a band's read goes stale behind its border.** Playable start to finish, and
+> **Status: v0.26.0. SP 8 (the long game) is the front: a hearth that walks out comes back as a rival band, the clan is asked once what it is (the answer shapes the ending), and surplus hands can now raise the works - a palisade, a smokehouse, a shrine - permanent and modest, bought with hands the forage line wanted.** Playable start to finish, and
 > deliberately small: one map, four jobs, twenty seasons. Combat arrived with SP 6 as raid
 > violence; the deeper war tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,
