@@ -755,12 +755,34 @@ play: the read exists, it ages, it lies, and the wall is yours to aim.)*
 thing being managed is a people rather than a household.*
 
 > **Proposed shape, 2026-09-06: unsigned, riding the SP 9/10 triage conversation, and
-> therefore not commitments.** Candidate boxes for whenever this front opens: the campaign
-> arc itself (what a long run is winning and losing); doctrine, meaning the tallies and
-> choices hardening into a people's character; borders and neighbours at scale, with the
-> walked-out hearths and rival camps as polities; attrition and the endgame. Candidates
-> riding along from the retired sub-project 9: research progressed by processing scouted
-> facts, and buildings as a spent, permanent sink. None of this is promised until signed.
+> therefore not commitments.** Candidate boxes for whenever this front opens, in the order
+> the research says they should come:
+>
+> 1. **Rivals: the walked-out hearth returns.** The oldest promise in the repo still
+>    standing: sub-project 2 slice 4 measured that driving a hearth off is unpunished and
+>    named the fix ("the walked-out hearth turning up on the map"), and `_leave`'s
+>    docstring still promises the second half. Nothing was built; the neighbours on the
+>    map are procedurally named strangers. Everything a rival needs now exists: agents
+>    carry food, mood, location, and since sub-project 7 a unit mix and a readable
+>    strength; the hearth leaves carrying its grudge; the raid and intel layers price the
+>    reunion. This is the most grounded candidate in the repo: it closes a measured debt,
+>    reuses three shipped systems, and invents no new fiction.
+> 2. **Doctrine: the run's choices harden into a people's character.** Grounded in what
+>    tallies already are: a persistent, choice-written memory that content reads. Doctrine
+>    is named moments and epilogue prose gated on those tallies, corpus-first and
+>    engine-light: what the clan was in year one is what its people are in year five.
+> 3. **The arc: runs past twenty seasons.** Deliberately last, because the measurements
+>    argue against it until something changes: the plateau means a long run auto-pilots
+>    through its middle, and the frequency refusal showed the naive run cannot absorb more
+>    pressure. The extra-decision brief (surplus into permanence) is the candidate that
+>    gives a long run a middle; ENDURED and BURIED would need era milestones rather than a
+>    longer clock.
+>
+> Riding along from the retired sub-project 9, as candidates for whichever front opens
+> first: research progressed by processing scouted facts, and buildings as a spent,
+> permanent sink (their warning stands: nothing passive, or scarcity dies).
+>
+> None of this is promised until signed by Brandon.
 
 ## Sub-projects 9 and 10: retired 2026-09-06, the ideas triaged
 
