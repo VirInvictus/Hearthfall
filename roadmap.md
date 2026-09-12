@@ -44,7 +44,6 @@ run.
       sub-project 6 below.)
 
       **Verdict, recorded 2026-09-06, read against v0.23.0: interesting and survivable,
-        *(GUT-CHECK CONFIRMED 2026-09-12 (Brandon): the verdict stands as his own.)*
       fun not yet.** The input is `audit/Hearthfall/year-read-input-2026-09-06.md` (two
       annotated runs, one carrying the full raid arc); the reading below was proposed by
       the agent and accepted by Brandon the same day. *Interesting:* yes. The raid arc is
@@ -59,6 +58,7 @@ run.
       fix was tried the same day and **refused on measurement** (see the sub-project 6
       note): every shape of the frequency raise drove the naive run past the brutal floor
       the verdict had just recorded, so the fun gap waits on the economy, not the bands.
+        *(GUT-CHECK CONFIRMED 2026-09-12 (Brandon): the verdict stands as his own.)*
 
 **Why this exists.** Slice 2's first measurement passed every automated guard while year one
 killed half the clan under good play and left the store at zero for the rest of the run. The
