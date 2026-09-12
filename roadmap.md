@@ -999,3 +999,34 @@ not quietly built either.
 the map, terrain, and event order. `main()` and the new-run action both draw a fresh seed.
 
 **Settled 2026-08-09, in slice 3:** the order is `Orders.scout`, not `Orders.explore`.
+
+## New findings 2026-09-12 (six-lens full audit; detail: audit/FULL-AUDIT-2026-09-12.md, Wave 5)
+
+- [ ] **HIGH: the TUI cannot answer a pending event choice - the run
+      soft-locks.** run_until_interrupted returns EVENT; nothing renders
+      state.pending or calls turn.apply_choice; the next run re-interrupts
+      immediately. Either the roadmap's "event modal" box is stale or this
+      is a regression from the TUI rebuild. Fix: a modal over state.pending
+      (title/body/options are engine-formed) calling apply_choice, and
+      surface DIRECTOR interrupts.
+- [ ] **Forecast diverges from resolution when a hearth hoards** (forecast
+      uses share_out, _consume uses _divide/first_claim; the parity test's
+      fixtures carry zero resentment so it cannot catch this). Use _divide
+      in forecast and add a hoarding parity case. Related determinism hole:
+      id(h) tie-breaking in state.py - use the stable household id.
+- [ ] **Prose sweep:** spec status v0.25.0 vs shipped v0.26.0; README's
+      standing-orders claim is a stub; four-jobs prose (five shipped); the
+      works missing from "The turn"; corpus 90 vs 87; SP 8 "slice 1"
+      header; the phantom data/ tree; SP 4/5 have no patchnotes entries.
+- [ ] **Economy campaign boxes (filed structure proposed by the audit -
+      the lane adopts or amends):** (1) S food-flow baseline ledger, no
+      constants move; (2) M yields; (3) M winters, read jointly with 2;
+      (4) M band pressure (RAID_STORE_LOSS re-judged first, then
+      BAND_COUNT_RANGE (2,3); contact ~2/3, naive endurance floor 5);
+      (5) S arc re-measured, target table to Brandon. Enhancement queue:
+      band TRADE intents (declared, never formed), raid telegraphing from
+      held reads, works-rung choice via the doctrine-fork shape, wolf-pack
+      wildlife, rival reunion corpus.
+- [ ] **GitHub presentation (workspace batch):** optional description
+      variant with the deterministic/pure-logic hooks; +7 topics; create
+      the v0.26.0 Release; wiki off; discussions on when players exist.
