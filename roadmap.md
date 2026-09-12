@@ -44,6 +44,7 @@ run.
       sub-project 6 below.)
 
       **Verdict, recorded 2026-09-06, read against v0.23.0: interesting and survivable,
+        *(GUT-CHECK CONFIRMED 2026-09-12 (Brandon): the verdict stands as his own.)*
       fun not yet.** The input is `audit/Hearthfall/year-read-input-2026-09-06.md` (two
       annotated runs, one carrying the full raid arc); the reading below was proposed by
       the agent and accepted by Brandon the same day. *Interesting:* yes. The raid arc is
@@ -814,6 +815,7 @@ records, not a magnitude a constant can move. The arc stays refused until a
 dedicated economy campaign re-tunes yields, winters, and band pressure
 together; the pieces it will need - the works, doctrine, the rivals - are
 all shipped and waiting for it.
+  *(OPENED 2026-09-12 (Brandon): the economy re-tune campaign is a go; the next Hearthfall lane files its boxes, runs the coordinated re-tune through the 50-seed gate-read harness, and brings targets back for approval before any ship verdict.)*
 
 - [x] Doctrine: the run's choices harden into character
       *(Shipped v0.25.0. The corpus gains the doctrine fork
