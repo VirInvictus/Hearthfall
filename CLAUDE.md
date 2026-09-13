@@ -31,8 +31,11 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 - `src/hearthfall/engine/`: pure logic (state, turn, world, intel, people, events, rng,
   balance, reports).
 - `src/hearthfall/tui/`: the Textual skin. Throwaway-able by design.
-- `src/hearthfall/data/`: TOML content. Events, terrain, units, peoples. No logic.
-- `tests/`: engine tests. The skin is not tested.
+- `src/hearthfall/data/`: TOML content. The event corpus, `tallies.toml`, `units.toml`.
+  No logic. Terrain lives in `balance.py`; neighbours and peoples are generated.
+- `tests/`: engine tests, plus the skin's pilot smoke tests in `test_tui.py` (the event
+  modal and the save/load path: the two behaviors whose failure ends the run). Everything
+  cosmetic about the skin stays untested.
 
 ## Conventions
 
@@ -41,8 +44,10 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 - `VERSION` lives in `src/hearthfall/__init__.py` and is mirrored in `pyproject.toml`.
   Bumping the version means updating both.
 - Run tests with `./run_tests.sh` (or
-  `PYTHONPATH=src python3 -m unittest discover -s tests`).
-- Tests are stdlib `unittest`, matching the rest of the author's Python projects.
+  `PYTHONPATH=src uv run python3 -m unittest discover -s tests`; through uv because the
+  skin's pilot tests import Textual, and ambient python has no Textual).
+- Tests are stdlib `unittest`, matching the rest of the author's Python projects. Never
+  run bare `pytest` over this tree; it collects stray root scripts.
 - **Run the tools through `uv run`.** `ruff` and `pyright` are pinned in the `dev` dependency
   group and resolved from the committed lockfile, so `uv run ruff check src tests` is exactly
   what CI runs. A bare `ruff` is whatever is on `PATH` and has disagreed with CI before.
@@ -60,8 +65,10 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
   is parameterised because a bare `list` leaves the element type unknown and that unknown
   spreads to callers. `tests/support.py` holds `not_none` and `an_int` because
   `assertIsNotNone` does not narrow a type and `snapshot()` values are deliberately `int | str`.
-- `hypothesis` is available for invariants that are genuinely properties (forecast parity,
-  determinism) rather than examples. It does not replace the example tests.
+- `hypothesis` was pruned in v0.23.1 after zero imports across the project's life. The
+  property-shaped invariants it was kept for (forecast parity, determinism, no order
+  sequence driving a store negative) are pinned by example tests in the suite. Do not
+  re-add it without a property the examples genuinely cannot pin.
 
 ## Content
 

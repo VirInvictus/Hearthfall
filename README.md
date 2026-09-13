@@ -14,8 +14,8 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.26.0. SP 8 (the long game) is the front: a hearth that walks out comes back as a rival band, the clan is asked once what it is (the answer shapes the ending), and surplus hands can now raise the works - a palisade, a smokehouse, a shrine - permanent and modest, bought with hands the forage line wanted.** Playable start to finish, and
-> deliberately small: one map, four jobs, twenty seasons. Combat arrived with SP 6 as raid
+> **Status: v0.27.0. SP 8 (the long game) shipped its three slices - a hearth that walks out comes back as a rival band, the clan is asked once what it is (the answer shapes the ending), and surplus hands raise the works: a palisade, a smokehouse, a shrine, permanent and modest, bought with hands the forage line wanted.** The 28-season arc was measured and refused (a longer run is a longer death at current yields), and the economy re-tune campaign it waits on is filed. v0.27.0 repaired the skin: the world's event choices are answerable again, and saves moved to a fixed, guarded location. Playable start to finish, and
+> deliberately small: one map, five jobs, twenty seasons. Combat arrived with SP 6 as raid
 > violence; the deeper war tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,
 > and for the standing rule that no slice ships until a year of it has been *played*.
@@ -60,6 +60,11 @@ not scouted yet. Each season you split a finite clan four ways:
   the margin grades the cost: a lost raid buries the clan's dead, a rout scatters the
   band far enough that its camp shows on the map. The untyped count is a spear line,
   and other lines can stand beside it: what the wall is made of changes what it holds.
+- **Work** spends surplus hands on permanence: whatever the clan raises is the ladder's
+  next entry, the engine's call. A palisade prices the next raid's granary loss down, a
+  smokehouse trims the rot, a shrine steadies morale. Each is built once and modest
+  forever; what they cost is forage hands, in exactly the fat seasons where the
+  allocation would otherwise write itself.
 
 Then the season resolves, the world asks you something with no clean answer, and you live
 with it. Children eat and cannot work. Everyone eats regardless.
@@ -81,7 +86,7 @@ and starts arranging. Defer to him, at a cost you pay that evening, and it runs 
 Nothing announces this and no meter is shown. The powerful moments are rare because they are
 hard to reach, never because a die came up short.
 
-Eighty-seven entries so far, keyed on the season, the ground, the hearths, how much the clan
+Ninety entries so far, keyed on the season, the ground, the hearths, how much the clan
 knows and how long since it checked. A clan that fed strangers in a year it could not afford to
 is remembered by somebody three days' walk away; a clan that has buried enough people answers
 questions differently.
@@ -94,7 +99,7 @@ is a thin, shed-able skin over it.
 ```
 src/hearthfall/engine/   pure logic, stdlib only, fully tested
 src/hearthfall/tui/      Textual skin; the engine does not know it exists
-src/hearthfall/data/     TOML content: events, tallies, terrain
+src/hearthfall/data/     TOML content: the event corpus, tallies, unit types
 tests/                   the engine is tested; the skin is not
 ```
 
@@ -114,7 +119,7 @@ uv venv && uv pip install -e .
 .venv/bin/hearthfall --seed 42   # replay a run exactly
 ```
 
-Hit `Ctrl+P` to open the command palette, where you can set standing orders, advance the season, change your glyph tier (ascii/unicode/nerd), and save or load the game.
+Hit `Ctrl+P` to open the command palette: advance time until the engine interrupts, answer the events the world puts to the clan (a fired choice stops the run until you answer it), change your glyph tier, and save or load the game. Saves live at a fixed location under `~/.local/state/hearthfall/`. One honest gap: standing orders drive the run on the engine's defaults, and the skin does not yet expose an editor for them.
 
 ## Requirements
 

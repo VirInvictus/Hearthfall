@@ -758,7 +758,7 @@ rather than a hunt.
 against a read enemy the best decision in the game?", is answerable in
 play: the read exists, it ages, it lies, and the wall is yours to aim.)*
 
-## Sub-project 8: the long game (slice 1 shipped)
+## Sub-project 8: the long game (slices 1 to 3 shipped; the arc awaits the economy campaign)
 
 *Doctrine, borders, attrition, the endgame. The campaign arc: runs long enough that the
 thing being managed is a people rather than a household.*
@@ -1175,10 +1175,22 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
       (`events/loader.py`, `units.py`) named as the only exceptions.*
       *Proof: three save/load pilot tests in `tests/test_tui.py`, pointed
       at a throwaway SAVE_PATH so a real save is never touched.)*
-- [ ] **Prose sweep:** spec status v0.25.0 vs shipped v0.26.0; README's
+- [x] **Prose sweep:** spec status v0.25.0 vs shipped v0.26.0; README's
       standing-orders claim is a stub; four-jobs prose (five shipped); the
       works missing from "The turn"; corpus 90 vs 87; SP 8 "slice 1"
       header; the phantom data/ tree; SP 4/5 have no patchnotes entries.
+      *(Swept in v0.27.0. Spec status moved to the shipped version and its
+      sentence now says SP 8 shipped all three slices. The spec's data/
+      line described terrain, agents, peoples, and names that never lived
+      there; it now describes the corpus, tallies, and units, and says
+      where terrain actually is (balance.py). The README's palette claim
+      now says what the palette does - and names the standing-orders
+      editor as the gap it is - "five jobs", the works added to "The
+      turn", ninety entries, and the data line fixed the same way. SP 8's
+      header reads "slices 1 to 3 shipped". The SP 4/5 patchnotes debt is
+      paid with a dated retrospective entry below. Found while sweeping:
+      run_tests.sh ran the suite under ambient python, which has no
+      Textual now that the skin has tests; it runs through uv like CI.)*
 - [x] **Economy campaign boxes (filed structure proposed by the audit -
       the lane adopts or amends):** (1) S food-flow baseline ledger, no
       constants move; (2) M yields; (3) M winters, read jointly with 2;

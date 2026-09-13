@@ -3,7 +3,7 @@
 > A hearth is what you gather around and what you defend. A fall is what happens to most
 > of them. The name holds both halves of the arc: grow a fire into a people, or bury them.
 
-**Status:** v0.25.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is built and reachable in play: bands mass with a readable strength, the massing window opens, and the raid costs grain, graves, or both. Sub-project 7, composition, is complete (v0.20.0 through v0.23.0). Sub-project 8, the long game, is the live front: slice 1 shipped the walked-out hearth as a rival band (v0.24.0), slice 2 shipped doctrine and the tally-assembled epilogue (v0.25.0), and slice 3 shipped the works - surplus hands raised into permanent, modest improvements (v0.26.0).
+**Status:** v0.27.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is built and reachable in play: bands mass with a readable strength, the massing window opens, and the raid costs grain, graves, or both. Sub-project 7, composition, is complete (v0.20.0 through v0.23.0). Sub-project 8, the long game, has shipped all three of its signed slices: the walked-out hearth returns as a rival band (v0.24.0), doctrine and the tally-assembled epilogue (v0.25.0), and the works - surplus hands raised into permanent, modest improvements (v0.26.0). Its arc was measured and refused (a 28-season run is a longer death at current yields), and the filed economy re-tune campaign is the front now; v0.27.0 repaired the skin around it: the event choice is answerable again, the forecast agrees with resolution when a hearth hoards, and saves are hardened.
 
 **This document was rewritten on 2026-08-08.** The original is in git history and should be
 read by anyone who wants to know what was given up. It was a knife aimed at scope creep, and
@@ -116,9 +116,12 @@ src/hearthfall/
     combat.py        #   single-stack resolution (slice 1 of SP 6).
     units.py         #   NEW. unit types (strength/guard) and compositions (SP 7).
   tui/               # thin skin over engine. Textual. throwaway-able.
-  data/              # TOML. events, terrain, agents, peoples, names. no logic.
-tests/               # engine is tested. the skin is not.
+  data/              # TOML content: the event corpus, tallies.toml, units.toml. no logic.
+tests/               # engine is tested. the skin is not (two pilot smoke tests excepted).
 ```
+
+Terrain lives in `balance.py` as constants, and neighbours and peoples are
+generated, not authored; the data tree is content and only content.
 
 **The engine never imports the frontend.** You should be able to drive a full game from a
 REPL or a test with zero terminal.
@@ -411,10 +414,13 @@ again. Two corollaries follow, and both are load-bearing:
 - **The engine takes no dependencies at all.**
 - **Data: TOML**, read with stdlib `tomllib`.
 - **Determinism: seeded RNG, one source, injectable.** Repeated for weight.
-- **Tests: the engine is tested; the skin is not.** Stdlib `unittest`. The property-shaped
+- **Tests: the engine is tested; the skin mostly is not.** Stdlib `unittest`. The property-shaped
   invariants (forecast parity, determinism, no order sequence driving a store negative) are
   pinned by example tests in the suite; `hypothesis` was pruned in v0.23.1 after zero
-  imports across the project's life.
+  imports across the project's life. The one skin behavior that gets tests is the one whose
+  failure ends the run: the event-choice modal and the save/load path are driven through
+  Textual's pilot in `tests/test_tui.py`, because the 2026-09-12 audit found a fired choice
+  could soft-lock the whole game and four hundred green engine tests could not see it.
 - **Dev tooling is pinned in the lockfile, not by CI.** `ruff` and `pyright` are dependency-group
   entries, so `uv run ruff check` locally is the exact binary CI runs. They drifted once, with
   CI on a ruff whose default rule set was narrower than the developer's, which meant a working

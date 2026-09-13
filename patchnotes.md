@@ -10,6 +10,89 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.27.0 (2026-09-13)
+
+**The audit release: the skin answers its events again.** The 2026-09-12
+six-lens audit found one HIGH and a handful of MEDIUMs; this release
+repairs all of them and files the economy campaign the arc was waiting on.
+
+The HIGH was a soft-lock. `run_until_interrupted` returns EVENT when the
+world asks a question, and since the v0.13.0 skin rebuild nothing
+answered: no modal rendered `state.pending`, nothing called
+`apply_choice`, and the next run re-interrupted forever. The Phase 0
+roadmap box still claimed an event modal; the claim was stale, not the
+test. The modal is back (`EventChoiceScreen`): the engine-formed question
+with every option and endorsement, answered by number key or click, the
+answer appended to the chronicle, and every interrupt now says why the run
+handed control back, including the director's, which used to stop the run
+in silence. Escape steps back over the modal to read the chronicle; the
+question is waiting when you come back. The skin has tests now, driven
+through Textual's own pilot: a real fired event renders, choosing lands,
+the run advances.
+
+Two determinism repairs ride with it. The forecast divided the store with
+`share_out` while resolution divides with `_divide`, so the two disagreed
+exactly when a hoarding hearth took its share first: at five food under an
+even split the forecast promised three deaths and resolution buried two.
+Forecast uses `_divide` now, and the parity suite gained the case its
+zero-resentment fixtures could never see. And the three household
+tie-breaks (new hands, new children, deaths) broke ties on `id(h)`, a
+memory address that survives neither a restart nor a save; they break on
+the stable household id now, and `test_a_save_replays_exactly` pins the
+property end to end: pickle a run mid-stream, revive it, and the seasons
+after the load must match the uninterrupted twin.
+
+Save/load grew up. Saves went to `savegame.pkl` in whatever directory the
+game was launched from; they now live at one fixed path
+(`~/.local/state/hearthfall/savegame.pkl`), written through a temp file
+and a rename so a crash cannot tear them. Loading refuses a missing or
+corrupt save with a line in the chronicle instead of a traceback, and
+rebuilds the pane from the loaded chronicle instead of showing the old
+run's seasons above the new ones. The architecture guard pins the
+engine's I/O boundary now: no `open()`, no storage-flavored imports, the
+two content loaders named as the only exceptions.
+
+And the campaign is filed. The economy re-tune boxes exist as real
+checkboxes under SP 8 (coordinated levers, 50-seed gate-read measurement,
+targets to Brandon before any ship verdict), and Box 1 is measured: the
+per-season food-flow baseline ledger, recorded in the roadmap with its
+reading - the game is a sawtooth that winters reset, and the campaign is
+pricing a winter/yield pair, not a raid or rot problem.
+
+Also: the standing-orders gap the audit caught in the README is now stated
+in the README (the palette runs on engine defaults; the editor is not
+built), five jobs instead of four, ninety corpus entries instead of
+eighty-seven, the works in "The turn", the phantom data/ tree corrected
+in spec and README, and `run_tests.sh` runs through uv because the
+skin's new tests need Textual. 12 new tests; suite at 415; pyright
+strict zero.
+
+## Retrospective, recorded 2026-09-13: SP 4 and SP 5, shipped unrecorded
+
+Sub-project 4 (neighbours and the director) and sub-project 5 (the ring)
+shipped on 2026-08-31, between v0.13.0's TUI rebuild and the v0.13.1
+hygiene release, in commits `2521313` and `61ae8ed`: no version bump, no
+patchnotes entry, no tag. The 2026-09-12 audit's docs lens found the gap;
+this entry is the record, retroactive, and changes nothing about code,
+versions, or tags.
+
+**SP 4, neighbours and the director.** `engine/agents.py` put neighbours,
+weather, and wildlife on the map as agents with state, needs, and intents:
+bands hold grain and mood, form raid intents when miserable, and the
+honesty guarantee is enforced in the shape of the thing - an intent
+requires a learnable fact, so the massing was always knowable before it
+arrived. `engine/director.py` paces and nothing else: it chooses which
+already-justified intent surfaces now and when to break standing orders,
+never inventing a threat (spec §9.10), and every interrupt lands
+traceable in the chronicle.
+
+**SP 5, the ring.** The named cast arrived, drawn from households exactly
+as spec §5 requires: people with traits, ambitions, relationships,
+ageing, and death; advisors whose agendas are wrong in characteristic
+ways; council decisions rendered inline in the chronicle;
+`engine/tiers.py` for emergence conditions and the named moment; and
+corpus entries keyed on ring composition and household standing.
+
 ## v0.26.0 (2026-09-06)
 
 **SP 8, slice 3: the works.** Surplus hands become permanent, modest
@@ -314,7 +397,8 @@ violence player-visible (see the roadmap's verdict-discipline note).
   verdict is owed before SP 6's first player-visible slice claims the gate.
 
 Suite unchanged and green.
-## v0.13.0
+
+## v0.13.0 (2026-08-21)
 
 - **TUI Rebuild:** `tui/app.py` has been completely replaced with a responsive Textual UI built around the new `ChronicleEntry` spine.
 - **Command Palette:** Navigation and actions have moved to the Textual Command Palette (Ctrl+P).
