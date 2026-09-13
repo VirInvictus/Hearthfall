@@ -159,6 +159,88 @@ def unequal_orders(state) -> Orders:
     return orders
 
 
+def builder_orders(state) -> Orders:
+    """`steady_orders` with two forage hands moved to the works whenever the
+    store is healthy.
+
+    The v0.26.0 gate-read policy: the works are paid for in forage hands,
+    exactly the trade the slice was priced in. "Healthy" is deliberately
+    crude (twenty food banked) and the ladder stops asking once all three
+    works stand, so this stays a fixed rule rather than a tuned strategy: a
+    comparison against `steady_orders` measures the works and nothing else.
+    """
+    base = steady_orders(state)
+    if state.stores.food >= 20 and sum(state.improvements.values()) < 3:
+        hands = min(2, base.forage)
+        base.work = hands
+        base.forage -= hands
+        base.validate(state.population.adults)
+    return base
+
+
+def food_ledger(policy, seeds: range = range(50), choice: int = 0) -> list[dict]:
+    """Per-season food-flow means across a spread of runs: the economy
+    campaign's baseline instrument (roadmap Box 1).
+
+    For each season of the run, the seasons that were actually alive are
+    averaged: opening and closing stores, what foraging brought in, what the
+    mouths ate, what rotted, and `other`, the residual that covers the raid
+    granary, the walked-out hearth's share, and every event delta at once.
+    The report does not attribute those three and pretending otherwise would
+    put a lie in the ledger. `starved` and `alive` travel beside them, so a
+    shrinking column count is mortality and never averages lying by
+    omission. No constants move and nothing is judged here; this is the
+    picture the coordinated re-tune is measured against.
+    """
+    seasons: list[list[dict]] = [[] for _ in range(balance.TURNS_PER_RUN)]
+    for seed in seeds:
+        state = turn.new_game(seed)
+        rng = Rng(seed)
+        index = 0
+        while not state.is_over and index < balance.TURNS_PER_RUN:
+            opening = state.stores.food
+            report = turn.resolve(state, policy(state), rng, CORPUS)
+            if state.pending is not None:
+                turn.apply_choice(state, min(choice, len(state.pending.options) - 1))
+            seasons[index].append(
+                {
+                    "opening": opening,
+                    "produced": report.produced,
+                    "eaten": report.consumed,
+                    "spoiled": report.spoiled,
+                    "starved": report.starved,
+                    "other": state.stores.food
+                    - (opening + report.produced - report.consumed - report.spoiled),
+                    "closing": state.stores.food,
+                }
+            )
+            index += 1
+    ledger: list[dict] = []
+    for rows in seasons:
+        if not rows:
+            break
+        count = len(rows)
+        ledger.append(
+            {
+                "season": len(ledger) + 1,
+                "alive": count,
+                **{
+                    key: round(sum(row[key] for row in rows) / count, 1)
+                    for key in (
+                        "opening",
+                        "produced",
+                        "eaten",
+                        "spoiled",
+                        "starved",
+                        "other",
+                        "closing",
+                    )
+                },
+            }
+        )
+    return ledger
+
+
 def _food_lost_to_stale_intel(seed: int, policy) -> int:
     """How much food a run expected and did not get, because its numbers were out of date."""
     state = turn.new_game(seed)

@@ -825,6 +825,125 @@ together; the pieces it will need - the works, doctrine, the rivals - are
 all shipped and waiting for it.
   *(OPENED 2026-09-12 (Brandon): the economy re-tune campaign is a go; the next Hearthfall lane files its boxes, runs the coordinated re-tune through the 50-seed gate-read harness, and brings targets back for approval before any ship verdict.)*
 
+### The economy re-tune campaign (filed 2026-09-13)
+
+Boxes adopted from the audit's proposed structure (FULL-AUDIT-2026-09-12.md,
+Wave 5, FEATURES lens). **The protocol is binding, and it is what separates
+this campaign from the falsified single-lever passes of 2026-09-06** (the
+frequency refusal, v0.23.2; the `STARTING_FOOD` note in `balance.py`; the
+growth and map sweeps in SP 2 and SP 1):
+
+- **Levers move COORDINATEDLY.** Boxes 2 and 3 are one judgment (yields and
+  the off-season pressure that eats them); Box 4 is judged on the result of
+  both; Box 5 is the campaign's answer. No box ships a constant alone.
+- **Everything is measured through the 50-seed gate-read harness**
+  (`test_playthrough.py`), paired per seed, with the reachability guards
+  live (`TestRaidersReachARun`, `TestTheCorpusIsAlive`) and the shape-of-a-run
+  floor holding throughout (endured >= 5, buried >= 5).
+- **Locked levers stay locked:** `MAP_*` and map size (refused on
+  measurement, SP 1), population growth (`BOND_*`, swept in SP 2 slice 2),
+  and `STARTING_FOOD` as a scalar (the `balance.py` note). Enhancement-queue
+  ideas (band TRADE intents, raid telegraphing, works-rung choice, wolf-pack
+  wildlife, rival reunion corpus) are content work and wait for the economy
+  they would sit on.
+- **Every target returns to Brandon for approval before any ship verdict.**
+  Boxes 2 through 5 produce proposals, not releases.
+
+- [x] **Box 1 (S): the per-season food-flow baseline ledger. No constants
+      move.** The instrument is `food_ledger(policy, seeds)` in
+      `test_playthrough.py`, beside `builder_orders` (the v0.26.0 gate-read
+      policy, recovered faithfully: 14 of 50 endured against the naive 11).
+      Measured over the harness's 50 seeds, choice 0, seasons alive only.
+      *(Recorded 2026-09-13.)*
+
+      ```
+      naive (steady_orders): endured 11/50, survivors 28
+      S | alive | open | prod |  eat | spoil | other | close | starved
+      1 |  50   | 30.0 |  4.0 | 14.0 |   1.0 |  -0.1 |  18.9 |   0.0
+      2 |  50   | 18.9 |  8.3 | 14.0 |   1.0 |  -1.0 |  11.2 |   0.0
+      3 |  50   | 11.2 | 15.6 | 15.0 |   0.0 |   2.5 |  14.4 |   0.0
+      4 |  50   | 14.4 |  0.0 | 14.4 |   0.0 |   0.8 |   0.8 |   4.2
+      5 |  49   |  0.8 |  6.2 |  6.5 |   0.0 |   0.7 |   1.1 |   2.1
+      6 |  49   |  1.1 |  6.9 |  5.5 |   0.1 |  -0.1 |   2.4 |   0.1
+      7 |  49   |  2.4 | 12.0 |  5.4 |   0.1 |   0.4 |   9.3 |   0.0
+      8 |  49   |  9.3 |  0.0 |  6.4 |   0.0 |   2.0 |   4.9 |   1.2
+      9 |  33   |  6.4 |  4.8 |  4.2 |   0.4 |   2.0 |   8.5 |   0.0
+      10 | 31   |  9.1 |  6.5 |  4.2 |   1.3 |  -1.9 |   8.2 |   0.0
+      11 | 31   |  8.2 | 10.9 |  4.0 |   0.6 |   1.3 |  15.8 |   0.0
+      12 | 30   | 16.3 |  0.0 |  5.8 |   0.0 |  -1.7 |   8.8 |   0.0
+      13 | 27   |  9.0 |  4.4 |  4.0 |   0.4 |   0.2 |   9.2 |   0.0
+      14 | 26   |  9.6 |  6.1 |  4.0 |   1.2 |  -0.2 |  10.2 |   0.1
+      15 | 26   | 10.2 | 10.6 |  3.8 |   0.7 |   0.9 |  17.3 |   0.0
+      16 | 25   | 17.6 |  0.0 |  5.7 |   0.0 |   0.2 |  12.1 |   0.1
+      17 | 20   | 12.2 |  4.5 |  4.0 |   0.7 |  -0.3 |  11.7 |   0.0
+      18 | 17   | 13.1 |  6.5 |  4.4 |   1.6 |  -2.6 |  11.1 |   0.0
+      19 | 13   | 12.9 | 11.5 |  4.5 |   0.9 |  -3.5 |  15.5 |   0.0
+      20 | 11   | 17.4 |  0.0 |  7.3 |   0.0 |  -1.5 |   8.6 |   0.3
+
+      builder (steady + 2 on the works): endured 14/50, survivors 29
+      S | alive | open | prod |  eat | spoil | other | close | starved
+      1 |  50   | 30.0 |  2.0 | 14.0 |   1.0 |  -0.1 |  16.9 |   0.0
+      2 |  50   | 16.9 |  8.3 | 14.0 |   1.0 |  -1.1 |   9.1 |   0.0
+      3 |  50   |  9.1 | 15.6 | 15.0 |   0.0 |   2.6 |  12.3 |   0.0
+      4 |  50   | 12.3 |  0.0 | 12.3 |   0.0 |   0.5 |   0.5 |   5.0
+      5 |  48   |  0.2 |  5.7 |  5.7 |   0.0 |   0.8 |   1.1 |   1.8
+      6 |  48   |  1.1 |  6.4 |  4.6 |   0.1 |  -0.3 |   2.4 |   0.0
+      7 |  48   |  2.4 | 10.9 |  4.6 |   0.1 |   1.1 |   9.7 |   0.0
+      8 |  48   |  9.7 |  0.0 |  6.1 |   0.0 |   2.1 |   5.6 |   0.6
+      9 |  41   |  5.7 |  3.9 |  3.7 |   0.2 |   0.3 |   6.0 |   0.0
+      10 | 39   |  6.3 |  5.8 |  3.6 |   0.8 |  -1.1 |   6.6 |   0.0
+      11 | 38   |  6.7 | 10.1 |  3.5 |   0.5 |   0.4 |  13.3 |   0.0
+      12 | 36   | 14.0 |  0.0 |  5.0 |   0.0 |   1.0 |  10.0 |   0.1
+      13 | 30   | 10.4 |  3.8 |  3.4 |   0.5 |  -0.2 |  10.1 |   0.0
+      14 | 28   | 10.7 |  5.5 |  3.4 |   1.5 |  -0.8 |  10.6 |   0.0
+      15 | 28   | 10.6 |  9.4 |  3.3 |   0.7 |   0.5 |  16.6 |   0.0
+      16 | 27   | 17.0 |  0.0 |  5.0 |   0.0 |  -1.6 |  10.4 |   0.0
+      17 | 23   | 10.8 |  4.1 |  3.4 |   0.6 |   1.8 |  12.7 |   0.0
+      18 | 20   | 13.3 |  4.7 |  3.5 |   1.4 |  -1.8 |  11.2 |   0.0
+      19 | 16   | 13.1 | 10.0 |  3.6 |   0.8 |  -3.7 |  14.9 |   0.0
+      20 | 14   | 16.4 |  0.0 |  5.7 |   0.0 |   0.0 |  10.6 |   0.0
+      ```
+
+      **What the baseline says** (the reading Boxes 2 through 4 are judged
+      against): the game is a sawtooth that winters reset. Every growing
+      season tops out around a season's demand in the store, and every
+      winter (seasons 4, 8, 12, 16, 20: production is structurally zero)
+      drains it to near nothing and takes people with it; the naive policy's
+      mortality is almost entirely a first-winter event (4.2 starved in
+      season 4 alone), after which the surviving clan is small enough to
+      feed. Spoilage is noise (never 1.6) and `other` (raids, walkouts,
+      events, unattributed by design) is noise next to it, so **the campaign
+      has no raid problem or rot problem to tune first; it has a winter
+      problem shaped like "growing seasons cannot bank enough"**, which is
+      exactly the yield-curve/off-season-pressure pair Boxes 2 and 3 price.
+      The builder pays for the works out of the first two winters (5.0 and
+      1.8 starved against the naive 4.2 and 2.1) and recovers it in calmer,
+      better-stocked later winters and a bigger clan at every season after
+      8.
+
+- [ ] **Box 2 (M): the `FORAGE_YIELD` curve.** What a known, surveyed hand
+      brings back per season and terrain. Proposal to Brandon, read against
+      the baseline's growing-season ceiling: the sawtooth's peaks (~15.6 on
+      season 3) are what a bigger curve would raise, and the first winter's
+      store is what it would stock.
+- [ ] **Box 3 (M): `WINTER_EXTRA_FOOD` + `SPOIL_RATE`.** The off-season's
+      two pressure levers, judged JOINTLY with Box 2 (softening winter while
+      raising yields is one coordinated move, not two wins): the baseline's
+      winter rows are the target shape, and the smokehouse's trim
+      (`_spoil_rate`) rides the same reading.
+- [ ] **Box 4 (M): band pressure.** `RAID_STORE_LOSS` re-judged FIRST
+      against whatever economy Boxes 2 and 3 produce (the v0.19.0 retune set
+      it at 8 under the current yields), then `BAND_COUNT_RANGE` (2, 3),
+      which the v0.23.2 refusal parked until the clan had slack to absorb a
+      second band. Targets from the audit: raids contact ~2/3 of runs over
+      the 50-seed harness; the naive policy's endurance holds at the suite
+      floor (5). `TestRaidersReachARun` stays live throughout.
+- [ ] **Box 5 (S): the 28-season arc re-measured.** `TURNS_PER_RUN` 28
+      against the re-tuned economy, same measurement as the 2026-09-06
+      refusal. The target table (endurance, survivors, raids, works, the
+      activity signals) comes back to Brandon with the campaign's proposal;
+      the ship verdict is his.
+
 - [x] Doctrine: the run's choices harden into character
       *(Shipped v0.25.0. The corpus gains the doctrine fork
       (`data/events/doctrine.toml`): after the graves have started, the clan
@@ -1060,7 +1179,7 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
       standing-orders claim is a stub; four-jobs prose (five shipped); the
       works missing from "The turn"; corpus 90 vs 87; SP 8 "slice 1"
       header; the phantom data/ tree; SP 4/5 have no patchnotes entries.
-- [ ] **Economy campaign boxes (filed structure proposed by the audit -
+- [x] **Economy campaign boxes (filed structure proposed by the audit -
       the lane adopts or amends):** (1) S food-flow baseline ledger, no
       constants move; (2) M yields; (3) M winters, read jointly with 2;
       (4) M band pressure (RAID_STORE_LOSS re-judged first, then
@@ -1069,6 +1188,13 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
       band TRADE intents (declared, never formed), raid telegraphing from
       held reads, works-rung choice via the doctrine-fork shape, wolf-pack
       wildlife, rival reunion corpus.
+      *(Filed 2026-09-13 under SP 8's "The economy re-tune campaign", with
+      the binding protocol written down: coordinated levers only, 50-seed
+      gate-read measurement, locked levers named, targets return to Brandon.
+      Box 1 executed in-lane the same day: the `food_ledger` instrument plus
+      the recovered builder policy, baseline recorded, and the sawtooth read
+      - the campaign has a winter problem, not a raid or rot problem. Boxes
+      2 through 5 are open and produce proposals, not releases.)*
 - [ ] **GitHub presentation (workspace batch):** optional description
       variant with the deterministic/pure-logic hooks; +7 topics; create
       the v0.26.0 Release; wiki off; discussions on when players exist.
