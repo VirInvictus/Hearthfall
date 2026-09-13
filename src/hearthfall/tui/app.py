@@ -10,7 +10,8 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.command import Hit, Hits, Provider
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Footer, RichLog, Static
+from textual.screen import ModalScreen
+from textual.widgets import Button, Footer, RichLog, Static
 
 from hearthfall import VERSION
 from hearthfall.engine.events.loader import load_corpus
@@ -18,6 +19,7 @@ from hearthfall.engine.intel import FactKind
 from hearthfall.engine.orders import Orders
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import GameState
+from hearthfall.engine.turn import InterruptReason, apply_choice, run_until_interrupted
 from hearthfall.engine.world import Terrain
 
 
@@ -89,6 +91,90 @@ class ActionProvider(Provider):
                 )
 
 
+def interrupt_line(reason: InterruptReason) -> str:
+    """Why the background run handed control back, as one chronicle line.
+
+    A stop the player is never told the reason for reads as a hang, which is
+    exactly what a fired event used to be: the run broke and nothing said why.
+    """
+    return {
+        InterruptReason.EVENT: "[bold #c0a36e]Interrupted: the clan faces a choice.[/]",
+        InterruptReason.STARVATION: "[bold #c4746e]Interrupted: Starvation predicted![/]",
+        InterruptReason.DIRECTOR: "[bold #c0a36e]Interrupted: the director broke the standing orders. The chronicle tells it.[/]",
+        InterruptReason.GAME_OVER: "[bold #c4746e]The hearth goes out.[/]",
+    }[reason]
+
+
+class EventChoiceScreen(ModalScreen[None]):
+    """The event the world just put to the clan, and the answers it will take.
+
+    Everything on this screen is engine-formed: title, body, and options are
+    `state.pending` (`PendingChoice`), built by the tick that fired the event.
+    Choosing calls `turn.apply_choice`, which is the only way a pending choice
+    clears; before this screen existed, a fired choice re-interrupted the run
+    forever, and the game could not be played past the first event that asked
+    a question.
+    """
+
+    CSS = """
+    EventChoiceScreen { align: center middle; }
+    #event-modal { background: #1d1c19; padding: 1 2; border: solid #c0a36e; width: 64; height: auto; max-height: 80%; }
+    #event-title { text-style: bold; color: #c0a36e; margin-bottom: 1; }
+    #event-body { margin-bottom: 1; }
+    EventChoiceScreen Button { width: 100%; margin-bottom: 1; }
+    """
+
+    BINDINGS: typing.ClassVar = [
+        Binding("escape", "peek", "Read the chronicle", priority=True),
+        Binding("1", "answer(0)"),
+        Binding("2", "answer(1)"),
+        Binding("3", "answer(2)"),
+    ]
+
+    def __init__(self, state: GameState) -> None:
+        super().__init__()
+        self.state = state
+
+    def compose(self) -> ComposeResult:
+        pending = self.state.pending
+        if (
+            pending is None
+        ):  # unreachable: the screen is only pushed for a pending choice
+            return
+        with Vertical(id="event-modal"):
+            yield Static(pending.title, id="event-title")
+            yield Static(pending.body, id="event-body")
+            for index, option in enumerate(pending.options):
+                label = f"{index + 1}. {option.text}"
+                if option.endorsements:
+                    label += "\n" + ", ".join(option.endorsements)
+                yield Button(label, id=f"option-{index}")
+
+    def action_peek(self) -> None:
+        """Step back over the modal without answering. The choice stays
+        pending; the next run puts the question straight back."""
+        self.dismiss()
+
+    def action_answer(self, index: int) -> None:
+        pending = self.state.pending
+        if pending is None or not 0 <= index < len(pending.options):
+            return
+        option = pending.options[index]
+        apply_choice(self.state, index)
+        log = self.app.query_one("#chronicle", RichLog)
+        taken = option.text
+        if option.endorsements:
+            taken += f" ({', '.join(option.endorsements)})"
+        log.write(f"[#8ea4a2]→ {taken}[/]")
+        app = typing.cast("HearthfallApp", self.app)
+        app.update_rail()
+        self.dismiss()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id and event.button.id.startswith("option-"):
+            self.action_answer(int(event.button.id.removeprefix("option-")))
+
+
 class HearthfallApp(App):
     CSS = """
     Screen { background: #181616; color: #c5c9c5; }
@@ -113,6 +199,9 @@ class HearthfallApp(App):
         self.rng = rng
         self.glyph_tier = GlyphTier.UNICODE
         self.corpus = load_corpus(state.snapshot())
+        # Why the last background run stopped. Surfaced for tests, and honest
+        # state for any future widget that wants to show it.
+        self.last_interrupt: InterruptReason | None = None
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="main"):
@@ -229,10 +318,9 @@ class HearthfallApp(App):
         if self.state.is_over:
             return
 
-        from hearthfall.engine.turn import InterruptReason, run_until_interrupted
-
         start_turn = self.state.turn
         reason = run_until_interrupted(self.state, self.rng, self.corpus)
+        self.last_interrupt = reason
 
         log = self.query_one("#chronicle", RichLog)
 
@@ -245,10 +333,9 @@ class HearthfallApp(App):
             for line in entry.lines:
                 log.write(line)
 
-        if reason == InterruptReason.STARVATION:
-            log.write("[bold #c4746e]Interrupted: Starvation predicted![/]")
-        elif reason == InterruptReason.GAME_OVER:
-            log.write("[bold #c4746e]The hearth goes out.[/]")
+        log.write(interrupt_line(reason))
+        if reason is InterruptReason.EVENT and self.state.pending is not None:
+            self.push_screen(EventChoiceScreen(self.state))
 
         self.update_rail()
 

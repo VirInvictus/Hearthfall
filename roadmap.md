@@ -79,6 +79,14 @@ the difference between hard and disheartening.
 - [x] A ~20-entry event table in `data/events/` (shipped with thirty)
 - [x] Survival win/lose conditions
 - [x] Textual skin: state readout, allocation controls, event modal
+      *(The event modal regressed out of the skin in the v0.13.0 rebuild and
+      nothing said so: `run_until_interrupted` returned EVENT and nothing
+      rendered `state.pending` or called `apply_choice`, so the run
+      re-interrupted forever. Restored in v0.27.0 as a modal over the
+      engine-formed question, with the DIRECTOR stop signposted instead of
+      silent. The allocation controls of the original Phase 0 skin are still
+      owed: the palette's standing-orders action remains a stub, and the run
+      follows the default orders.)*
 - [x] Engine test suite: turn resolution, food math, condition evaluation, determinism
 - [x] Architecture guard test: nothing under `engine/` imports Textual or the frontend
 - [x] Headless full-run playthrough test, and guards on the shape of a run
@@ -1002,13 +1010,19 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
 
 ## New findings 2026-09-12 (six-lens full audit; detail: audit/FULL-AUDIT-2026-09-12.md, Wave 5)
 
-- [ ] **HIGH: the TUI cannot answer a pending event choice - the run
+- [x] **HIGH: the TUI cannot answer a pending event choice - the run
       soft-locks.** run_until_interrupted returns EVENT; nothing renders
       state.pending or calls turn.apply_choice; the next run re-interrupts
       immediately. Either the roadmap's "event modal" box is stale or this
       is a regression from the TUI rebuild. Fix: a modal over state.pending
       (title/body/options are engine-formed) calling apply_choice, and
       surface DIRECTOR interrupts.
+      *(Fixed in v0.27.0: it was the rebuild regression - the modal is back
+      (`EventChoiceScreen`, engine-formed question, `apply_choice` on
+      answer), DIRECTOR stops get a signpost line, and the Phase 0 box
+      annotation now records the regression honestly. Writer-level proof:
+      `tests/test_tui.py` drives a real fired event through Textual's
+      pilot - it renders, choosing lands the effect, the run advances.)*
 - [ ] **Forecast diverges from resolution when a hearth hoards** (forecast
       uses share_out, _consume uses _divide/first_claim; the parity test's
       fixtures carry zero resentment so it cannot catch this). Use _divide
