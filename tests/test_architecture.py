@@ -14,6 +14,38 @@ from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent.parent / "src" / "hearthfall" / "engine"
 
+# The stdlib modules that can move bytes somewhere. "No I/O" (spec.md §3,
+# README) has exactly two audited exceptions, the content loaders
+# (`events/loader.py` and `units.py`), which read the shipped TOML through
+# `importlib.resources`; everything else under `engine/` touches storage
+# never, for any reason.
+IO_ROOTS = frozenset(
+    {
+        "os",
+        "io",
+        "pathlib",
+        "pickle",
+        "shutil",
+        "subprocess",
+        "socket",
+        "ssl",
+        "urllib",
+        "http",
+        "ftplib",
+        "smtplib",
+        "sqlite3",
+        "tempfile",
+        "glob",
+        "zipfile",
+        "tarfile",
+        "csv",
+        "xml",
+        "importlib",
+        "tomllib",
+    }
+)
+CONTENT_LOADERS = frozenset({"loader.py", "units.py"})
+
 
 def engine_modules() -> list[Path]:
     return sorted(ENGINE.rglob("*.py"))
@@ -69,6 +101,44 @@ class TestEngineIsolation(unittest.TestCase):
                 "engine/rng.py so runs reproduce (spec.md §9.3)",
             )
             self.assertNotIn("secrets", roots, f"{module.name} imports secrets")
+
+    def test_no_engine_module_opens_a_file(self):
+        # The imports test below catches a new module-level dependency; this
+        # catches the cheaper shortcut, a bare `open()` call, which needs no
+        # import at all.
+        for module in engine_modules():
+            for node in ast.walk(ast.parse(module.read_text(encoding="utf-8"))):
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "open"
+                ):
+                    self.fail(
+                        f"{module.name} calls open(); the engine performs no "
+                        "I/O (spec.md §3). The content loaders read package "
+                        "data through importlib.resources."
+                    )
+
+    def test_only_the_content_loaders_touch_storage(self):
+        for module in engine_modules():
+            roots = {name.split(".")[0] for name in imports_of(module)}
+            clashed = roots & IO_ROOTS
+            if module.name in CONTENT_LOADERS:
+                self.assertEqual(
+                    clashed,
+                    {"importlib", "tomllib"},
+                    f"{module.name} imports {sorted(clashed)}; the two content "
+                    "loaders may read package data through importlib.resources "
+                    "and parse it with tomllib, and nothing more",
+                )
+            else:
+                self.assertEqual(
+                    clashed,
+                    set(),
+                    f"{module.name} imports I/O module(s) {sorted(clashed)}; "
+                    "the engine performs no I/O (spec.md §3), and the only "
+                    "exceptions are the two content loaders",
+                )
 
 
 if __name__ == "__main__":

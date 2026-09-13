@@ -11,10 +11,13 @@ through Textual's own pilot.
 
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 
 from textual.widgets import Button, Static
 
+import hearthfall.tui.app as app_module
 from hearthfall.engine import turn
 from hearthfall.engine.orders import Orders
 from hearthfall.engine.rng import Rng
@@ -102,6 +105,80 @@ class TestInterruptLines(unittest.TestCase):
         ):
             self.assertIn("Interrupted", interrupt_line(reason))
         self.assertNotIn("Interrupted", interrupt_line(InterruptReason.GAME_OVER))
+
+
+class TestSaveAndLoad(unittest.IsolatedAsyncioTestCase):
+    """The audit's load-hygiene findings: a save that lands wherever the
+    working directory was, a load that swapped the state without rewriting
+    the chronicle pane, and an unreadable file that would have replaced the
+    live run with a traceback. Every test here points SAVE_PATH at a
+    throwaway directory; the player's real save is never touched."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.save_path = Path(tmp.name) / "savegame.pkl"
+        self.addCleanup(setattr, app_module, "SAVE_PATH", app_module.SAVE_PATH)
+        app_module.SAVE_PATH = self.save_path
+
+    async def test_a_save_round_trips_and_the_pane_follows_the_loaded_run(self):
+        # A run already six seasons old, so the save carries a real chronicle.
+        # resolve() leaves the chronicle alone; entries are the driver's job,
+        # so the fixture appends them the way run_until_interrupted does.
+        from test_playthrough import CORPUS, steady_orders
+
+        from hearthfall.engine.chronicle import ChronicleEntry
+
+        state, rng = turn.new_game(3), Rng(3)
+        for _ in range(6):
+            if state.is_over:
+                break
+            report = turn.resolve(state, steady_orders(state), rng, CORPUS)
+            state.chronicle.append(
+                ChronicleEntry(
+                    turn=report.turn, season=report.season, lines=list(report.log)
+                )
+            )
+            if state.pending is not None:
+                turn.apply_choice(state, 0)
+        app = HearthfallApp(state, rng)
+        async with app.run_test():
+            app.save_game()
+            self.assertTrue(self.save_path.exists())
+            saved_snapshot = app.state.snapshot()
+            saved_entries = len(app.state.chronicle)
+            self.assertGreater(saved_entries, 0)
+
+            log = app.query_one("#chronicle", app_module.RichLog)
+            log.write("[spring]a season the loaded run never saw[/]")
+
+            app.load_game()
+            self.assertEqual(app.state.snapshot(), saved_snapshot)
+            self.assertEqual(len(app.state.chronicle), saved_entries)
+            # The pane was rebuilt from the loaded chronicle: the junk season
+            # is gone, and the load said so.
+            texts = [strip.text for strip in log.lines]
+            self.assertFalse(
+                any("the loaded run never saw" in text for text in texts),
+                "the pane still shows seasons that are not in the loaded state",
+            )
+            self.assertTrue(any("Game loaded" in text for text in texts))
+
+    async def test_a_missing_save_is_a_message_not_an_error(self):
+        app = an_app()
+        async with app.run_test():
+            state = app.state
+            app.load_game()  # nothing saved yet; must not raise
+            self.assertIs(app.state, state)
+
+    async def test_a_corrupt_save_is_refused_and_the_run_survives(self):
+        app = an_app()
+        self.save_path.write_bytes(b"this is not a hearthfall save")
+        async with app.run_test():
+            state = app.state
+            app.load_game()  # must not raise, must not swap the state
+            self.assertIs(app.state, state)
+            self.assertIsNotNone(app.state.world)
 
 
 if __name__ == "__main__":

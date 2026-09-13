@@ -1039,6 +1039,23 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
       harness: pickle the state and rng mid-run, revive, and the seasons
       after the load must match the uninterrupted twin, kin groups
       compared hearth by hearth.)*
+- [x] **load_game hygiene:** the audit found the loaded state swapped in
+      while the chronicle pane still showed the old run, saves pickled to
+      whatever the working directory was, and a corrupt or missing file
+      reaching the live run as an exception.
+      *(Fixed in v0.27.0: saves live at one fixed path
+      (`~/.local/state/hearthfall/savegame.pkl`), written through a temp
+      file and a rename so a crash mid-save cannot tear them; load refuses
+      a missing or unreadable file with a chronicle line instead of
+      tracebacking, guarantees the swap carries standing orders, reloads
+      the corpus against the loaded state, and rebuilds the pane from the
+      loaded chronicle (season headers, events, and the answers now that
+      they are recorded). The architecture guard grew the I/O pin the
+      audit asked for: no engine module opens a file or imports a
+      storage-flavored stdlib module, with the two audited content loaders
+      (`events/loader.py`, `units.py`) named as the only exceptions.*
+      *Proof: three save/load pilot tests in `tests/test_tui.py`, pointed
+      at a throwaway SAVE_PATH so a real save is never touched.)*
 - [ ] **Prose sweep:** spec status v0.25.0 vs shipped v0.26.0; README's
       standing-orders claim is a stub; four-jobs prose (five shipped); the
       works missing from "The turn"; corpus 90 vs 87; SP 8 "slice 1"

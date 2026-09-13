@@ -5,6 +5,7 @@ import os
 import pickle
 import typing
 from enum import StrEnum
+from pathlib import Path
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -14,6 +15,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, RichLog, Static
 
 from hearthfall import VERSION
+from hearthfall.engine.chronicle import ChronicleEntry
 from hearthfall.engine.events.loader import load_corpus
 from hearthfall.engine.intel import FactKind
 from hearthfall.engine.orders import Orders
@@ -21,6 +23,10 @@ from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import GameState
 from hearthfall.engine.turn import InterruptReason, apply_choice, run_until_interrupted
 from hearthfall.engine.world import Terrain
+
+# One save file, in the user's state directory. A save written to "whatever
+# the working directory was" is a save the player cannot find again tomorrow.
+SAVE_PATH = Path.home() / ".local" / "state" / "hearthfall" / "savegame.pkl"
 
 
 class GlyphTier(StrEnum):
@@ -220,11 +226,7 @@ class HearthfallApp(App):
             f"[#c0a36e]Hearthfall {VERSION}[/][#625e5a] · seed [/]{self.state.seed}"
         )
         for entry in self.state.chronicle:
-            log.write(
-                f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]"
-            )
-            for line in entry.lines:
-                log.write(line)
+            self._write_entry(log, entry)
 
     def on_resize(self) -> None:
         rail = self.query_one("#rail")
@@ -314,6 +316,29 @@ class HearthfallApp(App):
                 "[italic #8ba4b0]Standing orders modal not yet fully implemented. Using defaults.[/]"
             )
 
+    def _write_entry(self, log: RichLog, entry: ChronicleEntry) -> None:
+        """One chronicle entry, exactly as the run wrote it: the season
+        header, the event, the season's lines, and the answer if one was
+        given."""
+        log.write(
+            f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]"
+        )
+        if entry.event_title:
+            log.write(f"[bold #c0a36e]Event: {entry.event_title}[/]")
+        for line in entry.lines:
+            log.write(line)
+        if entry.choice_taken:
+            log.write(f"[#8ea4a2]→ {entry.choice_taken}[/]")
+
+    def _render_chronicle(self) -> None:
+        """Rebuild the whole pane from the state's chronicle. Used on mount
+        and after a load; before the rewrite, a loaded run kept the old
+        run's seasons on screen above its own."""
+        log = self.query_one("#chronicle", RichLog)
+        log.clear()
+        for entry in self.state.chronicle:
+            self._write_entry(log, entry)
+
     def run_season(self) -> None:
         if self.state.is_over:
             return
@@ -323,15 +348,8 @@ class HearthfallApp(App):
         self.last_interrupt = reason
 
         log = self.query_one("#chronicle", RichLog)
-
         for entry in self.state.chronicle[start_turn:]:
-            log.write(
-                f"[bold]{entry.season.value.title()}, Year {entry.turn // 4 + 1}[/bold]"
-            )
-            if entry.event_title:
-                log.write(f"[bold #c0a36e]Event: {entry.event_title}[/]")
-            for line in entry.lines:
-                log.write(line)
+            self._write_entry(log, entry)
 
         log.write(interrupt_line(reason))
         if reason is InterruptReason.EVENT and self.state.pending is not None:
@@ -340,18 +358,66 @@ class HearthfallApp(App):
         self.update_rail()
 
     def save_game(self) -> None:
-        with open("savegame.pkl", "wb") as f:
+        """Pickle the state and the rng to one fixed save file.
+
+        The save lives in the user's state directory rather than in whatever
+        the working directory happened to be when the game launched, and it
+        lands via a temp file and a rename so a crash mid-write cannot leave
+        a torn save where a good one used to be.
+        """
+        SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = SAVE_PATH.with_suffix(".pkl.tmp")
+        with open(tmp_path, "wb") as f:
             pickle.dump((self.state, self.rng), f)
+        os.replace(tmp_path, SAVE_PATH)
         log = self.query_one("#chronicle", RichLog)
-        log.write("[italic #8ba4b0]Game saved to savegame.pkl[/]")
+        log.write(f"[italic #8ba4b0]Game saved to {SAVE_PATH}[/]")
 
     def load_game(self) -> None:
-        if os.path.exists("savegame.pkl"):
-            with open("savegame.pkl", "rb") as f:
-                self.state, self.rng = pickle.load(f)
-            self.update_rail()
-            log = self.query_one("#chronicle", RichLog)
-            log.write("[italic #8ba4b0]Game loaded from savegame.pkl[/]")
+        """Swap in the saved state, or say why not.
+
+        A missing save is a normal state, not an error. An unreadable one
+        (truncated, corrupt, or written by an older shape of the game) is
+        refused and the running game keeps going; the old code would have
+        replaced the live run with the exception mid-load.
+        """
+        log = self.query_one("#chronicle", RichLog)
+        if not SAVE_PATH.exists():
+            log.write(f"[italic #8ba4b0]No saved game at {SAVE_PATH}.[/]")
+            return
+        try:
+            with open(SAVE_PATH, "rb") as f:
+                state, rng = pickle.load(f)
+            if not isinstance(state, GameState) or not isinstance(rng, Rng):
+                raise TypeError("not a Hearthfall save")
+        except (
+            pickle.PickleError,
+            EOFError,
+            AttributeError,
+            ImportError,
+            IndexError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ):
+            # The set of exceptions a corrupt or hostile pickle file can
+            # raise while being read, per the pickle module's own docs.
+            log.write(
+                "[bold #c4746e]The save could not be read. It may be corrupt "
+                "or from an older version of the game. This run continues.[/]"
+            )
+            return
+        self.state, self.rng = state, rng
+        if not self.state.standing_orders:
+            self.state.standing_orders = Orders(is_standing=True)
+        # The corpus parses conditions against a state's snapshot for
+        # validation only; reload it against the loaded state so the skin
+        # carries nothing over from the run it was showing.
+        self.corpus = load_corpus(self.state.snapshot())
+        self.last_interrupt = None
+        self._render_chronicle()
+        log.write(f"[italic #8ba4b0]Game loaded from {SAVE_PATH}[/]")
+        self.update_rail()
 
 
 def main() -> None:
