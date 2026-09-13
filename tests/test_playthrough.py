@@ -278,6 +278,51 @@ class TestAFullRun(unittest.TestCase):
         first, second = play(7), play(7)
         self.assertEqual(first, second)
 
+    def test_a_save_replays_exactly(self):
+        # A save is a checkpoint in a seeded stream: pickle the state and the
+        # rng, revive them, and the seasons after the load must be the seasons
+        # an uninterrupted run would have had. This is where the `id(h)`
+        # tie-breaks in population mutation would have bitten: a memory
+        # address does not survive the pickle, so which hearth a tied death or
+        # birth landed on could differ between the loaded run and the twin.
+        import pickle
+
+        def play_on(state, rng, seasons: int) -> None:
+            for _ in range(seasons):
+                if state.is_over:
+                    return
+                turn.resolve(state, steady_orders(state), rng, CORPUS)
+                if state.pending is not None:
+                    turn.apply_choice(state, 0)
+
+        revived_state, revived_rng = turn.new_game(11), Rng(11)
+        play_on(revived_state, revived_rng, 9)
+        revived_state, revived_rng = pickle.loads(
+            pickle.dumps((revived_state, revived_rng))
+        )
+
+        twin, twin_rng = turn.new_game(11), Rng(11)
+        play_on(twin, twin_rng, 9)
+        play_on(revived_state, revived_rng, 15)
+        play_on(twin, twin_rng, 15)
+
+        self.assertEqual(revived_state.snapshot(), twin.snapshot())
+        self.assertEqual(revived_state.outcome, twin.outcome)
+        # The snapshot is flat scalars, so hearth-level divergence could hide
+        # inside an agreeing aggregate. Compare the kin groups themselves.
+        self.assertEqual(
+            [
+                (h.id, h.adults, h.child_count, h.mood, h.resentment, h.bond)
+                for h in revived_state.population.households
+            ],
+            [
+                (h.id, h.adults, h.child_count, h.mood, h.resentment, h.bond)
+                for h in twin.population.households
+            ],
+        )
+        # And the rng itself round-trips: the next draws agree.
+        self.assertEqual(revived_rng.randint(0, 10**9), twin_rng.randint(0, 10**9))
+
     def test_different_seeds_tell_different_stories(self):
         transcripts = [play(seed) for seed in range(12)]
         self.assertGreater(len({tuple(t.events) for t in transcripts}), 1)

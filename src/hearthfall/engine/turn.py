@@ -365,11 +365,14 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
     # rationing choice changes who goes without and therefore how many die. Feeding three
     # households evenly can kill nobody where feeding one of them fully kills two, off the
     # same shortfall. A forecast that averaged that away would be hiding the consequence of
-    # the very decision it exists to inform.
+    # the very decision it exists to inform. The division is `_divide`, not `share_out`, for
+    # the same reason: a hearth past `HOARDS_AT` takes its share before the policy divides
+    # the rest, and a forecast that priced the season as if the choice still applied to
+    # everyone would diverge from resolution exactly when hoarding made the choice matter.
     would_starve = 0
     for household, share in zip(
         households,
-        share_out(households, eaten, orders.rationing, per_adult, per_child),
+        _divide(households, eaten, orders.rationing, per_adult, per_child),
         strict=True,
     ):
         short = household.demand(per_adult, per_child) - share

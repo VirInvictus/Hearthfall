@@ -1023,11 +1023,22 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
       annotation now records the regression honestly. Writer-level proof:
       `tests/test_tui.py` drives a real fired event through Textual's
       pilot - it renders, choosing lands the effect, the run advances.)*
-- [ ] **Forecast diverges from resolution when a hearth hoards** (forecast
+- [x] **Forecast diverges from resolution when a hearth hoards** (forecast
       uses share_out, _consume uses _divide/first_claim; the parity test's
       fixtures carry zero resentment so it cannot catch this). Use _divide
       in forecast and add a hoarding parity case. Related determinism hole:
       id(h) tie-breaking in state.py - use the stable household id.
+      *(Fixed in v0.27.0, both halves. `forecast` now divides through
+      `_divide`, so the projection prices a hoarding hearth's first claim;
+      the parity fixtures could not see the rung and the new
+      `test_forecast_matches_resolution_when_a_hearth_hoards` sweeps short
+      stores across all three rationings, where the old code projected 3
+      starved against 2 actual. All three `id(h)` tie-breaks in
+      `state.py` now break on the stable household id, guarded by
+      `test_state` and by `test_a_save_replays_exactly` in the playthrough
+      harness: pickle the state and rng mid-run, revive, and the seasons
+      after the load must match the uninterrupted twin, kin groups
+      compared hearth by hearth.)*
 - [ ] **Prose sweep:** spec status v0.25.0 vs shipped v0.26.0; README's
       standing-orders claim is a stub; four-jobs prose (five shipped); the
       works missing from "The turn"; corpus 90 vs 87; SP 8 "slice 1"

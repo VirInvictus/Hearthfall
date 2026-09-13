@@ -213,11 +213,11 @@ class Population:
             if not self.households:
                 self.households.append(Household(id=self.next_household_id, adults=0))
                 self.next_household_id += 1
-            smallest = min(self.households, key=lambda h: (h.size, id(h)))
+            smallest = min(self.households, key=lambda h: (h.size, h.id))
             smallest.adults += 1
 
     def add_child(self, matures_after: int) -> None:
-        for household in sorted(self.households, key=lambda h: (h.size, id(h))):
+        for household in sorted(self.households, key=lambda h: (h.size, h.id)):
             if household.adults:
                 household.children.append(matures_after)
                 return
@@ -233,7 +233,11 @@ class Population:
             candidates = [h for h in self.households if not h.is_empty]
             if not candidates:
                 break
-            if min(candidates, key=lambda h: (h.mood, -h.size, id(h))).take_a_person():
+            # The tiebreak is the household's stable id, never `id(h)`: a memory
+            # address survives nothing, not even a save/load, so a tie broken on
+            # it could replay differently after a round trip. The ids are
+            # deterministic increments for exactly this kind of question.
+            if min(candidates, key=lambda h: (h.mood, -h.size, h.id)).take_a_person():
                 taken += 1
         return taken
 

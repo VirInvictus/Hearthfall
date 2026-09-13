@@ -13,6 +13,7 @@ from support import an_int
 
 from hearthfall.engine import turn
 from hearthfall.engine.orders import Orders
+from hearthfall.engine.people import Household
 from hearthfall.engine.state import Population, Season
 
 SNAPSHOT_KEYS = {
@@ -126,6 +127,32 @@ class TestPopulation(unittest.TestCase):
         population = Population.of(4, [1, 2, 3])
         self.assertEqual(population.child_count, 3)
         self.assertEqual(population.total, 7)
+
+    def test_ties_break_on_the_household_id_not_the_memory_address(self):
+        # Every mutation here once broke ties on `id(h)`, which is a memory
+        # address: it is not stable across processes and it does not survive a
+        # pickle round trip, so a tie could replay differently after a
+        # save/load and a seed stopped meaning exactly one run. The
+        # incremental household ids exist so this kind of question has a
+        # stable answer. These households are deliberately listed id 2 first.
+        population = Population(
+            households=[Household(id=2, adults=2), Household(id=1, adults=2)],
+            next_household_id=3,
+        )
+        population.add_adults(1)
+        by_id = {h.id: h for h in population.households}
+        self.assertEqual(by_id[1].adults, 3, "the new hand went to the wrong hearth")
+        self.assertEqual(by_id[2].adults, 2)
+
+    def test_a_death_tie_breaks_on_the_stable_id_too(self):
+        population = Population(
+            households=[Household(id=2, adults=2), Household(id=1, adults=2)],
+            next_household_id=3,
+        )
+        population.take_people(1)
+        by_id = {h.id: h for h in population.households}
+        self.assertEqual(by_id[1].adults, 1, "the death landed on the wrong hearth")
+        self.assertEqual(by_id[2].adults, 2)
 
 
 class TestOrders(unittest.TestCase):

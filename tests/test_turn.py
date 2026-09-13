@@ -14,6 +14,7 @@ from hearthfall.engine import balance, turn
 from hearthfall.engine.events.loader import Event
 from hearthfall.engine.intel import FactKind, Ledger
 from hearthfall.engine.orders import Orders
+from hearthfall.engine.people import Household, Rationing
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
     ChoiceOption,
@@ -778,6 +779,54 @@ class TestForecast(unittest.TestCase):
                 self.assertEqual(projected.shortfall, report.shortfall)
                 self.assertEqual(projected.would_starve, report.starved)
                 self.assertEqual(projected.spoiled, report.spoiled)
+
+    def _hoarding_state(self, food: int, rationing: Rationing, turn_number: int):
+        """A short store and a grudge: one hearth past `HOARDS_AT`, two not.
+
+        The parity fixtures above all carry zero resentment, so they can only
+        ever exercise the plain `share_out` path; this one is shaped so the
+        hoarding rung (`_divide`'s first claim) changes the division, which is
+        exactly where a forecast that used `share_out` diverged from what
+        resolution did.
+        """
+        world = World.generate(5, 5, Rng(1), WEIGHTS)
+        ledger = Ledger(halflives=balance.FACT_HALFLIFE)
+        ledger.reveal(world, world.home, turn=0)
+        ledger.survey(world.home, turn.true_yield(world.tile(world.home)), turn=0)
+        return GameState(
+            seed=1,
+            world=world,
+            ledger=ledger,
+            population=Population(
+                households=[
+                    Household(id=1, adults=2, resentment=balance.HOARDS_AT + 2),
+                    Household(id=2, adults=2, children=[1]),
+                    Household(id=3, adults=2),
+                ],
+                next_household_id=4,
+            ),
+            stores=Stores(food=food),
+            turn=turn_number,
+        )
+
+    def test_forecast_matches_resolution_when_a_hearth_hoards(self):
+        for turn_number in (0, 3):  # a growing season and a winter
+            for food in (2, 5, 8, 12):  # every one of them short
+                for rationing in Rationing:
+                    with self.subTest(turn=turn_number, food=food, rationing=rationing):
+                        orders = Orders(forage=3, rationing=rationing)
+                        projected = turn.forecast(
+                            self._hoarding_state(food, rationing, turn_number),
+                            orders,
+                        )
+                        report = turn.resolve(
+                            self._hoarding_state(food, rationing, turn_number),
+                            orders,
+                            Rng(1),
+                        )
+                        self.assertEqual(projected.eaten, report.consumed)
+                        self.assertEqual(projected.shortfall, report.shortfall)
+                        self.assertEqual(projected.would_starve, report.starved)
 
     def test_forecast_does_not_mutate(self):
         state = a_state(food=50, adults=6)
