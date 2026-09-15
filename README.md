@@ -14,7 +14,7 @@ Think *A Dark Room* that grows a spine into *King of Dragon Pass*, rendered in g
   <img src="docs/screenshots/run.png" alt="Hearthfall in year three: the clan panel with its kin groups, a fog-black map, the season ledger showing what the ground supports, and a chronicle of the seasons so far">
 </p>
 
-> **Status: v0.27.0. SP 8 (the long game) shipped its three slices - a hearth that walks out comes back as a rival band, the clan is asked once what it is (the answer shapes the ending), and surplus hands raise the works: a palisade, a smokehouse, a shrine, permanent and modest, bought with hands the forage line wanted.** The 28-season arc was measured and refused (a longer run is a longer death at current yields), and the economy re-tune campaign it waits on is filed. v0.27.0 repaired the skin: the world's event choices are answerable again, and saves moved to a fixed, guarded location. Playable start to finish, and
+> **Status: v0.28.0. SP 8 (the long game) shipped its three slices: a hearth that walks out comes back as a rival band, the clan is asked once what it is (the answer shapes the ending), and surplus hands raise the works: a palisade, a smokehouse, a shrine, permanent and modest, bought with hands the forage line wanted.** The 28-season arc was measured and refused (a longer run is a longer death at current yields), and the economy re-tune campaign it waits on is filed. v0.27.0 repaired the skin: the world's event choices are answerable again, and saves moved to a fixed, guarded location. v0.28.0 finished the job: standing orders are editable over a live forecast, a shortfall the orders cannot fix can be accepted and resolved through, and the run can finally be lost. Playable start to finish, and
 > deliberately small: one map, five jobs, twenty seasons. Combat arrived with SP 6 as raid
 > violence; the deeper war tiers of the spine below are designed but not built. See
 > [`roadmap.md`](roadmap.md) for what each slice has to prove before the next one starts,
@@ -86,7 +86,7 @@ and starts arranging. Defer to him, at a cost you pay that evening, and it runs 
 Nothing announces this and no meter is shown. The powerful moments are rare because they are
 hard to reach, never because a die came up short.
 
-Ninety entries so far, keyed on the season, the ground, the hearths, how much the clan
+A hundred and two entries so far, keyed on the season, the ground, the hearths, how much the clan
 knows and how long since it checked. A clan that fed strangers in a year it could not afford to
 is remembered by somebody three days' walk away; a clan that has buried enough people answers
 questions differently.
@@ -120,7 +120,13 @@ uv venv && uv pip install -e .
 .venv/bin/hearthfall --seed 42   # replay a run exactly
 ```
 
-Hit `Ctrl+P` to open the command palette: advance time until the engine interrupts, answer the events the world puts to the clan (a fired choice stops the run until you answer it), change your glyph tier, and save or load the game. Saves live at a fixed location under `~/.local/state/hearthfall/`. One honest gap: standing orders drive the run on the engine's defaults, and the skin does not yet expose an editor for them.
+Hit `Ctrl+P` to open the command palette: advance time until the engine interrupts, answer the events the world puts to the clan (a fired choice stops the run until you answer it), edit the standing orders over a live forecast of the season they would produce, and, when the forecast is short and the orders cannot fix it, accept the shortfall and resolve the season anyway. Change your glyph tier, and save or load the game; saves live at a fixed location under `~/.local/state/hearthfall/`.
+
+For reading runs instead of playing them:
+
+```sh
+hearthfall --replay --seed 42   # one run, headless, annotated season by season
+```
 
 ## Requirements
 

@@ -34,8 +34,9 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 - `src/hearthfall/tui/`: the Textual skin. Throwaway-able by design.
 - `src/hearthfall/data/`: TOML content. The event corpus, `tallies.toml`, `units.toml`.
   No logic. Terrain lives in `balance.py`; neighbours and peoples are generated.
-- `tests/`: engine tests, plus the skin's pilot smoke tests in `test_tui.py` (the event
-  modal and the save/load path: the two behaviors whose failure ends the run). Everything
+- `tests/`: engine tests, plus the skin's pilot tests in `test_tui.py` (the event
+  modal, the save/load path, the standing-orders editor, and the accept-the-shortfall
+  path: the behaviors whose failure ends the run or stops it dead). Everything
   cosmetic about the skin stays untested.
 
 ## Conventions

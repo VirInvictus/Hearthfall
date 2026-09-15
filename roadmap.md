@@ -559,33 +559,33 @@ commitment should show its arithmetic before you make it.
 - [x] `engine/combat.py`: abstract single-stack resolution, your strength vs. theirs, one roll
       *(Shipped v0.14.0: `resolve()` takes our strength, theirs, and the rng; the odds
       are our share of the field and one `Rng.fraction()` draw decides. `Outcome` records
-      odds, roll, and the margin — how far the draw landed from the decision boundary —
-      so slice 5 grades stakes by it. Exactly one draw per fight, test-pinned. Engine-only
+      odds, roll, and the margin (how far the draw landed from the decision
+      boundary), so slice 5 grades stakes by it. Exactly one draw per fight, test-pinned. Engine-only
       slice: the standing-gate verdict accrues when the raiders make it player-visible,
       alongside the owed SP 3-5 combined read.)*
 - [x] Terrain and morale modifiers
       *(Shipped v0.15.0: each side's strength is scaled by the ground it stands on
-      (`balance.TERRAIN_COMBAT_WEIGHT` — hills 1.25, forest 1.10, plain 1.00,
+      (`balance.TERRAIN_COMBAT_WEIGHT`: hills 1.25, forest 1.10, plain 1.00,
       marsh 0.90, water 0.50) and by clan morale on a linear 0.80-1.20 band with
       parity at five. Every modifier is an optional keyword, so slice 1's calls
       are unchanged and the dumb version stays reachable. Same single draw,
       test-pinned; measured against a year-read once raiders make it visible.)*
 - [x] Intel quality as a combat input; a stale fact should cost you
-      *(Shipped v0.16.0: `balance.INTEL_COMBAT_FACTOR` prices the read — fresh
-      1.00, aging 0.90, stale 0.80, never-scouted 0.70 — and
+      *(Shipped v0.16.0: `balance.INTEL_COMBAT_FACTOR` prices the read (fresh
+      1.00, aging 0.90, stale 0.80, never-scouted 0.70) and
       `resolve(intel_staleness=...)` scales our side by it. The truth still
       wins on the numbers; this is the price of not knowing them. Slice 4
       wires the ledger's staleness into the call at raid time.)*
 - [x] Raiders that hit stores; the granary as a target
-      *(Shipped v0.17.0: a miserable band masses — strength drawn seeded at
+      *(Shipped v0.17.0: a miserable band masses (strength drawn seeded at
       formation, `FactKind.RAIDER_STRENGTH` learned the season it masses, and
-      the director holds it for `RAID_MATURITY_TURNS` (2) — then the raid
+      the director holds it for `RAID_MATURITY_TURNS` (2), and then the raid
       resolves at the season boundary: `combat.resolve(militia × spears-per-
       adult, band strength, home terrain, clan morale, staleness of the read)`.
       Won: the band breaks. Lost: the granary pays `RAID_STORE_LOSS` (15,
       clamped to the store) and the clan takes a morale hit. The player
       decision is the militia count in Orders, competing with foraging for the
-      same hands — the pre-committed auto-resolution from the design brief.*
+      same hands: the pre-committed auto-resolution from the design brief.*
       *Decision taken 2026-09-04: auto-resolution, per the brief's
       recommendation and Brandon's keep-moving directive.)*
       *(Design brief, written 2026-09-04 from a survey of `agents.py`,
@@ -596,7 +596,7 @@ commitment should show its arithmetic before you make it.
       worst resentment: doing well draws raids sooner). The raid fires at the
       season boundary in `turn.resolve` when the director raises the RAID
       interrupt. **The player decision:** a militia count in `Orders`,
-      competing with foraging for the same adults — the standing scarcity trade,
+      competing with foraging for the same adults, the standing scarcity trade,
       and the "real decision every season" the gate demands. **The read:** the
       raider band's strength surfaces as a ledger fact (new `FactKind` or reuse
       of `PRESENCE` keyed on the agent id); its `Staleness` prices the fight
@@ -604,8 +604,8 @@ commitment should show its arithmetic before you make it.
       slice 3 already built. **The fight:**
       `combat.resolve(militia_strength, raider_strength, rng, our_ground=home
       tile terrain, our_morale=clan morale, intel_staleness=...)`. **Slice 5
-      stakes:** losses graded by `Outcome.margin` — a rout costs the losers
-      less than a near-run thing — with dead people via
+      stakes:** losses graded by `Outcome.margin` (a rout costs the losers
+      less than a near-run thing), with dead people via
       `Population.take_a_person`, lost `stores.food` (the granary as the
       target), and ground: a lost fight exposes frontier tiles.
       **Open for Brandon:** the raid as a pre-committed auto-resolution driven
@@ -614,7 +614,7 @@ commitment should show its arithmetic before you make it.
       recommendation keeps the allocation as the decision and the fight as
       consequence.)*
 - [x] Real stakes: dead people, lost stores, ground gained
-      *(Shipped v0.18.0: losses grade by the margin — `combat.raid_deaths`
+      *(Shipped v0.18.0: losses grade by the margin: `combat.raid_deaths`
       buries 1-3 of the clan (round-robin over the living hearths, children
       first via `take_a_person`, each grave a morale hit on that hearth), and
       a rout (`combat.is_rout`, |margin| >= 0.25) scatters the band far
@@ -808,7 +808,7 @@ thing being managed is a people rather than a household.*
       keep-moving directive. `Orders.work` is a labour line like any other;
       what the hands raise is the ladder's next entry, the engine's call
       (`balance.WORKS`: palisade, smokehouse, shrine), each spent once and
-      modest forever - 6 grain the next raid does not carry off, half a
+      modest forever: 6 grain the next raid does not carry off, half a
       tender's worth of rot trimmed every season, one point of standing
       cheer. Completions are announced; a finished ladder says so; and the
       works read into `snapshot()` as three flat keys. The spoil arithmetic
@@ -817,7 +817,7 @@ thing being managed is a people rather than a household.*
       *Standing-gate verdict: **ships.** Gate-read over 50 seeds: a builder
       policy (two hands on the works whenever the store is healthy) finishes
       two works a run, endures 14 of 50 against the naive 11, and cuts what
-      raiders carry off - the decision is paid for in forage hands, in
+      raiders carry off: the decision is paid for in forage hands, in
       exactly the prosperous seasons where the allocation used to write
       itself. 9 new tests; suite at 403; pyright strict zero.)*
 
@@ -826,14 +826,14 @@ last and conditional on the economy, and the precondition was tested rather
 than assumed: with the works shipped, `TURNS_PER_RUN` was measured at 28
 seasons against the shipped 20. Every activity signal got better and the
 game got worse: raids rose from 16 to 27 per 50 runs under the naive
-policy, works were built, doctrine forks fired - and endurance fell from 11
+policy, works were built, doctrine forks fired, and endurance fell from 11
 to 5 of 50, with the builder policy at 3 of 50, below the suite floor, and
 survivors from 28 to 11. Twenty-eight seasons is not a longer game; it is a
 longer death, because the clan economy cannot feed the extra winters at
 current yields, and that is the shape problem the `STARTING_FOOD` note
 records, not a magnitude a constant can move. The arc stays refused until a
 dedicated economy campaign re-tunes yields, winters, and band pressure
-together; the pieces it will need - the works, doctrine, the rivals - are
+together; the pieces it will need (the works, doctrine, the rivals) are
 all shipped and waiting for it.
   *(OPENED 2026-09-12 (Brandon): the economy re-tune campaign is a go; the next Hearthfall lane files its boxes, runs the coordinated re-tune through the 50-seed gate-read harness, and brings targets back for approval before any ship verdict.)*
 
@@ -962,7 +962,7 @@ growth and map sweeps in SP 2 and SP 1):
 - [x] Doctrine: the run's choices harden into character
       *(Shipped v0.25.0. The corpus gains the doctrine fork
       (`data/events/doctrine.toml`): after the graves have started, the clan
-      is asked once what it is - keep people, or keep ground - and the
+      is asked once what it is, keep people or keep ground, and the
       answer is the `doctrine` tally, which nothing shows and only the
       ending reads. The payoffs are years later, gated on the choice plus
       the thing the choice was about: kept people meets kin of the fed
@@ -978,15 +978,15 @@ growth and map sweeps in SP 2 and SP 1):
       that kept ground. / There are steads that owe the clan grain, and the
       debt is inherited."). Prose and small payoffs only, so the economy is
       untouched. The liveness guard earned its keep again: the kept-ground
-      payoff was unreachable by construction of the policy ladder - doctrine
+      payoff was unreachable by construction of the policy ladder: doctrine
       2 needs a choice-1 run, surveys happen on surveying policies, and the
-      spread never combined the two - and the fix was extending the ladder
+      spread never combined the two, and the fix was extending the ladder
       (surveying runs now answer both ways) rather than loosening the
       content. 6 new tests; suite at 394; pyright strict zero.)*
 
 - [x] Rivals: the walked-out hearth returns
       *(Shipped v0.24.0: both halves of the promise live in `_leave` now.
-      The hearth that walks out camps in the dark as an ordinary band — id
+      The hearth that walks out camps in the dark as an ordinary band, id
       `rival_N`, named by its trait ("the Ironkin Clan"), holding the food
       it took and the mood it left in, camped on the nearest ground that is
       not the hearth and not water, and no random draw spent at creation.
@@ -1139,24 +1139,24 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
 
 ## New findings 2026-09-12 (six-lens full audit; detail: audit/FULL-AUDIT-2026-09-12.md, Wave 5)
 
-- [x] **HIGH: the TUI cannot answer a pending event choice - the run
+- [x] **HIGH: the TUI cannot answer a pending event choice, and the run
       soft-locks.** run_until_interrupted returns EVENT; nothing renders
       state.pending or calls turn.apply_choice; the next run re-interrupts
       immediately. Either the roadmap's "event modal" box is stale or this
       is a regression from the TUI rebuild. Fix: a modal over state.pending
       (title/body/options are engine-formed) calling apply_choice, and
       surface DIRECTOR interrupts.
-      *(Fixed in v0.27.0: it was the rebuild regression - the modal is back
+      *(Fixed in v0.27.0: it was the rebuild regression; the modal is back
       (`EventChoiceScreen`, engine-formed question, `apply_choice` on
       answer), DIRECTOR stops get a signpost line, and the Phase 0 box
       annotation now records the regression honestly. Writer-level proof:
       `tests/test_tui.py` drives a real fired event through Textual's
-      pilot - it renders, choosing lands the effect, the run advances.)*
+      pilot: it renders, choosing lands the effect, the run advances.)*
 - [x] **Forecast diverges from resolution when a hearth hoards** (forecast
       uses share_out, _consume uses _divide/first_claim; the parity test's
       fixtures carry zero resentment so it cannot catch this). Use _divide
       in forecast and add a hoarding parity case. Related determinism hole:
-      id(h) tie-breaking in state.py - use the stable household id.
+      id(h) tie-breaking in state.py: use the stable household id.
       *(Fixed in v0.27.0, both halves. `forecast` now divides through
       `_divide`, so the projection prices a hoarding hearth's first claim;
       the parity fixtures could not see the rung and the new
@@ -1194,8 +1194,8 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
       line described terrain, agents, peoples, and names that never lived
       there; it now describes the corpus, tallies, and units, and says
       where terrain actually is (balance.py). The README's palette claim
-      now says what the palette does - and names the standing-orders
-      editor as the gap it is - "five jobs", the works added to "The
+      now says what the palette does, and names the standing-orders
+      editor as the gap it is; "five jobs", the works added to "The
       turn", ninety entries, and the data line fixed the same way. SP 8's
       header reads "slices 1 to 3 shipped". The SP 4/5 patchnotes debt is
       paid with a dated retrospective entry below. Found while sweeping:
@@ -1214,25 +1214,129 @@ the map, terrain, and event order. `main()` and the new-run action both draw a f
       the binding protocol written down: coordinated levers only, 50-seed
       gate-read measurement, locked levers named, targets return to Brandon.
       Box 1 executed in-lane the same day: the `food_ledger` instrument plus
-      the recovered builder policy, baseline recorded, and the sawtooth read
-      - the campaign has a winter problem, not a raid or rot problem. Boxes
+      the recovered builder policy, baseline recorded, and the sawtooth read:
+      the campaign has a winter problem, not a raid or rot problem. Boxes
       2 through 5 are open and produce proposals, not releases.)*
-- [ ] **GitHub presentation (workspace batch):** optional description
+- [x] **GitHub presentation (workspace batch):** optional description
       variant with the deterministic/pure-logic hooks; +7 topics; create
       the v0.26.0 Release; wiki off; discussions on when players exist.
+      *(Executed 2026-09-15 in the blitz, on the approved set: description
+      variant applied, +7 topics applied to exactly the 20-topic cap, the
+      v0.27.0 Release created from the corrected tag (the "v0.26.0" word
+      amended at execution as the audit directed), wiki off, discussions
+      stay off until players exist.)*
 
 ### Final audit 2026-09-13 (THE FINAL AUDIT: NEW findings, one line each; full detail in audit-final/Hearthfall/FINAL-REPORT.md)
-- [ ] MED — The starvation loop is TERMINAL under the shipped skin: the only standing orders are the all-zero default and the editor is a stub, so once forecast.shortfall > 0, run_until_interrupted returns STARVATION before every resolve forever — no turn resolves, no deaths, GAME_OVER unreachable through the skin (app.py:221-222/:312-317, turn.py:1373-1375). Minimal orders editor (L) or at minimum an "accept the shortfall, resolve anyway" action (S).
-- [ ] MED — "The Ring" fires as the first event of nearly every run: gates on households >= 3 (true from turn 0 — STARTING_HOUSEHOLDS = 3, all founding hearths non-empty) at weight 100 vs everyone else's 1; forms the council (12 seeded draws) and endorses every later choice. Its own comments claim to be locked. Raise the gate, fix the comments, pin year-one immunity with a corpus test.
-- [ ] HIGH — spec.md:150-152: the contract's turn definition still says labour splits "between foraging, scouting, and tending" — five labour lines ship (militia v0.17.0, work v0.26.0).
-- [ ] HIGH — director.py:61-68 asserts an honesty guarantee ("the fact MUST have existed for at least a few turns") that no code enforces, and "50% of the time" is deterministic turn-parity (state.turn % 2 == 0); the rng parameter is never used. In the earned-vs-random experiment, the director's contract comment must tell the truth.
-- [ ] MED — Release-record: the v0.27.0 tag omits the Retrospective entry shipped in the same commit whose message names it (catch-up rule; force-push is Brandon's call, decide before consumption); zero Releases behind 17 tags; the presentation box says "create the v0.26.0 Release" (stale at birth — amend at execution); the +7 topics would hit the 20-topic cap exactly (confirm the final set first).
-- [ ] MED — Doc-truth cluster: §7 still files the works as uncommitted candidates (landed v0.26.0); the more-decisions framing still "not yet designed" (landed v0.26.0); the two module lists drift in opposite directions; the skin-testing claims lag (6 pilot tests); the SP 8 proposal/signature blocks stranded 230 lines apart; report.md presents retired SP 9/10 as live.
-- [ ] MED — Code-vs-doc: spec §6 says "lower the cooldown as the corpus grows" while the recorded measurement says the opposite (eligibility governs; corpus 82→90, cooldown unchanged); the new retrospective says agents.py "put neighbours, weather, and wildlife on the map" (only neighbours exist).
-- [ ] LOW — Small code: --seed 0 treated as absent; Save/Load under a live event modal swaps state under the answer (reads into discarded state; stacked modals); check_emergence dead parallel rule (delete); Intent.target never read; event_body write-only (save-schema note if removed); WORN_GROUND_FLOOR dead twin; band-economy numbers inline against balance.py's own contract; glyph-card dead branch + runtime re-import; turn.py mid-file/redundant imports; taken-choice line two formats before/after load; entry.turn // 4 hardcode; get_endorsements' promised guards absent; three unexplained type: ignores; answer keys hard-wired 1/2/3; Composition.count per call; combat local imports.
-- [ ] LOW — Comment truth: forecast lists the nonexistent _starve; populate_agents claims wildlife + "every number arrives as an argument" (food > 20 inline is a raid-arc lever outside balance); combat.py future tense + renamed spec section; people.py "nobody here has a name" vs Person in-module; save_game's (GameState, Rng) tuple contract undocumented; set_orders "Just log that it works" false; TERRAIN_COMBAT_WEIGHT's unreachable WATER entry; wandering.toml's "Phase 2 is where ground matters" false since slices 2-5; + the LOW polish set (FINAL-REPORT L5.14-26).
-- [ ] LOW — GitHub/housekeeping: workflow_dispatch + timeout-minutes; the force-push ruleset decision or the recorded no-protection note; social preview/badges/Projects (flip kit); events/.gitkeep vestigial; report.md disposition pointer; *.pkl optional; FUNMETER resume-or-park (local).
-- [ ] Feature candidates logged (FINAL-REPORT L4, ranked): standing-orders editor (L; converts watchable to playable; prerequisite for Boxes 2-5 to be judged as a game); forecast rendering (S; the engine's own promised instrument, one pure call away); corpus authoring batches (90 toward 250-400); save-format version stamp; headless --replay + chronicle export (fold the event_body render fix); raid telegraphing; works-rung choice; wolf-pack wildlife; rival reunion; TRADE intents (weakest); weather-as-agent (M, SEQUENCED STRICTLY AFTER BOX 5 — it perturbs the baseline; also fix the ticked roadmap.md:522 box claiming weather/wildlife agents exist).
-- [ ] Dependency ask: raise the textual floor (>=0.80 vs lock 8.2.8) + uv lock, on Brandon's go.
+- [x] MED: The starvation loop is TERMINAL under the shipped skin: the only standing orders are the all-zero default and the editor is a stub, so once forecast.shortfall > 0, run_until_interrupted returns STARVATION before every resolve forever: no turn resolves, no deaths, GAME_OVER unreachable through the skin (app.py:221-222/:312-317, turn.py:1373-1375). Minimal orders editor (L) or at minimum an "accept the shortfall, resolve anyway" action (S).
+      *(Executed in the final blitz, v0.28.0, both halves in one lane as
+      approved: the standing-orders editor is real (five labour lines
+      against the clan's adults, the rationing policy, the engine's own
+      forecast rendered live underneath and in the rail), and "accept the
+      shortfall and resolve anyway" resolves one season on the standing
+      orders, deaths and all, through `turn.resolve_and_record`, the
+      driver's per-season ritual named and shared. Pilot tests lose an
+      all-zero run end to end; GAME_OVER is reachable through the skin.)*
+- [x] MED: "The Ring" fires as the first event of nearly every run: gates on households >= 3 (true from turn 0: STARTING_HOUSEHOLDS = 3, all founding hearths non-empty) at weight 100 vs everyone else's 1; forms the council (12 seeded draws) and endorses every later choice. Its own comments claim to be locked. Raise the gate, fix the comments, pin year-one immunity with a corpus test.
+      *(Executed, v0.28.0. Gate raised to `year >= 2` plus `people >= 10`
+      (the founding clan is eight); the comments tell the truth; corpus
+      tests pin year-one immunity and the growth floor structurally.
+      Measured on the way: a household-count gate is unreachable inside a
+      twenty-season run (hearths barely split), so the gate prices growth
+      in people. The fix squeezed two fragile content chains; the corpus
+      batch below repairs them and liveness stays green.)*
+- [x] HIGH: spec.md:150-152: the contract's turn definition still says labour splits "between foraging, scouting, and tending"; five labour lines ship (militia v0.17.0, work v0.26.0).
+      *(Executed 2026-09-15: the contract says five labour lines, with the
+      versions named.)*
+- [x] HIGH: director.py:61-68 asserts an honesty guarantee ("the fact MUST have existed for at least a few turns") that no code enforces, and "50% of the time" is deterministic turn-parity (state.turn % 2 == 0); the rng parameter is never used. In the earned-vs-random experiment, the director's contract comment must tell the truth.
+      *(Executed, v0.28.0: the comment now describes what actually makes
+      the raid learnable (the mechanical massing announcement, the
+      maturity window, intent-only-from-starvation) and says plainly that
+      the low-slack hold is deterministic turn-parity; the dead rng
+      parameter is dropped from `Director.evaluate` and its call site.)*
+- [x] MED: Release-record: the v0.27.0 tag omits the Retrospective entry shipped in the same commit whose message names it (catch-up rule; force-push is Brandon's call, decide before consumption); zero Releases behind 17 tags; the presentation box says "create the v0.26.0 Release" (stale at birth; amend at execution); the +7 topics would hit the 20-topic cap exactly (confirm the final set first).
+      *(Executed 2026-09-15 on the approved answers: the pushed v0.27.0
+      tag was rewritten (annotated force-push, lease-guarded) to carry
+      both shipped entries verbatim, verified with `git cat-file tag`
+      before pushing; the v0.27.0 GitHub Release, the repo's first, was
+      created from the corrected tag; the +7 topics confirmed and
+      applied, landing at exactly the 20-topic cap.)*
+- [x] MED: Doc-truth cluster: §7 still files the works as uncommitted candidates (landed v0.26.0); the more-decisions framing still "not yet designed" (landed v0.26.0); the two module lists drift in opposite directions; the skin-testing claims lag (6 pilot tests); the SP 8 proposal/signature blocks stranded 230 lines apart; report.md presents retired SP 9/10 as live.
+      *(Executed 2026-09-15: §7 marks the works landed and cites the
+      analysis at its new docs/ path; the more-decisions question is
+      annotated landed; the module lists reconciled both sides; the
+      skin-testing claims say six pilot tests; the SP 8 signature moved
+      beside what it signs and the proposal block annotated executed;
+      report.md retired to docs/report-city-tier-analysis.md with a
+      dated header.)*
+- [x] MED: Code-vs-doc: spec §6 says "lower the cooldown as the corpus grows" while the recorded measurement says the opposite (eligibility governs; corpus 82→90, cooldown unchanged); the new retrospective says agents.py "put neighbours, weather, and wildlife on the map" (only neighbours exist).
+      *(Executed 2026-09-15: spec §6 now states the measured rule
+      (eligibility governs, not corpus size; the measurement is on
+      `balance.EVENT_COOLDOWN`), and the retrospective entry is reworded
+      to neighbours-only, which the corrected tag now carries.)*
+- [x] LOW: Small code: --seed 0 treated as absent; Save/Load under a live event modal swaps state under the answer (reads into discarded state; stacked modals); check_emergence dead parallel rule (delete); Intent.target never read; event_body write-only (save-schema note if removed); WORN_GROUND_FLOOR dead twin; band-economy numbers inline against balance.py's own contract; glyph-card dead branch + runtime re-import; turn.py mid-file/redundant imports; taken-choice line two formats before/after load; entry.turn // 4 hardcode; get_endorsements' promised guards absent; three unexplained type: ignores; answer keys hard-wired 1/2/3; Composition.count per call; combat local imports.
+      *(Executed, v0.28.0, except the deletions: --seed 0 is a seed; the
+      modal state-swap fixed (state read through the app at answer time,
+      load dismisses live questions); band constants moved to balance;
+      the glyph-card branch and runtime re-import gone; turn.py imports
+      hoisted (no cycle justified any of them) and the driver moved above
+      the helpers banner; the taken-choice line unified on the
+      chronicle's wording; the year computed from len(SEASONS);
+      get_endorsements reworded to the raw argmax it is; the three type:
+      ignores resolved the house way (runtime imports, parameterised
+      factories, and chronicle's cycle broken with a lazy annotation);
+      answer keys 4-9 wired; Composition.count scans instead of building
+      a dict per call; combat's local balance imports hoisted;
+      event_body is rendered now, which dissolves the write-only
+      finding. The removal candidates (check_emergence, Intent.target,
+      WORN_GROUND_FLOOR, events/.gitkeep, the three test-only accessors)
+      were asked and the answer did not come back, so nothing was
+      deleted: each is marked in code and the gate stays open in the new
+      box below. MIGRATE is ruled keep, recorded.)*
+- [x] LOW: Comment truth: forecast lists the nonexistent _starve; populate_agents claims wildlife + "every number arrives as an argument" (food > 20 inline is a raid-arc lever outside balance); combat.py future tense + renamed spec section; people.py "nobody here has a name" vs Person in-module; save_game's (GameState, Rng) tuple contract undocumented; set_orders "Just log that it works" false; TERRAIN_COMBAT_WEIGHT's unreachable WATER entry; wandering.toml's "Phase 2 is where ground matters" false since slices 2-5; + the LOW polish set (FINAL-REPORT L5.14-26).
+      *(Executed, v0.28.0: forecast's docstring; populate_agents, now
+      true by construction since every number arrives as an argument and
+      wildlife is named as typed-but-unpopulated; combat.py's tense and
+      its spec section name; people.py's header; save_game's
+      tuple-rides-along contract; TERRAIN_COMBAT_WEIGHT's reachability
+      note; wandering.toml's framing; set_orders, replaced by the real
+      editor; and the LOW polish set (intel's Phase-era framing,
+      balance's "first guess" header, reports' understating header,
+      chronicle's field comments, the tiers advisor ignore).)*
+- [x] LOW: GitHub/housekeeping: workflow_dispatch + timeout-minutes; the force-push ruleset decision or the recorded no-protection note; social preview/badges/Projects (flip kit); events/.gitkeep vestigial; report.md disposition pointer; *.pkl optional; FUNMETER resume-or-park (local).
+      *(Executed 2026-09-15: workflow_dispatch and a 10-minute timeout;
+      branch protection decided by recording "solo, unprotected by
+      design; the process, not a ruleset, gates force-pushes"; the
+      social preview/badges/Projects flip kit left for the flip-time
+      pass (Projects' v2-board scope still open); events/.gitkeep kept
+      pending the removal gate; report.md moved with its disposition
+      header; *.pkl ignored; FUNMETER resumed for this blitz's
+      year-reads.)*
+- [x] Feature candidates logged (FINAL-REPORT L4, ranked): standing-orders editor (L; converts watchable to playable; prerequisite for Boxes 2-5 to be judged as a game); forecast rendering (S; the engine's own promised instrument, one pure call away); corpus authoring batches (90 toward 250-400); save-format version stamp; headless --replay + chronicle export (fold the event_body render fix); raid telegraphing; works-rung choice; wolf-pack wildlife; rival reunion; TRADE intents (weakest); weather-as-agent (M, SEQUENCED STRICTLY AFTER BOX 5 (it perturbs the baseline); also fix the ticked roadmap.md:522 box claiming weather/wildlife agents exist).
+      *(Executed, v0.28.0: the editor and the forecast rendering as the
+      one lane they are; the corpus campaign's first batch, 90 to 102,
+      including a second take-in route that repairs the doctrine payoff
+      chain and two measured gate widenings, liveness green over all
+      102; the save-format version stamp; headless --replay with the
+      event_body render fix folded in. Still filed in the queue: raid
+      telegraphing, works-rung choice, wolf-pack wildlife, rival reunion
+      corpus, TRADE intents; weather-as-agent stays sequenced strictly
+      after Box 5, the guard is recorded on the campaign, and the SP 4
+      roadmap box now carries its honesty rider.)*
+- [x] Dependency ask: raise the textual floor (>=0.80 vs lock 8.2.8) + uv lock, on Brandon's go.
+      *(Approved 2026-09-15; the floor is textual>=8.2 with the lock
+      re-run in the release commit.)*
 
-**CONFIRMED-prior (final-audit verification):** the font-advisor overclaim, the no-I/O qualifier gap, the textual floor, the coverage observation. SUPERSEDED (verified fixed and pinned): the TUI event soft-lock, the forecast/hoarding divergence and id(h) tie-breaks, the load_game hygiene set. Audit-side corrections: the 21-em-dash count was a line count (22 chars) and missed 32 ASCII-dash surrogates (18 live); the lane record's "NOT pushed" is stale (pushed, tag on remote). Slop-reader verdict: genuinely human end to end; 22 em-dash characters (2 live) plus 32 spaced-hyphen surrogates (18 live) are the one systematic defect — punctuation, not voice.
+- [ ] **Removal candidates, gate open (asked 2026-09-15, no answer received):**
+      tiers.check_emergence, Intent.target, WORN_GROUND_FLOOR,
+      data/events/.gitkeep, and the three test-only accessors
+      (Ledger.fully_explored, Forecast.net, TurnReport.households_split).
+      A removal executes only on its own answered gate, so nothing was
+      deleted: each is marked in code where it stands, and one answered
+      gate executes the lot.
+
+- [x] **Branch protection (L6.6), decided by recording:** the repo is
+      solo and unprotected by design; the force-push and deletion guard
+      is process (Brandon answers every force-push), not a GitHub
+      ruleset.
+
+**CONFIRMED-prior (final-audit verification):** the font-advisor overclaim, the no-I/O qualifier gap, the textual floor, the coverage observation. SUPERSEDED (verified fixed and pinned): the TUI event soft-lock, the forecast/hoarding divergence and id(h) tie-breaks, the load_game hygiene set. Audit-side corrections: the 21-em-dash count was a line count (22 chars) and missed 32 ASCII-dash surrogates (18 live); the lane record's "NOT pushed" is stale (pushed, tag on remote). Slop-reader verdict: genuinely human end to end; the em-dash characters and spaced-hyphen surrogates were the one systematic defect, punctuation rather than voice, and they are recast in this block and swept across the rendered prose in the same pass.
