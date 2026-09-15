@@ -1,0 +1,57 @@
+project.done
+Hearthfall
+==========
+
+Completion date: 2026-09-15 (THE FINAL BLITZ)
+Final release: v0.28.0 (commit cfc5751; tag and GitHub Release cut and pushed)
+Commit range for the blitz: 50d4ea2..d1e4c53 (8 commits, main == origin/main, CI green)
+
+What shipped
+------------
+- v0.27.0's release record repaired first: the pushed tag force-pushed
+  (Brandon-approved) to carry both entries that release shipped, verified
+  with `git cat-file tag` before pushing, and the repo's first GitHub
+  Release created from the corrected tag. Topics at exactly the 20-topic
+  cap; description carries the deterministic hook; wiki off.
+- The doc-truth sweep: spec 4 counts five labour lines, the works and the
+  more-decisions question are marked landed, the module lists reconcile,
+  the cooldown rule states the measured thing, report.md retired to docs/,
+  the SP 4 roadmap box carries its honesty rider, and the retrospective
+  entry in patchnotes says what agents.py actually shipped.
+- v0.28.0: the starvation terminal loop is gone (the standing-orders editor
+  with a live forecast, plus accept-the-shortfall through
+  `turn.resolve_and_record`; the pilot tests lose an all-zero run end to
+  end); the Ring's gate is earned (`year >= 2` and `people >= 10`, pinned
+  by corpus tests); `--seed 0` is a seed; save/load dismisses a live
+  question; saves carry a format stamp; `--replay` prints the annotated
+  chronicle; the corpus grew 90 to 102 with the reachability guard green.
+- The audit's comment-truth and small-code clusters swept; the director's
+  comment tells the truth and its dead rng parameter is gone; the prose
+  recasts are done (no em-dashes, no spaced-hyphen surrogates in the docs).
+- The economy re-tune campaign (Boxes 2-5) measured under its protocol:
+  proposals recorded in the roadmap for Brandon (curve 3/4/7, two bands,
+  loss stays 8, arc stays refused); no constant moves, no ship verdict.
+
+Reopen conditions (the recorded futures)
+----------------------------------------
+- **The economy campaign's ship verdict is Brandon's.** The proposal and
+  its target tables sit in the roadmap's campaign section. On his go, the
+  constants move as one coordinated release with the shape-of-a-run floor
+  and the reachability guards live.
+- **Removal candidates: the gate is open.** check_emergence, Intent.target,
+  WORN_GROUND_FLOOR, data/events/.gitkeep, and the three test-only
+  accessors were asked (2026-09-15) and the answer did not come back, so
+  nothing was deleted; each is marked in code. One answered gate executes
+  the lot.
+- **The corpus campaign continues**: 102 toward the spec's 250-400; the
+  reachability harness guards every batch.
+- **Weather-as-agent** is sequenced strictly after the economy campaign's
+  Box 5 (it perturbs the baseline being measured). Wildlife is typed but
+  unpopulated; the SP 4 box's honesty rider records it.
+- **The enhancement queue** (filed, unranked work): raid telegraphing,
+  works-rung choice, wolf-pack wildlife, rival reunion corpus, TRADE
+  intents.
+- **The flip-time GitHub kit** (social preview, badges, Projects toggle)
+  waits for the presentation pass; Projects' v2-board scope is unresolved.
+- **The textual floor** was raised to the tested 8.2; anything below is
+  untested, not supported.
