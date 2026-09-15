@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hearthfall"
-version = "0.27.0"
+version = "0.28.0"
 description = "A grimdark clan-survival game for the terminal"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -14,7 +14,7 @@ authors = [
 ]
 # The engine takes no dependencies. Everything here belongs to the TUI skin.
 dependencies = [
-  "textual>=0.80",
+  "textual>=8.2",
 ]
 
 [project.scripts]

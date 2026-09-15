@@ -167,7 +167,7 @@ wheels = [
 
 [[package]]
 name = "hearthfall"
-version = "0.27.0"
+version = "0.28.0"
 source = { editable = "." }
 dependencies = [
     { name = "textual" },
@@ -181,7 +181,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "textual", specifier = ">=0.80" }]
+requires-dist = [{ name = "textual", specifier = ">=8.2" }]
 
 [package.metadata.requires-dev]
 dev = [

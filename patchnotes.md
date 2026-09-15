@@ -10,6 +10,89 @@ Newest at the top.
 > running totals were wrong. The numbers in the tagged entries are left as
 > shipped; take future totals from the runner's own count line.
 
+## v0.28.0 (2026-09-15)
+
+**The final blitz release: the game becomes losable, and the skin becomes
+playable.** The 2026-09-13 final audit's verdict was that the engineering
+contracts are pristine and the play experience is the finding: under the
+shipped skin, the game could neither be played nor lost. This release fixes
+exactly that, gives the Ring an honest opening, lands the corpus campaign's
+first batch, and pays the audit's comment-truth debts.
+
+The terminal loop is gone, in the one lane the audit said it should be.
+`run_until_interrupted` stops on a shortfall forecast before resolving, and
+with the shipped all-zero standing orders and a stub editor it stopped
+forever: no turn resolved, no deaths occurred, and GAME_OVER was unreachable
+through the skin. Two things land together. The standing-orders editor is
+real: five labour lines against the adults the clan actually has, the
+rationing policy, and the forecast rendered live underneath, which is the
+engine's own `turn.forecast` (produced, demand, net, idle hands, the
+shortfall in red). The same forecast now sits in the rail in play, so the
+allocation is decided against numbers instead of against a guess. And the
+stop has a way through: "accept the shortfall and resolve anyway" resolves
+one season on the standing orders, deaths and all, recorded exactly as a
+background season would be (`turn.resolve_and_record` is the driver's
+per-season ritual, named and shared). A winter the orders cannot fix no
+longer ends the run by hanging it. The pilot tests lose an all-zero run end
+to end; the skin can lose now.
+
+The Ring waits to be earned. It shipped gating on `households >= 3`, true
+from turn zero, at weight 100 against everyone else's 1: it fired as the
+first event of nearly every run while its own comments claimed the
+conditions kept it locked. The gate is `year >= 2` and `people >= 10` (the
+founding clan is eight), the comments tell the truth, and corpus tests pin
+year-one immunity and the growth floor structurally. Measured honestly on
+the way: a household-count gate is unreachable inside a twenty-season run
+because hearths barely split, so the gate prices growth in people.
+
+Also in the skin: `--seed 0` is a seed now, not a typo for random; Save and
+Load while a question is up dismiss the question instead of swapping state
+out from under the answer; saves are a stamped envelope, so a save from
+another format of the game is refused at load instead of unpickling and
+dying seasons later on a slot it never had; `--replay --seed N` plays one
+run headless and prints the annotated chronicle, season by season,
+allocation, forecast, events, and answers (the standing gate's reading, as
+a command instead of an edited test); the chronicle pane renders event
+bodies at last; and the number keys reach options four through nine.
+
+The corpus grew from ninety to a hundred and two. The batch includes a
+second take-in route (a man with a sled, distinct from the woman at the
+treeline) repairing the doctrine payoff chain that the Ring fix squeezed,
+and two gate widenings measured against the reachability harness:
+`debts.another_at_the_edge`'s `food > 18` never once coincided with a
+taken-in stranger across fourteen hundred ladder runs (it reads `> 12`
+now), and the buried-enough event sat one grave above every run's ceiling
+(it keys on two graves now). The liveness guard holds over all 102.
+
+The honesty pass. The director's comment claimed an enforcement backed by
+nothing ("the fact MUST have existed for at least a few turns") and a
+random draw that did not exist ("50% of the time" was deterministic
+turn-parity); it now describes the real mechanism (the massing announcement
+is what makes the raid learnable, and the low-slack hold is the calendar,
+not a coin), and the never-used rng parameter is gone from
+`Director.evaluate`. The band-economy numbers that lived inline in
+agents.py moved to balance.py, which is where its own header contract says
+they belong. The three unexplained `type: ignore`s are resolved the house
+way (runtime imports and parameterised factories; chronicle's cycle broken
+with a lazy annotation). turn.py's mid-file imports are hoisted and the
+driver sits above the helpers banner. The rest of the audit's comment-truth
+set is swept, and the audit's rendered-prose recasts are done: no em-dashes
+or spaced-hyphen surrogates left in the docs.
+
+GitHub: the pushed v0.27.0 tag was rewritten (annotated force-push,
+Brandon-approved) to carry both entries that release shipped, verified with
+`git cat-file tag` before pushing, and the v0.27.0 Release, the repo's
+first, was created from the corrected tag. Topics stand at exactly the
+20-topic cap, the description carries the deterministic hook, and the wiki
+is off. CI gained workflow_dispatch and a 10-minute timeout; `*.pkl` is
+ignored. The audit's removal candidates were asked (check_emergence,
+Intent.target, and the rest) and the answer did not come back, so nothing
+was deleted: each is marked in code, and the gate stays open in the
+roadmap.
+
+12 new tests; suite at 427; pyright strict zero. The textual floor is
+raised to the tested 8.2, lock re-run in this commit.
+
 ## v0.27.0 (2026-09-13)
 
 **The audit release: the skin answers its events again.** The 2026-09-12
@@ -98,7 +181,7 @@ corpus entries keyed on ring composition and household standing.
 
 **SP 8, slice 3: the works.** Surplus hands become permanent, modest
 things, and prosperous seasons get a real decision. `Orders.work` is a
-labour line like any other - hands against the same adults - and what the
+labour line like any other, hands against the same adults, and what the
 hands raise is the ladder's next entry, the engine's call the same way the
 survey's tile is (`balance.WORKS`: palisade, 6 hand-seasons; smokehouse,
 6; shrine, 8). A closed palisade is worth 6 grain the next raid does not
@@ -113,7 +196,7 @@ The forecast shares the spoil arithmetic through one function
 duplicates on purpose. Gate-read over 50 seeds: a builder policy (two
 hands on the works whenever the store is healthy) finishes two works a
 run, endures 14 of 50 against the naive 11, and cuts what raiders carry
-off - the decision is paid for in forage hands, exactly where the brief
+off: the decision is paid for in forage hands, exactly where the brief
 wanted it. 9 new tests; suite at 403; pyright strict zero.
 
 ## v0.25.0 (2026-09-06)
@@ -121,7 +204,7 @@ wanted it. 9 new tests; suite at 403; pyright strict zero.
 **SP 8, slice 2: doctrine.** Two clans that endure are not the same clan,
 and the ending says so now. The corpus gains the doctrine fork
 (`doctrine.toml`): after the graves have started, the clan is asked once
-what it is - keep people, or keep ground - and the answer is a tally like
+what it is, keep people or keep ground, and the answer is a tally like
 every other memory. The payoffs come years later and are gated on the
 choice plus the thing the choice was about: a clan that kept people meets
 kin of the strangers it fed at the crossings; a clan that kept ground
@@ -145,7 +228,7 @@ suite at 394; pyright strict zero.
 promise in the repo is kept. A hearth that walks out over a grudge no
 longer vanishes: it camps in the dark as an ordinary band, under a name
 its trait gives it, holding the food it took and the mood it left in.
-From the moment of leaving nothing is special-cased - the band economy
+From the moment of leaving nothing is special-cased: the band economy
 starves it, the SP 7 muster gives it a mix, the massing is announced,
 and the fight is priced by the web and the read. The chronicle line
 lands with the walkout: "They are raising a fire of their own. The
@@ -318,9 +401,9 @@ strict zero.
 
 **SP 6, slice 5: real stakes, graded by the margin.** `combat.raid_deaths`
 and `combat.is_rout` turn the fight's margin into consequences. A lost raid
-now buries the clan's dead — one grave for a near-run thing, up to three for
+now buries the clan's dead (one grave for a near-run thing, up to three for
 a rout (`RAID_DEATHS_PER_MARGIN`/`RAID_DEATHS_MAX`), dealt round-robin over
-the living hearths with a morale hit per grave — and a decisive outcome
+the living hearths with a morale hit per grave), and a decisive outcome
 marks ground: a rout scatters the band far enough that its camp shows on the
 map (`ledger.reveal` at the band's location). Won fights cost nothing but
 the season. The granary loss from slice 4 stands unchanged. The SP 6
@@ -331,13 +414,13 @@ question is now answerable in play. Suite at 340; pyright strict zero.
 **SP 6, slice 4: raiders, and the granary as a target.** Violence is
 player-visible. A miserable band masses: its spears are drawn (seeded) at
 intent formation, the ledger learns the band's strength that season, and the
-director holds the raid for two seasons — the window where the read ages and
+director holds the raid for two seasons, the window where the read ages and
 the player reassigns hands. When it comes, the raid resolves through
 `combat.resolve`: militia strength (spears per adult, a hand off the forage
 roll), home-ground terrain, clan morale, and the staleness of the read. Won,
 the band breaks; lost, the granary pays `RAID_STORE_LOSS` (15, clamped to the
 store) and morale takes `MORALE_LOSS_PER_RAID` (2). `Orders` gains the
-`militia` line, counting against the same hands as forage — the raid trade is
+`militia` line, counting against the same hands as forage: the raid trade is
 the scarcity trade. The fight is pre-committed (the auto-resolution from the
 design brief, decision recorded in the roadmap); it is still exactly one
 draw. Raid wiring tests: repel keeps the granary (verified against a no-raid
@@ -347,8 +430,8 @@ twin), an open granary pays exactly the loss, replays are exact. Suite at
 ## v0.16.0 (2026-09-04)
 
 **SP 6, slice 3: intel quality as a combat input.** `resolve()` takes
-`intel_staleness`, priced by `balance.INTEL_COMBAT_FACTOR` — fresh 1.00, aging
-0.90, stale 0.80, never-scouted 0.70 — scaling our side before the share. The
+`intel_staleness`, priced by `balance.INTEL_COMBAT_FACTOR` (fresh 1.00, aging
+0.90, stale 0.80, never-scouted 0.70), scaling our side before the share. The
 truth still wins fights on the numbers; this multiplier is the cost of
 committing against a read instead of a certainty. Stacks with terrain and
 morale; still exactly one draw. 4 new tests; suite at 333.
@@ -356,7 +439,7 @@ morale; still exactly one draw. 4 new tests; suite at 333.
 ## v0.15.0 (2026-09-04)
 
 **SP 6, slice 2: terrain and morale.** `resolve()` grows optional keyword
-modifiers — `our_ground`/`their_ground` (each side's terrain, weighted by
+modifiers: `our_ground`/`their_ground` (each side's terrain, weighted by
 `balance.TERRAIN_COMBAT_WEIGHT`: hills 1.25, forest 1.10, plain 1.00, marsh
 0.90, water 0.50) and `our_morale`/`their_morale` (the clan-wide 0-10 average,
 linear on a 0.80-1.20 band with parity at five, clamped). Modifiers scale
@@ -366,7 +449,7 @@ tests; suite at 329. Same gate posture as slice 1: measured when player-visible.
 
 ## v0.14.0 (2026-09-04)
 
-**SP 6, slice 1: abstract single-stack combat.** `engine/combat.py` — the dumb
+**SP 6, slice 1: abstract single-stack combat.** `engine/combat.py`: the dumb
 version `spec.md` calls for, kept dumb on purpose: our strength against theirs,
 one `Rng.fraction()` draw. The odds are our share of the strength on the field;
 `Outcome` records the pre-roll odds, the roll, and the margin (how far the draw

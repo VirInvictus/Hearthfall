@@ -3,7 +3,7 @@
 > A hearth is what you gather around and what you defend. A fall is what happens to most
 > of them. The name holds both halves of the arc: grow a fire into a people, or bury them.
 
-**Status:** v0.27.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is built and reachable in play: bands mass with a readable strength, the massing window opens, and the raid costs grain, graves, or both. Sub-project 7, composition, is complete (v0.20.0 through v0.23.0). Sub-project 8, the long game, has shipped all three of its signed slices: the walked-out hearth returns as a rival band (v0.24.0), doctrine and the tally-assembled epilogue (v0.25.0), and the works - surplus hands raised into permanent, modest improvements (v0.26.0). Its arc was measured and refused (a 28-season run is a longer death at current yields), and the filed economy re-tune campaign is the front now; v0.27.0 repaired the skin around it: the event choice is answerable again, the forecast agrees with resolution when a hearth hoards, and saves are hardened.
+**Status:** v0.28.0. The spine (sub-projects 1 through 5) is built and playable: fact ledger, households, chronicle, neighbours and the director, and the ring. Sub-project 6, violence, is built and reachable in play: bands mass with a readable strength, the massing window opens, and the raid costs grain, graves, or both. Sub-project 7, composition, is complete (v0.20.0 through v0.23.0). Sub-project 8, the long game, has shipped all three of its signed slices: the walked-out hearth returns as a rival band (v0.24.0), doctrine and the tally-assembled epilogue (v0.25.0), and the works: surplus hands raised into permanent, modest improvements (v0.26.0). Its arc was measured and refused (a 28-season run is a longer death at current yields), and the filed economy re-tune campaign is the front now; v0.27.0 repaired the skin around it (the event choice is answerable, the forecast agrees with resolution under hoarding, saves are hardened), and v0.28.0 finished the job: the standing orders are editable over a live forecast, a shortfall can be accepted and resolved through, and the run can finally be lost.
 
 **This document was rewritten on 2026-08-08.** The original is in git history and should be
 read by anyone who wants to know what was given up. It was a knife aimed at scope creep, and
@@ -255,7 +255,7 @@ tracks a tier internally for pacing and content gating; the player experiences a
 Abstract, pre-committed, resolved not micro'd. Two stacks meet; the engine weighs composition,
 terrain, numbers, morale, and the quality of your intel, then reports an outcome with real
 stakes. The dumb version shipped: your strength vs. theirs, one roll (`combat.resolve`),
-with the recorded odds and margin left as the hooks the depth earns — composition, terrain,
+with the recorded odds and margin left as the hooks the depth earns: composition, terrain,
 morale, and intel quality modify the odds; the stakes grade by the margin.
 
 ### The AoE2 layer (the reward, not the foundation)
