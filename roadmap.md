@@ -941,11 +941,27 @@ growth and map sweeps in SP 2 and SP 1):
       the baseline's growing-season ceiling: the sawtooth's peaks (~15.6 on
       season 3) are what a bigger curve would raise, and the first winter's
       store is what it would stock.
+      *(Measured 2026-09-15, blitz campaign. The v0.28.0 game changes re-based
+      the difficulty, so the baseline was re-recorded first: naive endures
+      6/50 (was 11/50 at v0.27.0), builder 9/50; first-winter cull 5.5. The
+      re-recorded baseline is the reference for everything below. Packages,
+      paired per seed, naive/builder: curve 3/4/6 endures 27/30; curve 3/4/7
+      endures 33/35 with the first-winter cull down to 2.9-3.2 and buried
+      still 15-17; curve 3/4/6 plus `WINTER_EXTRA_FOOD` 0 endures 41/42 and
+      triples survivors, which is the game becoming safe and is refused on
+      the campaign's own shape rule; curve plus trimmed summer rot adds
+      nothing over the curve alone. **Proposal: growing seasons 2/3/5 to
+      3/4/7. Winter yield stays structurally zero.**)*
 - [ ] **Box 3 (M): `WINTER_EXTRA_FOOD` + `SPOIL_RATE`.** The off-season's
       two pressure levers, judged JOINTLY with Box 2 (softening winter while
       raising yields is one coordinated move, not two wins): the baseline's
       winter rows are the target shape, and the smokehouse's trim
       (`_spoil_rate`) rides the same reading.
+      *(Measured 2026-09-15, jointly with Box 2's packages. Winter's
+      surcharge at 1 stays: zeroing it was the overshoot package above.
+      Spoil trimming on top of the new curve moved nothing (P4 against P1),
+      and the baseline already called spoilage noise. **Proposal: no move;
+      the curve carries the pair.**)*
 - [ ] **Box 4 (M): band pressure.** `RAID_STORE_LOSS` re-judged FIRST
       against whatever economy Boxes 2 and 3 produce (the v0.19.0 retune set
       it at 8 under the current yields), then `BAND_COUNT_RANGE` (2, 3),
@@ -953,11 +969,32 @@ growth and map sweeps in SP 2 and SP 1):
       second band. Targets from the audit: raids contact ~2/3 of runs over
       the 50-seed harness; the naive policy's endurance holds at the suite
       floor (5). `TestRaidersReachARun` stays live throughout.
+      *(Measured 2026-09-15 on the Box 2 proposal economy. The loss
+      re-judged first: 8 against 12 is indistinguishable on every signal,
+      so it stays 8; the granary hit is not the binding constraint at this
+      economy. Two bands (2, 3): contact lands on the audit's target almost
+      exactly (34 of 50 naive runs, 44 raids resolved; builder 44/50 and 74
+      raids), naive endurance holds at 27/50 against the floor of 5, buried
+      23, and the builder still endures 30/50 while building. **Proposal:
+      `BAND_COUNT_RANGE` (1, 2) to (2, 3); loss stays 8.**)*
 - [ ] **Box 5 (S): the 28-season arc re-measured.** `TURNS_PER_RUN` 28
       against the re-tuned economy, same measurement as the 2026-09-06
       refusal. The target table (endurance, survivors, raids, works, the
       activity signals) comes back to Brandon with the campaign's proposal;
       the ship verdict is his.
+      *(Measured 2026-09-15 under the full proposed package (curve 3/4/7,
+      two bands, loss 8). At the shipped 20 seasons: naive 27/50, builder
+      30/50, rings formed 8, doctrine forks 3-4, works about one per builder
+      run. At 28: naive 10/50 (survivors 60), builder 16/50 (survivors 77),
+      raids 85 and 122, forks 5-8, rings 8-9. Against the 2026-09-06 refusal
+      (5/50 and 3/50, survivors 28 to 11) the arc is far less catastrophic
+      and every activity signal rises, but it still prices a longer run as a
+      longer death: endurance halves and raids double. **Proposal: the arc
+      stays refused at this re-tune; twenty seasons is the run's length, and
+      the campaign's economy is priced to make twenty seasons worth
+      playing.** The fun verdict on the package is Brandon's, and it needs
+      the gate-read on the editor lane's annotated years, which the skin can
+      finally produce.)*
 
 - [x] Doctrine: the run's choices harden into character
       *(Shipped v0.25.0. The corpus gains the doctrine fork
