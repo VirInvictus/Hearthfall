@@ -93,14 +93,15 @@ questions differently.
 
 ## Architecture
 
-The engine is a pure Python library with no I/O, no rendering, and no dependencies. The TUI
+The engine is a pure Python library with no I/O beyond reading its own shipped TOML
+content, no rendering, and no dependencies. The TUI
 is a thin, shed-able skin over it.
 
 ```
 src/hearthfall/engine/   pure logic, stdlib only, fully tested
 src/hearthfall/tui/      Textual skin; the engine does not know it exists
 src/hearthfall/data/     TOML content: the event corpus, tallies, unit types
-tests/                   the engine is tested; the skin is not
+tests/                   the engine is tested; the skin carries six pilot tests
 ```
 
 You can drive a full game from a Python REPL with zero terminal. Every random draw goes

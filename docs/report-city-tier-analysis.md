@@ -1,5 +1,12 @@
 # City Tier & Research Paradigm (Analysis)
 
+> **Retired analysis, moved from the repo root on 2026-09-15.** This was written against
+> the pre-replan roadmap, and its targets no longer exist as written: Sub-project 9
+> (Infrastructure and Upgrades) and Sub-project 10 (City and Power) were retired on
+> 2026-09-06 with every idea triaged (see `roadmap.md`, "Sub-projects 9 and 10"), the
+> calendar-flow half shipped as sub-project 3, and the buildings half shipped as the
+> works (v0.26.0). Read as history, not as a plan.
+
 **Context:** A proposal to introduce a game-mode transition between Stage 1 (managing a small group) and Stage 2 (managing a city). This transition is gated by two specific research breakthroughs: *City Planning* and *Calendar*. 
 - **City Planning** unlocks buildings, adding passive resource generation and shifting labor from individual placement to population-level assignment.
 - **Calendar** attempts to shift the game from seasonal turn-based play to real-time (clock-based) flow.

@@ -11,9 +11,10 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 ## Hard constraints
 
 - **The engine imports nothing from the frontend, and nothing from PyPI.** `engine/` is
-  stdlib-only pure logic: no I/O, no rendering, no terminal. Textual lives in `tui/` and
-  nowhere else. A test enforces this. If a task seems to need a dependency inside the
-  engine, stop and ask.
+  stdlib-only pure logic: no I/O beyond the two content loaders reading the shipped TOML
+  through `importlib.resources` (the architecture test names them), no rendering, no
+  terminal. Textual lives in `tui/` and nowhere else. A test enforces this. If a task seems
+  to need a dependency inside the engine, stop and ask.
 - **One seeded RNG.** Every random draw goes through `engine/rng.py`. Never call
   `random.*` or `secrets.*` directly anywhere else in the engine. A seed must reproduce a
   run exactly; determinism is what makes balancing and bug-fixing possible at all.
@@ -28,8 +29,8 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
 
 ## Layout
 
-- `src/hearthfall/engine/`: pure logic (state, turn, world, intel, people, events, rng,
-  balance, reports).
+- `src/hearthfall/engine/`: pure logic (state, turn, world, intel, people, agents,
+  director, orders, chronicle, tiers, combat, units, events/, rng, balance, reports).
 - `src/hearthfall/tui/`: the Textual skin. Throwaway-able by design.
 - `src/hearthfall/data/`: TOML content. The event corpus, `tallies.toml`, `units.toml`.
   No logic. Terrain lives in `balance.py`; neighbours and peoples are generated.
@@ -55,8 +56,10 @@ and its warnings are aimed at real failure modes rather than hypothetical ones.
   own version, CI syncs with `--locked`, and a bump without `uv lock` is an instant red run
   (bit 2026-09-04 on the slice-2 release, fixed in `bf5ea4a`). Unlike cargo repos, where the
   lock regenerates in-tree, uv needs the explicit command.
-- **Pyright is strict over `engine/` and gates the whole tree.** The four CI steps are
-  `ruff check`, `ruff format --check`, `pyright src tests`, and the suite. Keep it at zero.
+- **Pyright is strict over `engine/` and gates the whole tree.** The five CI steps are
+  `uv sync --locked --group dev` (the lockfile records the project's own version; this is
+  the gate a bump without `uv lock` fails), then `ruff check`, `ruff format --check`,
+  `pyright src tests`, and the suite. Keep it at zero.
 - Engine dataclasses carry `slots=True`, and `frozen=True` too when they are value types.
   This is deliberate (`spec.md` §8): it is a chunk of what a stricter language would have
   given, bought without leaving Python.

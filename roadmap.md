@@ -520,6 +520,10 @@ commitment should show its arithmetic before you make it.
 *Question: is being raided by someone you could have scouted better than being raided?*
 
 - [x] `engine/agents.py`: neighbours, weather, and wildlife with state, needs, and intents
+      *(Honesty rider, 2026-09-15: this box overstates what shipped. `agents.py` types
+      weather and wildlife but populates only neighbours; the retrospective entry in
+      patchnotes has been reworded to match. Weather-as-agent is a filed candidate,
+      sequenced strictly after the economy campaign's Box 5.)*
 - [x] Peoples placed on the map, discoverable, with grain stores and moods that go stale
 - [x] `engine/director.py`: pacing only, never invention
 - [x] The honesty guarantee enforced in code: an intent requires a learnable fact
@@ -763,9 +767,10 @@ play: the read exists, it ages, it lies, and the wall is yours to aim.)*
 *Doctrine, borders, attrition, the endgame. The campaign arc: runs long enough that the
 thing being managed is a people rather than a household.*
 
-> **Proposed shape, 2026-09-06: unsigned, riding the SP 9/10 triage conversation, and
-> therefore not commitments.** Candidate boxes for whenever this front opens, in the order
-> the research says they should come:
+> **Proposed shape, 2026-09-06: unsigned at the time, executed as signed.** (Rivals shipped
+> v0.24.0, doctrine v0.25.0, the works v0.26.0; the arc was measured and refused, and the
+> front it waits on is the economy campaign below.) The candidates, in the order
+> the research said they should come:
 >
 > 1. **Rivals: the walked-out hearth returns.** The oldest promise in the repo still
 >    standing: sub-project 2 slice 4 measured that driving a hearth off is unpunished and
@@ -789,7 +794,14 @@ thing being managed is a people rather than a household.*
 >
 > Riding along from the retired sub-project 9, as candidates for whichever front opens
 > first: research progressed by processing scouted facts, and buildings as a spent,
-> permanent sink (their warning stands: nothing passive, or scarcity dies).
+> permanent sink (their warning stands: nothing passive, or scarcity dies; the buildings
+> candidate shipped as the works below, and research remains a candidate).
+
+> **Signed 2026-09-06, Brandon:** the order below is the plan. Rivals first, doctrine
+> second, the arc last (and only when the economy can carry it). The candidates ride with
+> the retired sub-project 9's survivors: research progressed by processing scouted facts,
+> and buildings as a spent, permanent sink (their warning stands: nothing passive, or
+> scarcity dies).
 
 - [x] The works: surplus raised into permanence
       *(Shipped v0.26.0, applying the extra-decision brief under the
@@ -848,6 +860,9 @@ growth and map sweeps in SP 2 and SP 1):
   they would sit on.
 - **Every target returns to Brandon for approval before any ship verdict.**
   Boxes 2 through 5 produce proposals, not releases.
+- **Sequencing guard (2026-09-15): weather-as-agent waits until Box 5 is done.**
+  It perturbs the very baseline the campaign is measuring, so it is recorded as a
+  candidate behind the campaign, never beside it.
 
 - [x] **Box 1 (S): the per-season food-flow baseline ledger. No constants
       move.** The instrument is `food_ledger(policy, seeds)` in
@@ -993,12 +1008,6 @@ growth and map sweeps in SP 2 and SP 1):
       turn six, massing at eleven with a mixed band, the blow at fourteen;
       the clan that buried the hearth met it again across the granary. 6
       new tests; suite at 388; pyright strict zero.)*
->
-> **Signed 2026-09-06, Brandon:** the order below is the plan. Rivals first, doctrine
-> second, the arc last (and only when the economy can carry it). The candidates ride with
-> the retired sub-project 9's survivors: research progressed by processing scouted facts,
-> and buildings as a spent, permanent sink (their warning stands: nothing passive, or
-> scarcity dies).
 
 ## Sub-projects 9 and 10: retired 2026-09-06, the ideas triaged
 
@@ -1053,8 +1062,9 @@ not quietly built either.
 - **More than two decisions in a season.** The most direct answer to an allocation that writes
   itself, and the one proposal on the table that creates a second thing to *decide* rather than
   a second thing to compute. It reopens `spec.md` §4 and every slice so far sits on the
-  one-order-per-season shape, so it needs a design conversation first. **Currently the most
-  promising unbuilt idea.**
+  one-order-per-season shape, so it needs a design conversation first. **(Landed, v0.26.0:**
+  the brief below shipped as the works, the labour line that spends surplus into permanence;
+  the brief is kept as the record of what was built.**)**
 
   **Design brief, drafted 2026-09-06: a proposal to be designed, not a decision.** The
   strongest shape merges this ask with the retired sub-project 9's best idea: **spending

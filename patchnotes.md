@@ -76,12 +76,13 @@ patchnotes entry, no tag. The 2026-09-12 audit's docs lens found the gap;
 this entry is the record, retroactive, and changes nothing about code,
 versions, or tags.
 
-**SP 4, neighbours and the director.** `engine/agents.py` put neighbours,
-weather, and wildlife on the map as agents with state, needs, and intents:
-bands hold grain and mood, form raid intents when miserable, and the
-honesty guarantee is enforced in the shape of the thing - an intent
-requires a learnable fact, so the massing was always knowable before it
-arrived. `engine/director.py` paces and nothing else: it chooses which
+**SP 4, neighbours and the director.** `engine/agents.py` put neighbours
+on the map as agents with state, needs, and intents (weather and wildlife
+are typed in the module but were not populated): bands hold grain and
+mood, form raid intents when miserable, and the honesty guarantee is
+enforced in the shape of the thing: an intent requires a learnable fact,
+so the massing was always knowable before it arrived. `engine/director.py`
+paces and nothing else: it chooses which
 already-justified intent surfaces now and when to break standing orders,
 never inventing a threat (spec §9.10), and every interrupt lands
 traceable in the chronicle.

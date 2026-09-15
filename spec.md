@@ -99,25 +99,29 @@ Non-negotiable separation.
 
 ```
 src/hearthfall/
-  engine/            # pure logic. no I/O, no rendering, no terminal. stdlib only.
+  engine/            # pure logic. no I/O beyond the two content loaders, no rendering,
+                     # no terminal. stdlib only.
     state.py         #   composes the pieces below; snapshot() is the content seam
     turn.py          #   the tick, plus the run-until-interrupted driver
     world.py         #   tiles and terrain. fog moves out to intel.py
     rng.py           #   ONE seeded source. determinism or nothing.
     balance.py       #   the numbers, with notes on what they were tuned against
-
-    intel.py         #   NEW. the fact ledger: value, staleness, price. THE spine module.
-    people.py        #   NEW. pool -> households -> named cast. absorbs Population.
-    agents.py        #   NEW. neighbours, weather, wildlife: state, needs, intents.
-    director.py      #   NEW. pacing only. picks which justified intent surfaces now.
-    orders.py        #   NEW. per-season and standing orders as one type.
-    chronicle.py     #   NEW. typed entries the skin renders.
-    tiers.py         #   NEW. emergence conditions and the named moment.
-    combat.py        #   single-stack resolution (slice 1 of SP 6).
-    units.py         #   NEW. unit types (strength/guard) and compositions (SP 7).
+    intel.py         #   the fact ledger: value, staleness, price. THE spine module.
+    people.py        #   pool -> households -> named cast. absorbs Population.
+    agents.py        #   neighbours (weather and wildlife typed, unpopulated): state,
+                     #   needs, intents.
+    director.py      #   pacing only. picks which justified intent surfaces now.
+    orders.py        #   per-season and standing orders as one type.
+    chronicle.py     #   typed entries the skin renders.
+    tiers.py         #   emergence conditions and the named moment.
+    combat.py        #   single-stack resolution.
+    units.py         #   unit types (strength/guard) and compositions.
+    reports.py       #   the season's prose, rendered from facts.
+    events/          #   the loader, the condition evaluator, and the draw table.
   tui/               # thin skin over engine. Textual. throwaway-able.
   data/              # TOML content: the event corpus, tallies.toml, units.toml. no logic.
-tests/               # engine is tested. the skin is not (two pilot smoke tests excepted).
+tests/               # engine is tested. the skin carries six pilot tests (the event
+                     # modal and the save/load path).
 ```
 
 Terrain lives in `balance.py` as constants, and neighbours and peoples are
@@ -147,9 +151,11 @@ how many seasons resolve before the game stops and asks you something.
 - **Later:** you set standing orders and the game runs until the director interrupts. Three
   quiet years cost three lines in the chronicle, not twelve screens of clicking.
 
-**A season holds two decisions, not one.** Labour is the first: hands split between foraging,
-scouting, and tending, against a forage ceiling that only knowing more ground can raise, by
-walking ground the clan has never seen or by surveying ground it has only walked past.
+**A season holds two decisions, not one.** Labour is the first: hands split across five
+lines, foraging, scouting, tending, militia, and work (militia shipped with SP 6 slice 1,
+v0.17.0; work with the SP 8 works, v0.26.0), against a forage ceiling that only knowing more
+ground can raise, by walking ground the clan has never seen or by surveying ground it has
+only walked past.
 **Rationing is the second, and it only exists when the store is short.** Equal shares, the workers first, or
 the children first. It is deliberately absent in a good season, because a question with no
 stakes asked every turn teaches the player to stop reading.
@@ -160,9 +166,10 @@ waste food, and a full store must make the policy irrelevant. Measured, an even 
 threshold at once. What it buys is that nobody was wronged. Concentrating food saves people and
 makes a household that was fed last and knows it.
 
-A standing question, raised 2026-08-09 and **not yet designed**: whether a season should hold
-*more* steps than these two. It is the most direct answer to an allocation that writes itself,
-and it would reopen this section, so it gets a design conversation rather than an insertion.
+A standing question, raised 2026-08-09: whether a season should hold *more* decisions than
+these two. It was the most direct answer to an allocation that writes itself. **(Landed,
+v0.26.0:** the design brief shipped as the works, a labour line that spends surplus into
+permanence; the brief is recorded in the roadmap's "Raised, not yet designed" entry.**)**
 
 This is what "under glass" means concretely. The food system does not vanish when you stop
 allocating foragers by hand; it keeps running, and it can still kill you. It just stops
@@ -272,9 +279,9 @@ of this document and it should be read as such.
 
   ```
   households_resentful   = 2
-  neighbours_hostile     = 1
-  nearest_threat_seasons = 2
-  ring_dominant_agenda   = "war"
+  hearths_walked_out     = 1
+  stale_surveys          = 3
+  works_palisade         = 1
   ```
 
   A new concept costs one snapshot key, not one grammar feature. `state.py` already declares
@@ -307,11 +314,17 @@ of this document and it should be read as such.
   it means the corpus does not have to wait for the named cast in sub-project 5.
 - **Rarity comes from conditions, never from a weight lottery.** A powerful event should be
   rare because it is hard to reach. Earned reads as consequence; rolled reads as noise.
+  Tables do draw by weight: the weight paces how often an eligible beat comes round, and the
+  conditions decide when it is eligible at all. What no powerful event is, is rare by weight
+  alone.
 - **A repeatable event is repeatable across a run, not across consecutive seasons.** Measured
   at v0.5.0, every run in a sixty-seed sample replayed an event verbatim and the worst came
   round an extra forty-nine times. A cooldown in the draw fixed it without touching the TOML.
-  That is a rule about *drawing*, not an enrichment of the format, and it is a stopgap: the
-  real answer to a thin corpus is more of it. Lower the cooldown as the corpus grows.
+  That is a rule about *drawing*, not an enrichment of the format, and it is a stopgap whose
+  retirement the corpus does not buy: measured again as the corpus grew from 82 to 90 with
+  the cooldown unchanged, what governs repetition is how many entries are *eligible at once*,
+  not how many exist. Writing more events raises the ceiling; it does not remove the need
+  for this. The measurement is recorded on `balance.EVENT_COOLDOWN`.
 
 > **DIRECT WARNING TO THE AUTHOR.** You built a query grammar for Atrium. You built a taxonomy
 > DSL for your library. You will want to build the perfect event language before you write a
@@ -335,12 +348,14 @@ plan. `roadmap.md` holds the detail. The order is load-bearing.
 8. **The long game.** Doctrine, borders, attrition, the endgame.
 
 **The count said ten until 2026-09-06; the two extras are resolved now, not pending.**
-Sub-projects 9 and 10 entered the roadmap on 2026-08-21 out of the `report.md` analysis,
+Sub-projects 9 and 10 entered the roadmap on 2026-08-21 out of the city-tier analysis
+(`docs/report-city-tier-analysis.md`; it lived at the repo root when it was written),
 and this list was never grown to match them. Examined against what has shipped and what
 the measurements say, the count is eight and the ideas went where they belong. The
-endgame clause folds into sub-project 8, where the same words already lived. Research
-driven by processed facts, and buildings as a permanent sink for surplus, ride
-sub-project 8's design conversation as candidates, not commitments. The calendar flow was
+endgame clause folds into sub-project 8, where the same words already lived. Buildings
+as a permanent sink for surplus landed as the works (v0.26.0, `balance.WORKS`); research
+driven by processed facts remains the candidate riding sub-project 8's design
+conversation. The calendar flow was
 sub-project 3, shipped. Races, asymmetric starts, and the macro transition are parked in
 the roadmap's "Raised, not yet designed": the game after sub-project 8's game.
 
@@ -443,8 +458,9 @@ again. Two corollaries follow, and both are load-bearing:
   the staleness ramp in the fact ledger (seen / was true once / guessing / never looked) is
   the case that justifies it. The palette hosts the picker, a glyph test card (tofu occupies
   one cell, so no escape sequence can detect it; the player's eyes are the only detector), and
-  a font advisor that scans installed fonts and prints the config line for the user's terminal.
-  A launcher may spawn its own terminal window with a font stack via one-shot CLI overrides,
+  a font advisor that prints standing advice rather than scanning anything: it shows every
+  tier and tells the reader what empty boxes mean and what to switch to. A launcher may spawn
+  its own terminal window with a font stack via one-shot CLI overrides,
   which never touch the user's config.
 - **Save/load is no longer deferrable.** It was correct to park it for a 30-minute run. A
   campaign that reaches tier 4 outlives a sitting.
