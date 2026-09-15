@@ -56,7 +56,7 @@ And the campaign is filed. The economy re-tune boxes exist as real
 checkboxes under SP 8 (coordinated levers, 50-seed gate-read measurement,
 targets to Brandon before any ship verdict), and Box 1 is measured: the
 per-season food-flow baseline ledger, recorded in the roadmap with its
-reading - the game is a sawtooth that winters reset, and the campaign is
+reading: the game is a sawtooth that winters reset, and the campaign is
 pricing a winter/yield pair, not a raid or rot problem.
 
 Also: the standing-orders gap the audit caught in the README is now stated
