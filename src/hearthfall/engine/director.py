@@ -7,7 +7,6 @@ from hearthfall.engine import balance
 from hearthfall.engine.agents import IntentKind
 
 if TYPE_CHECKING:
-    from hearthfall.engine.rng import Rng
     from hearthfall.engine.state import GameState
 
 
@@ -28,23 +27,35 @@ class Director:
     and which waits, and it decides when to break standing orders.
     """
 
-    def evaluate(self, state: GameState, rng: Rng) -> DirectorInterrupt | None:
-        """Evaluate all agent intents and return an interrupt if one surfaces.
+    def evaluate(self, state: GameState) -> DirectorInterrupt | None:
+        """Surface a ripe raid intent, or hold it for pacing. No draw is spent here.
 
-        The pacing logic looks at clan slack. If the clan is doing well,
-        threats surface faster.
+        What makes the blow learnable is structure elsewhere, not this method:
+        an intent exists only on an agent the world placed and starved into
+        bitterness (`agents.grow` never invents one); the season it forms, the
+        massing is announced and the band's strength and mix are learned into
+        the ledger (`turn._agents_tick`); and the intent matures over
+        `balance.RAID_MATURITY_TURNS` before this method will surface it. The
+        player is not owed a scouting visit for the raid to be honest; they
+        are owed the announcement, and the announcement is mechanical (the
+        honesty guarantee, `spec.md` §1).
+
+        The pacing heuristic reads the clan's slack: food per living
+        household, less the longest grudge. High slack surfaces the raid the
+        season it ripens; slack under 5 holds it on even-numbered turns,
+        which delays the blow one season at a time. That parity is
+        deterministic, which is exactly why this method takes no rng: there
+        is no draw to inject, and claiming one would be the old comment's
+        lie.
         """
-        # Determine "slack": How well is the player doing?
+        # Slack: how well is the clan actually doing? Rich and ungrudging is
+        # the moment the world notices there is room.
         food = state.stores.food
         households = state.population.living_households
         worst_resentment = state.population.worst_resentment
-
-        # A simple slack heuristic: high food per household and low resentment means high slack.
-        # If slack is high, the director might pull the trigger on a raid sooner.
-        # If slack is low, it might delay it to avoid a death spiral.
         slack_score = (food / max(1, households)) - worst_resentment
 
-        # Look for the most mature intent
+        # The most mature intent wins; there is usually only one.
         for agent in state.agents.values():
             if agent.intent and agent.intent.kind == IntentKind.RAID:
                 # The window is the read. A band is held until its intent
@@ -58,13 +69,9 @@ class Director:
                 if agent.intent.target_turn and state.turn < agent.intent.target_turn:
                     continue
 
-                # Does the player know about this intent?
-                # The honesty guarantee says the intent must be learnable. It exists on the agent,
-                # so the ledger COULD have it. We don't strictly require the player to have
-                # actually scouted it to fire it (the world doesn't wait for you to look),
-                # but the fact MUST have existed for at least a few turns.
-
-                # For pacing: if slack is very low (< 5), give them a break 50% of the time.
+                # Low slack holds the blow on even turns: a struggling clan
+                # gets a season's reprieve, half the time, by the calendar
+                # and not by a coin.
                 if slack_score < 5 and state.turn % 2 == 0:
                     continue
 

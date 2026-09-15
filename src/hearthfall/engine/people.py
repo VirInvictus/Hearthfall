@@ -7,8 +7,9 @@ household*, and that household remembers. The famine is identical; only one of t
 produce a rival.
 
 A household is what starves, what resents, what marries, and what feuds. It is deliberately
-not a person: nobody here has a name, and the named cast in sub-project 5 gets drawn *from*
-these, never bolted alongside them.
+not a person: a household itself holds no name and no face. `Person` is defined in this very
+module, but only as the named cast drawn *from* these households (sub-project 5), never
+bolted alongside them; the household layer stays nameless by design.
 
 The pool has not gone away, it has moved. `Population` still answers `adults`, `child_count`,
 `total`, and `morale`, so every caller and every event condition keeps working, but it answers

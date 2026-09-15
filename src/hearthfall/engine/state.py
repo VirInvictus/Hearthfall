@@ -12,14 +12,13 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from hearthfall.engine.agents import Agent
-    from hearthfall.engine.chronicle import ChronicleEntry
     from hearthfall.engine.orders import Orders
-    from hearthfall.engine.people import Person
-    from hearthfall.engine.tiers import Council
 
+from hearthfall.engine.agents import Agent
+from hearthfall.engine.chronicle import ChronicleEntry
 from hearthfall.engine.intel import FactKind, Ledger
-from hearthfall.engine.people import Household
+from hearthfall.engine.people import Household, Person
+from hearthfall.engine.tiers import Council
 from hearthfall.engine.units import UnitDef, UnitDefs
 from hearthfall.engine.world import Terrain, World
 
@@ -372,16 +371,16 @@ class GameState:
     ledger: Ledger
     population: Population
     stores: Stores
-    agents: dict[str, Agent] = field(default_factory=dict)  # type: ignore
+    agents: dict[str, Agent] = field(default_factory=dict[str, Agent])
     tier: str = "clan"
     next_person_id: int = 1
-    cast: dict[str, Person] = field(default_factory=dict)  # type: ignore
+    cast: dict[str, Person] = field(default_factory=dict[str, Person])
     council: Council | None = None
     turn: int = 0
     outcome: Outcome | None = None
     pending: PendingChoice | None = None
     standing_orders: Orders | None = None
-    chronicle: list[ChronicleEntry] = field(default_factory=list)  # type: ignore
+    chronicle: list[ChronicleEntry] = field(default_factory=list[ChronicleEntry])
     # The terrain most recently walked into. Kept on the state rather than passed around
     # per turn so that `snapshot()` stays the only seam content reads through.
     last_revealed: Terrain | None = None

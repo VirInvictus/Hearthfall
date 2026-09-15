@@ -1,7 +1,8 @@
 # What the scouts bring back. Keyed to the ground most recently walked into.
 #
-# In Phase 0 terrain is flavor and a condition key; it gates no resources. Phase 2 is where
-# the ground starts to matter, and where these grow into real intel.
+# Terrain has carried real weight since sub-project 1 (capacity, wear, staleness), so these
+# are not flavor: the ground a party walks into decides what the clan can work and how long
+# its picture of it stays true. These events are the memory of the walks.
 
 [[event]]
 id = "wander.stones_in_the_forest"

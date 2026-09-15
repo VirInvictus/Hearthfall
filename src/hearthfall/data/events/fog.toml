@@ -142,3 +142,49 @@ it simply happened while everyone was busy.
 """
 [event.effect]
 morale = 2
+
+[[event]]
+id = "fog.the_old_numbers"
+weight = 4
+once = true
+when = ["stale_surveys >= 2", "year >= 2"]
+title = "The Old Numbers"
+body = """
+The plan still says the wood feeds five, but that number was counted seasons ago and the
+wood has been worked every one of them. Nobody wants to be the one to say the map might be
+a story the clan tells itself.
+"""
+
+  [[event.choice]]
+  text = "Send someone to count it again."
+  [event.choice.effect]
+  food = -5
+  morale = 1
+
+  [[event.choice]]
+  text = "The numbers held before. Plan on them."
+  [event.choice.effect]
+  morale = -1
+
+[[event]]
+id = "fog.wide_ground_thin_knowledge"
+weight = 4
+once = true
+when = ["tiles_known >= 4", "tiles_surveyed <= 1", "year >= 2"]
+title = "Wide Ground, Thin Knowledge"
+body = """
+The clan knows where four kinds of ground are and what none of them will carry. Walking past
+a place is not the same as knowing it, and the allocation is being argued over numbers
+nobody ever took.
+"""
+
+  [[event.choice]]
+  text = "Look properly before planning further."
+  [event.choice.effect]
+  food = -5
+  morale = 1
+
+  [[event.choice]]
+  text = "Walking has kept the clan this far."
+  [event.choice.effect]
+  morale = -1

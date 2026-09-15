@@ -139,3 +139,17 @@ is in the store will not reach spring at the rate the clan is eating.
   text = "Say nothing. Let them have the autumn."
   [event.choice.effect]
   morale = 1
+
+[[event]]
+id = "seasons.the_thaw"
+weight = 2
+when = ["season == spring", "year >= 2"]
+title = "The Thaw"
+body = """
+The track out of the trees is mud instead of ice, which is not much, and the clan treats it
+like a festival. Anyone who has carried water through a winter knows exactly what mud is
+worth.
+"""
+
+[event.effect]
+morale = 1

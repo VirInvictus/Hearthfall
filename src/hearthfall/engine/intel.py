@@ -22,8 +22,8 @@ from enum import StrEnum
 
 from hearthfall.engine.world import Coord, World
 
-# A fact hangs off either a place or a named thing. Tiles are all Phase 1 needs; the named
-# form exists now so sub-project 4 does not have to reshape the keys to add neighbours.
+# A fact hangs off either a place or a named thing. Tile facts came first; the named form
+# arrived with the neighbours, and nothing about the ledger had to reshape to take them.
 Subject = Coord | str
 
 

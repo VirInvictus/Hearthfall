@@ -1,21 +1,22 @@
 """Abstract combat resolution.
 
-`spec.md` §"Combat (later)" is the contract: two stacks meet, the engine weighs what
-it knows, and the outcome carries real stakes. This slice is that contract's dumb
-first version, and deliberately so — your strength against theirs, one roll. Terrain,
-morale, intel quality, and named stakes arrive in the slices that follow as modifiers
-on the odds and grades on the margin; the roll itself stays a single draw so a fight
-is always reproducible and always readable from the chronicle.
+`spec.md` §"Combat" is the contract: two stacks meet, the engine weighs what
+it knows, and the outcome carries real stakes. It shipped as that contract's
+dumb first version, deliberately: your strength against theirs, one roll.
+Terrain, morale, intel quality, and composition then landed as modifiers on
+the odds, and the stakes grade on the margin; the roll itself stayed a single
+draw so a fight is always reproducible and always readable from the chronicle.
 
-The odds are each side's share of the *effective* strength on the field, and slices
-layer what "effective" means. Slice 1 was raw numbers. Slice 2 weights each side by
-the ground it stands on and by morale, both as multipliers applied before the share
-is taken — so a quarter-again of hills is worth exactly what the balance table says
-it is, and nothing about the roll changes. One uniform draw against the share still
-decides the fight, which keeps the whole thing a pure function of (strengths,
-modifiers, rng draw) and keeps slice 5's stakes honest: the margin — how far the
-roll landed from the decision boundary — says whether a win was a rout or a
-coin-flip that happened to go our way.
+The odds are each side's share of the *effective* strength on the field, and
+the slices layered what "effective" means. Slice 1 was raw numbers. Slice 2
+weighted each side by the ground it stands on and by morale, both as
+multipliers applied before the share is taken, so a quarter-again of hills is
+worth exactly what the balance table says it is, and nothing about the roll
+changed. One uniform draw against the share still decides the fight, which
+keeps the whole thing a pure function of (strengths, modifiers, rng draw) and
+keeps slice 5's stakes honest: the margin, how far the roll landed from the
+decision boundary, says whether a win was a rout or a coin-flip that happened
+to go our way.
 """
 
 from __future__ import annotations
@@ -27,6 +28,9 @@ from hearthfall.engine.balance import (
     INTEL_COMBAT_FACTOR,
     MORALE_COMBAT_CEIL,
     MORALE_COMBAT_FLOOR,
+    RAID_DEATHS_MAX,
+    RAID_DEATHS_PER_MARGIN,
+    RAID_WIN_REVEAL_MARGIN,
     TERRAIN_COMBAT_WEIGHT,
 )
 from hearthfall.engine.intel import Staleness
@@ -172,15 +176,11 @@ def raid_deaths(margin: float) -> int:
     scale with how far the draw landed from the decision boundary, capped at
     what a small clan can bury.
     """
-    from hearthfall.engine import balance
-
-    deaths = round(-margin * balance.RAID_DEATHS_PER_MARGIN)
-    return max(1, min(balance.RAID_DEATHS_MAX, deaths))
+    deaths = round(-margin * RAID_DEATHS_PER_MARGIN)
+    return max(1, min(RAID_DEATHS_MAX, deaths))
 
 
 def is_rout(margin: float) -> bool:
     """Whether a won or lost fight was a rout — decisive enough that the band
     scattered beyond shadowing distance, marking its camp on the map."""
-    from hearthfall.engine import balance
-
-    return abs(margin) >= balance.RAID_WIN_REVEAL_MARGIN
+    return abs(margin) >= RAID_WIN_REVEAL_MARGIN

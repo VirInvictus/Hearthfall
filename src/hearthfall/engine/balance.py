@@ -2,8 +2,9 @@
 
 Balance is an empirical question answered by playing, not by reasoning. Keeping the numbers
 here means a balance pass is one diff and one review, instead of a hunt through the rules.
-Nothing in here is sacred; all of it is a first guess aimed at the Phase 0 question, which
-is whether the allocate-and-survive loop is tolerable for thirty minutes.
+Nothing in here is sacred: the constants are measured, not reasoned, and most carry a note
+saying what they were tuned against. A constant whose note no longer describes the game it
+ships in is a finding, not a fixture.
 
 Rules live in `turn.py`. Numbers live here. Do not inline a constant into a rule.
 """
@@ -199,6 +200,10 @@ WORN_GROUND_FLOOR_TENTHS = 4
 # Worked-out ground still feeds somebody. Ground that could fall to zero would turn one bad
 # stretch into an unrecoverable one, and a tile the clan can never use again is a tile the map
 # might as well not have. Water is not covered by this: it was never workable.
+#
+# Unused since v0.8.0, when wear moved to taking richness in tenths and the live constant
+# became WORN_GROUND_FLOOR_TENTHS above. Kept for now (a removal decision was asked and not
+# answered); nothing reads it, and the near-identical name is exactly why it is marked here.
 WORN_GROUND_FLOOR = 1
 
 # Extra food every mouth needs in winter. Cold is a cost, not just a lack of yield, and this
@@ -337,6 +342,10 @@ FACT_HALFLIFE: dict[FactKind, int | None] = {
 # high ground is worth a quarter again, forest gives a tenth, marsh is worse than
 # open ground (slow footing punishes the bigger stack), and fighting in water is
 # close to fighting half-naked. Ground not listed is neutral.
+#
+# Reachability note: fights resolve at the hearth's terrain (the band comes over
+# the border to the clan, not the other way), and the hearth is never water, so
+# WATER's entry is recorded for completeness and is unreachable in play.
 TERRAIN_COMBAT_WEIGHT: dict[Terrain, float] = {
     Terrain.HILLS: 1.25,
     Terrain.FOREST: 1.10,
@@ -478,6 +487,18 @@ BAND_COUNT_RANGE = (1, 2)
 # three seasons, which is a siege rather than a raid; six is a band that went
 # home to eat what it took and is starving again two years later.
 MORALE_AFTER_RAID = 6
+# Food a band is content above: while its store holds more than this, its mood
+# climbs instead of falling. Shipped inline in `agents.grow` against this
+# file's own contract and moved here when the audit caught it; it is a raid-arc
+# lever like the rest of this section, so it belongs beside them.
+BAND_CONTENT_FOOD = 20
+# Mood drawn per band at placement. Contentment varies at birth for the same
+# reason starting food does: bands are born unequal.
+BAND_STARTING_MOOD = (3, 7)
+# Placement attempts before the map stops looking for land. Water is rare and
+# the map is small, so this never binds in practice; it exists so a degenerate
+# world cannot hang band placement.
+AGENT_PLACEMENT_ATTEMPTS = 100
 
 # --- Combat: graded stakes (SP 6, slice 5) ---------------------------------------
 

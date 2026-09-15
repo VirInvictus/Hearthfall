@@ -55,15 +55,18 @@ class Agent:
         *,
         forage: int,
         consumption: int,
+        cheer_at: int,
     ) -> None:
         """Process one season for this agent.
 
         They gather less than they eat, so the store runs down; when it runs
-        out, mood drops; when mood drops low enough, they may form a hostile
-        intent (like RAID) if they don't already have one. The economy arrives
-        as an argument rather than being read from `balance`, for the same
-        reason the half-lives do: it keeps this module a leaf of the import
-        graph. The caller reads the numbers from `balance` and hands them over.
+        out, mood drops; while the store holds above `cheer_at`, mood climbs
+        back. When mood drops low enough, they form a hostile intent (RAID)
+        if they don't already have one. The economy arrives as arguments
+        rather than being read from `balance`, for the same reason the
+        half-lives do: it keeps this module a leaf of the import graph. The
+        caller reads the numbers from `balance` and hands them over,
+        `cheer_at` included.
 
         The band's composition is not drawn here: mustering is the tick's job
         (`turn._agents_tick`), which owns the seeded draws and the ledger
@@ -76,7 +79,7 @@ class Agent:
             if self.food < 0:
                 self.food = 0
                 self.mood -= 1
-            elif self.food > 20:
+            elif self.food > cheer_at:
                 self.mood = min(10, self.mood + 1)
 
             # Form intents if miserable and not already holding one
@@ -93,22 +96,29 @@ def populate_agents(
     rng: Rng,
     band_food: tuple[int, int],
     band_count: tuple[int, int],
+    band_mood: tuple[int, int],
+    placement_attempts: int,
 ) -> dict[str, Agent]:
-    """Seed the map with neighbours and wildlife.
+    """Seed the map with neighbouring bands.
 
-    This replaces an empty world with one that has actors in it. The range
-    the bands start with and how many of them there are arrive as arguments,
-    like every number this module uses; the caller reads them from `balance`.
+    This replaces an empty world with one that has actors in it. Weather and
+    wildlife are typed on `AgentType` but nobody populates them yet: the
+    map's only agents are these neighbours, and a rival hearth that walks out
+    joins them the same way (`turn._raise_rivals`). The ranges the bands
+    start with, their mood, how many of them there are, and the placement
+    attempt cap all arrive as arguments, like every number this module uses;
+    the caller reads them from `balance`.
     """
     agents: dict[str, Agent] = {}
     low, high = band_food
     count_low, count_high = band_count
+    mood_low, mood_high = band_mood
 
     num_neighbours = rng.randint(count_low, count_high)
     placed_neighbours = 0
     attempts = 0
 
-    while placed_neighbours < num_neighbours and attempts < 100:
+    while placed_neighbours < num_neighbours and attempts < placement_attempts:
         attempts += 1
         x = rng.randint(0, world.width - 1)
         y = rng.randint(0, world.height - 1)
@@ -124,7 +134,7 @@ def populate_agents(
                 type=AgentType.NEIGHBOUR,
                 location=coord,
                 food=rng.randint(low, high),
-                mood=rng.randint(3, 7),
+                mood=rng.randint(mood_low, mood_high),
             )
             placed_neighbours += 1
 

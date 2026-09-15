@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import unittest
 
-from support import not_none
+from support import an_int, not_none
 
+from hearthfall.engine import turn
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import (
     Event,
     EventError,
+    load_corpus,
     parse_corpus,
     parse_document,
 )
@@ -279,3 +281,90 @@ class TestTheCooldown(unittest.TestCase):
         # Guards a real trap: `xs[-0:]` is the whole list, so a zero cooldown computed by
         # slicing would silently mean "never repeat, ever" rather than "no cooldown".
         self.assertIsNotNone(table.draw(self.corpus(), REFERENCE, Rng(1), recent=()))
+
+
+# --- The shipped corpus, as content ------------------------------------------------------
+
+
+def shipped_corpus() -> list[Event]:
+    # The real 100-plus-entry corpus, loaded the way the game loads it, for
+    # tests that pin things about the shipped content rather than about the
+    # parser's rules.
+    return load_corpus(turn.new_game(0).snapshot())
+
+
+class TestTheRingGate(unittest.TestCase):
+    """The Ring must be earned.
+
+    It shipped gating on `households >= 3`, which the founding clan satisfies
+    on turn zero, at weight 100 against everyone else's 1, so it fired as the
+    first event of nearly every run while its own comments claimed the
+    conditions kept it locked. The gate is raised now; these pins keep it
+    raised: the moment belongs to a clan that has grown, and the corpus has
+    to say so structurally, not just happen to behave.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.ring = next(
+            event for event in shipped_corpus() if event.id == "emergence.the_ring"
+        )
+
+    def test_the_ring_cannot_fire_anywhere_in_year_one(self):
+        from hearthfall.engine.events.conditions import matches
+
+        for seed in range(10):
+            state = turn.new_game(seed)
+            for season_of_year in range(4):
+                state.turn = season_of_year
+                self.assertFalse(
+                    matches(self.ring.when, state.snapshot()),
+                    f"seed {seed}: the ring was eligible in year one, "
+                    f"season {season_of_year + 1}",
+                )
+
+    def test_the_gate_names_a_year_two_floor(self):
+        years = [c for c in self.ring.when if c.key == "year"]
+        self.assertTrue(
+            any(c.op == ">=" and an_int(c.value) >= 2 for c in years),
+            f"the ring's gate lost its year floor: {[str(c) for c in self.ring.when]}",
+        )
+
+    def test_the_gate_names_real_growth(self):
+        # The founding clan is eight people. Anything at or below that is a
+        # gate true from turn zero, which is the bug this class exists to
+        # keep closed.
+        growth = [c for c in self.ring.when if c.key == "people"]
+        self.assertTrue(
+            any(c.op == ">=" and an_int(c.value) > 8 for c in growth),
+            f"the ring's gate lost its growth condition: "
+            f"{[str(c) for c in self.ring.when]}",
+        )
+
+
+class TestContentAnchors(unittest.TestCase):
+    """Where a constant and shipped content must agree, pin the two together.
+
+    BIRTH_FOOD_THRESHOLD is deliberately retained as a content anchor:
+    hunger.toml reads a hardcoded food threshold, and the constant exists so
+    the number has one named home. Nothing enforced the agreement, which is
+    how the anchor would rot silently.
+    """
+
+    def test_hunger_toml_is_pinned_to_birth_food_threshold(self):
+        from importlib import resources
+
+        from hearthfall.engine import balance
+
+        text = (
+            resources.files("hearthfall.data")
+            .joinpath("events")
+            .joinpath("hunger.toml")
+            .read_text(encoding="utf-8")
+        )
+        self.assertIn(
+            f"food > {balance.BIRTH_FOOD_THRESHOLD}",
+            text,
+            "hunger.toml's food gate and balance.BIRTH_FOOD_THRESHOLD disagree; "
+            "the constant is the anchor and the TOML is the reader",
+        )

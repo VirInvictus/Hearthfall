@@ -129,3 +129,26 @@ said like a small thing. It is not a small thing.
 """
 [event.effect]
 morale = 2
+
+[[event]]
+id = "clan.the_long_night"
+weight = 6
+once = true
+when = ["morale <= 3", "year >= 1"]
+title = "The Long Night"
+body = """
+Nobody is saying anything tonight, which is worse than the complaints were. The fires are
+low and everyone has somewhere else to look. Whatever this is, it will still be here at
+dawn, and it will be heavier for the waiting.
+"""
+
+  [[event.choice]]
+  text = "Sit up with them until the fire catches."
+  [event.choice.effect]
+  food = -3
+  morale = 2
+
+  [[event.choice]]
+  text = "Sleep. Grief keeps its own hours."
+  [event.choice.effect]
+  morale = -1

@@ -2,14 +2,12 @@ import unittest
 
 from hearthfall.engine.agents import Intent, IntentKind
 from hearthfall.engine.director import Director
-from hearthfall.engine.rng import Rng
 from hearthfall.engine.turn import new_game
 
 
 class TestDirector(unittest.TestCase):
     def test_director_surfaces_raid(self):
         state = new_game(0)
-        rng = Rng(0)
 
         # Override an agent to have a raid intent
         agent_id = next(iter(state.agents.keys()))
@@ -18,8 +16,9 @@ class TestDirector(unittest.TestCase):
 
         director = Director()
 
-        # In a high slack situation, it surfaces
-        interrupt = director.evaluate(state, rng)
+        # In a high slack situation, it surfaces. No rng is passed and none is
+        # spent: the director's pacing is deterministic.
+        interrupt = director.evaluate(state)
 
         assert interrupt is not None
         self.assertEqual(interrupt.cause, f"raid_{agent.id}")
@@ -27,14 +26,13 @@ class TestDirector(unittest.TestCase):
 
     def test_director_never_invents_threats(self):
         state = new_game(0)
-        rng = Rng(0)
 
         # Ensure no intents
         for agent in state.agents.values():
             agent.intent = None
 
         director = Director()
-        interrupt = director.evaluate(state, rng)
+        interrupt = director.evaluate(state)
 
         self.assertIsNone(
             interrupt,

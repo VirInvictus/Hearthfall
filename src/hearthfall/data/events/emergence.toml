@@ -1,10 +1,24 @@
+# The named moment: the ring emerges.
+#
+# The gate is a real growth condition, and it was not always: it shipped gating on
+# `households >= 3`, which the founding clan satisfies on turn zero (it starts with three
+# hearths and eight people), at weight 100 against everyone else's 1, so this fired as the
+# first event of nearly every run while the old comment claimed the conditions kept it
+# locked. Raised in v0.28.0: the ring waits for year two and for a clan a quarter again
+# its founding size, which takes seasons of fed, settled hearths. A clan that never grows
+# never gets a council, which is the point. (Household count was measured and rejected as
+# the gate: hearths only split past a size the twenty-season run barely reaches, and a gate
+# nothing in the harness can meet is a locked door, not a growth condition.)
+#
+# The weight stays high on purpose: rarity comes from conditions, never from a weight
+# lottery (spec 6). Once the clan has earned the moment, the moment outranks the season's
+# ordinary beats and fires promptly; what gates it is the growth, not a die.
+
 [[event]]
 id = "emergence.the_ring"
-# High weight so it triggers quickly, but conditions keep it locked
 weight = 100
 once = true
-# Gated on having 3+ households and not having formed the ring
-when = ["households >= 3", "tally_ring_formed == 0"]
+when = ["year >= 2", "people >= 10", "tally_ring_formed == 0"]
 title = "The Ring"
 body = """
 The clan has grown. The decisions are too big for one voice at the fire. The heads of the households gather in a ring. You are still the leader, but you will hear them speak.
@@ -16,3 +30,27 @@ text = "Let them speak."
 morale = 1
 [event.choice.effect.tally]
 ring_formed = 1
+
+[[event]]
+id = "emergence.the_first_seat"
+weight = 6
+once = true
+when = ["tally_ring_formed == 1", "year >= 3"]
+title = "The First Seat"
+body = """
+The ring has been talking for a year now, and it has noticed something: the same mouths do
+the talking. There is a young one in the western hearth who has not stopped being right,
+and the ring is split on whether that is a reason to listen or a reason to wait.
+"""
+
+  [[event.choice]]
+  text = "Give the young one a voice."
+  [event.choice.effect]
+  morale = 1
+  [event.choice.effect.household]
+  mood = 1
+
+  [[event.choice]]
+  text = "Seats are earned here, not given."
+  [event.choice.effect]
+  morale = -1

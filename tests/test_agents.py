@@ -20,6 +20,7 @@ class TestAgents(unittest.TestCase):
             rng,
             forage=balance.BAND_FORAGE,
             consumption=balance.BAND_CONSUMPTION,
+            cheer_at=balance.BAND_CONTENT_FOOD,
         )
         self.assertEqual(agent.food, 0)
         self.assertEqual(agent.mood, 0)

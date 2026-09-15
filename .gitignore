@@ -7,3 +7,7 @@ dist/
 .ruff_cache/
 .pytest_cache/
 FUNMETER
+
+# Savegames live outside the tree by design (~/.local/state/hearthfall/);
+# this keeps a stray one from ever being tracked by accident.
+*.pkl

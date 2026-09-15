@@ -78,7 +78,9 @@ class Composition:
         )
 
     def count(self, key: str) -> int:
-        return dict(self.counts).get(key, 0)
+        # A scan, not a dict build: this is called per line per side inside
+        # combat pricing, and the counts tuple holds a handful of pairs.
+        return next((count for name, count in self.counts if name == key), 0)
 
     def total(self) -> int:
         return sum(count for _, count in self.counts)

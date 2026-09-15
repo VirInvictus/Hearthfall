@@ -252,3 +252,27 @@ share except every other fire in the camp.
   [[event.choice]]
   text = "Even shares. Whatever is wrong at that fire is not a food problem."
   [event.choice.effect]
+
+[[event]]
+id = "hearths.the_hoarder"
+weight = 6
+once = true
+when = ["households_hoarding >= 1"]
+title = "The Hearth That Stops Waiting"
+body = """
+One fire no longer waits for the shares to be dealt. It takes what it calls its own and
+dares the rest of the clan to say a word about it. Everyone is watching what you do about
+that, which means nobody is watching the stores.
+"""
+
+  [[event.choice]]
+  text = "Let them take first, and let it be seen."
+  [event.choice.effect.household]
+  mood = 2
+
+  [[event.choice]]
+  text = "Deal them last, like anyone else."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.household]
+  resentment = 1

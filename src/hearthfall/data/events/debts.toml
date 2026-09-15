@@ -145,7 +145,7 @@ noticed. He has never once mentioned it.
 [[event]]
 id = "debts.another_at_the_edge"
 weight = 3
-when = ["tally_strangers_taken_in > 0", "food > 18", "season != winter"]
+when = ["tally_strangers_taken_in > 0", "food > 12", "season != winter"]
 title = "Another One"
 body = """
 Word travels, apparently. There is a woman at the treeline with a child and no story she is
@@ -188,3 +188,48 @@ who are here, and nobody can name the season that changed.
 """
 [event.effect]
 morale = 2
+
+[[event]]
+id = "debts.a_man_with_a_sled"
+weight = 5
+once = true
+when = ["year >= 1", "food > 12"]
+title = "A Man with a Sled"
+body = """
+He walks the treeline pulling a sled, and everything he owns is on it, which is a winter's
+worth of almost nothing. He was with a band once; he does not say what happened to it, and
+the sled says most of it anyway. He can pull a workload and he knows it, and he waits to be
+told.
+"""
+
+  [[event.choice]]
+  text = "Take him in. Another back is another back."
+  [event.choice.effect]
+  adults = 1
+  food = -6
+  morale = 1
+  [event.choice.effect.tally]
+  strangers_taken_in = 1
+
+  [[event.choice]]
+  text = "Turn him away. The clan can barely feed its own."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.tally]
+  ground_lost_to_fear = 1
+
+[[event]]
+id = "debts.the_debt_comes_back"
+weight = 6
+once = true
+when = ["tally_debts_owed_to_you >= 2", "year >= 2"]
+title = "The Debt Comes Back"
+body = """
+A line of people you do not know come up the track with sledges, and the man leading them
+names a hearth that fed his when it could not feed itself. He has not forgotten. He has
+been waiting until he had something worth carrying.
+"""
+
+[event.effect]
+food = 8
+morale = 1

@@ -11,15 +11,20 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from enum import StrEnum
 
-from hearthfall.engine import balance, reports
+from hearthfall.engine import balance, combat, reports
+from hearthfall.engine.agents import Agent, AgentType, IntentKind, populate_agents
+from hearthfall.engine.chronicle import ChronicleEntry
+from hearthfall.engine.director import Director
 from hearthfall.engine.events import table
 from hearthfall.engine.events.loader import Event, load_tallies
 from hearthfall.engine.intel import Fact, FactKind, Ledger, Staleness
 from hearthfall.engine.orders import Orders
-from hearthfall.engine.people import Household, Rationing, first_claim, share_out
+from hearthfall.engine.people import Household, Rationing, Trait, first_claim, share_out
 from hearthfall.engine.rng import Rng
 from hearthfall.engine.state import (
+    ChoiceOption,
     Effect,
     GameState,
     Outcome,
@@ -28,6 +33,7 @@ from hearthfall.engine.state import (
     Season,
     Stores,
 )
+from hearthfall.engine.tiers import Council, Tier, generate_person, get_endorsements
 from hearthfall.engine.units import Composition, UnitDefs, load_units
 from hearthfall.engine.world import Coord, Terrain, Tile, World
 
@@ -339,7 +345,7 @@ class Forecast:
 def forecast(state: GameState, orders: Orders) -> Forecast:
     """Project this turn's food ledger for `orders`, mutating nothing.
 
-    Mirrors `_produce`, `_consume`, `_starve`, and `_spoil` in that order, because the
+    Mirrors `_produce`, `_consume`, and `_spoil` in that order, because the
     order is what determines the numbers (this turn's foraging feeds this turn's mouths;
     rot lands on what is left rather than on what someone was about to eat).
 
@@ -401,10 +407,6 @@ def forecast(state: GameState, orders: Orders) -> Forecast:
     )
 
 
-from hearthfall.engine import combat
-from hearthfall.engine.agents import Agent, AgentType, IntentKind, populate_agents
-
-
 def new_game(
     seed: int,
     tallies: Sequence[str] | None = None,
@@ -433,7 +435,12 @@ def new_game(
     ledger.reveal(world, world.home, turn=0)
     ledger.survey(world.home, true_yield(world.tile(world.home)), turn=0)
     agents = populate_agents(
-        world, rng, balance.BAND_STARTING_FOOD, balance.BAND_COUNT_RANGE
+        world,
+        rng,
+        balance.BAND_STARTING_FOOD,
+        balance.BAND_COUNT_RANGE,
+        balance.BAND_STARTING_MOOD,
+        balance.AGENT_PLACEMENT_ATTEMPTS,
     )
     state = GameState(
         agents=agents,
@@ -459,8 +466,6 @@ def _founding_households() -> Population:
     Deterministic and seed-independent counts and traits.
     """
     count = balance.STARTING_HOUSEHOLDS
-    from hearthfall.engine.people import Trait
-
     traits = list(Trait)
 
     households = [
@@ -586,6 +591,91 @@ def apply_effect(state: GameState, effect: Effect) -> None:
     # though: a negative resentment is not forgiveness, it is a bug in an event.
     for name, delta in effect.tally:
         state.tallies[name] = max(0, state.tallies.get(name, 0) + delta)
+
+
+# --- The driver: standing orders, run until interrupted ----------------------------------
+
+
+class InterruptReason(StrEnum):
+    """Why the background engine run broke and handed control back to the player."""
+
+    EVENT = "event"
+    STARVATION = "starvation"
+    GAME_OVER = "game_over"
+    DIRECTOR = "director"
+
+
+def resolve_and_record(
+    state: GameState, rng: Rng, events: Sequence[Event] = ()
+) -> TurnReport:
+    """Resolve one season on the standing orders and append its chronicle entry.
+
+    This is the driver's whole per-season ritual, named so a caller other than
+    `run_until_interrupted` (the skin's accept-the-shortfall action) records a
+    season exactly as a run would: same entries, same event titles, nothing
+    rebuilt in the frontend.
+    """
+    if state.standing_orders is None:
+        raise ValueError("Cannot run without standing orders")
+    report = resolve(state, state.standing_orders, rng, events)
+    state.chronicle.append(_chronicle_entry(state, report, events))
+    return report
+
+
+def _chronicle_entry(
+    state: GameState, report: TurnReport, events: Sequence[Event]
+) -> ChronicleEntry:
+    """The season as the chronicle holds it: the report's lines, plus the fired
+    event's title and body, which the report carries only as an id."""
+    entry = ChronicleEntry(
+        turn=report.turn, season=report.season, lines=list(report.log)
+    )
+    if state.pending:
+        entry.event_title = "Event"
+        if report.event_id:
+            for event in events:
+                if event.id == report.event_id:
+                    entry.event_title = event.title
+                    entry.event_body = event.body
+                    break
+    return entry
+
+
+def run_until_interrupted(
+    state: GameState, rng: Rng, events: Sequence[Event] = ()
+) -> InterruptReason:
+    """Run turns on the standing orders until an interrupt condition is met.
+
+    The starvation stop is advisory, not absolute: it fires before the first
+    season whose forecast runs short, and it will fire again every time while
+    the orders stay the same, which is the engine telling the player to change
+    something. It is not a wall: a caller that decides the shortfall is
+    unavoidable calls `resolve_and_record` and the season resolves, deaths
+    and all. Without that way through, a winter the orders cannot fix would
+    stop the run forever, and a game that cannot be lost is not a game.
+    """
+    if not state.standing_orders:
+        raise ValueError("Cannot run without standing orders")
+
+    while True:
+        if state.is_over:
+            return InterruptReason.GAME_OVER
+        if state.pending:
+            return InterruptReason.EVENT
+
+        projection = forecast(state, state.standing_orders)
+        if projection.shortfall > 0:
+            return InterruptReason.STARVATION
+
+        report = resolve_and_record(state, rng, events)
+
+        if report.director_interrupt_cause:
+            return InterruptReason.DIRECTOR
+
+        if state.is_over:
+            return InterruptReason.GAME_OVER
+        if state.pending:
+            return InterruptReason.EVENT
 
 
 # --- Steps, in resolution order ---------------------------------------------------------
@@ -922,8 +1012,6 @@ def _refresh_band_reads(
     than no prose. Only a band still massing is worth reading; a band whose
     raid has resolved has gone home.
     """
-    from hearthfall.engine.agents import IntentKind
-
     if (
         agent.intent is None
         or agent.intent.kind is not IntentKind.RAID
@@ -1124,12 +1212,7 @@ def _draw_event(
     report.note(event.title)
 
     if event.has_choices:
-        from hearthfall.engine.tiers import get_endorsements
-
         endorsements = get_endorsements(state, event.options)
-
-        from hearthfall.engine.state import ChoiceOption
-
         new_options: list[ChoiceOption] = []
         for i, opt in enumerate(event.options):
             names = tuple(endorsements.get(i, []))
@@ -1290,8 +1373,6 @@ def _advance(state: GameState, rng: Rng, report: TurnReport) -> None:
     state.turn += 1
     # Check if ring formed
     if state.tallies.get("ring_formed", 0) > 0 and state.tier == "clan":
-        from hearthfall.engine.tiers import Council, Tier, generate_person
-
         state.tier = Tier.RING
         state.council = Council()
         # Add one representative from each household to the council
@@ -1343,64 +1424,6 @@ def _clamp_morale(value: int) -> int:
 # `reports.py`. The rules move the state; how the season reads is one module's job.
 
 
-from enum import StrEnum
-
-
-class InterruptReason(StrEnum):
-    """Why the background engine run broke and handed control back to the player."""
-
-    EVENT = "event"
-    STARVATION = "starvation"
-    GAME_OVER = "game_over"
-    DIRECTOR = "director"
-
-
-def run_until_interrupted(
-    state: GameState, rng: Rng, events: Sequence[Event] = ()
-) -> InterruptReason:
-    """Run turns using standing orders until an interrupt condition is met."""
-    if not state.standing_orders:
-        raise ValueError("Cannot run without standing orders")
-
-    from hearthfall.engine.chronicle import ChronicleEntry
-
-    while True:
-        if state.is_over:
-            return InterruptReason.GAME_OVER
-        if state.pending:
-            return InterruptReason.EVENT
-
-        projection = forecast(state, state.standing_orders)
-        if projection.shortfall > 0:
-            return InterruptReason.STARVATION
-
-        report = resolve(state, state.standing_orders, rng, events)
-
-        entry = ChronicleEntry(
-            turn=report.turn, season=report.season, lines=list(report.log)
-        )
-        if state.pending:
-            entry.event_title = "Event"
-            # We don't have the event object here to get its title/body easily.
-            # `events` list could be searched for `report.event_id`.
-            if report.event_id:
-                for ev in events:
-                    if ev.id == report.event_id:
-                        entry.event_title = ev.title
-                        entry.event_body = ev.body
-                        break
-
-        state.chronicle.append(entry)
-
-        if report.director_interrupt_cause:
-            return InterruptReason.DIRECTOR
-
-        if state.is_over:
-            return InterruptReason.GAME_OVER
-        if state.pending:
-            return InterruptReason.EVENT
-
-
 def _agents_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
     for agent in state.agents.values():
         had_intent = agent.intent is not None
@@ -1408,6 +1431,7 @@ def _agents_tick(state: GameState, rng: Rng, report: TurnReport) -> None:
             rng,
             forage=balance.BAND_FORAGE,
             consumption=balance.BAND_CONSUMPTION,
+            cheer_at=balance.BAND_CONTENT_FOOD,
         )
         # A band massing for a raid is public — the spears are visible from the
         # border. The ledger learns its strength and its mix the season it
@@ -1487,9 +1511,7 @@ def _muster_band(state: GameState, agent: Agent, rng: Rng) -> None:
 def _director_tick(
     state: GameState, orders: Orders, rng: Rng, report: TurnReport
 ) -> None:
-    from hearthfall.engine.director import Director
-
-    interrupt = Director().evaluate(state, rng)
+    interrupt = Director().evaluate(state)
     if interrupt:
         report.director_interrupt_cause = interrupt.cause
         report.note(interrupt.message)

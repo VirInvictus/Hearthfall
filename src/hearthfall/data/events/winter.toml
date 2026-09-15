@@ -128,3 +128,27 @@ volunteers anyway, in the flat voice of a person who has already done the arithm
   text = "Forbid it. Nobody dies for a maybe."
   [event.choice.effect]
   morale = 1
+
+[[event]]
+id = "winter.the_quiet_after"
+weight = 5
+once = true
+when = ["season == winter", "tally_hungry_winters >= 1", "year >= 2"]
+title = "The Quiet After"
+body = """
+The hungry winter is over and the clan is strangely quiet about it. People keep catching
+each other counting stores that have not been counted out loud. Everyone wants to know the
+number, and nobody wants to be the one who says it.
+"""
+
+  [[event.choice]]
+  text = "Count what is left, out loud, where everyone hears."
+  [event.choice.effect]
+  morale = 1
+
+  [[event.choice]]
+  text = "Count it alone, and let them wonder."
+  [event.choice.effect]
+  morale = -1
+  [event.choice.effect.household]
+  mood = -1

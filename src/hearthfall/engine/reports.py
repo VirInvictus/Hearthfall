@@ -1,10 +1,11 @@
-"""What the scouts say, rendered from what they learned.
+"""What the season says, rendered from what the clan learned.
 
 `spec.md` §1 puts it in four words: **a report is rendered facts.** Nothing here decides
-anything or changes anything. It reads the ledger and says, in the clan's own voice, what the
-party came back with, and every sentence it produces is a fact the player could also have read
-off the map. That constraint is the point. A report that knew something the ledger does not
-would be the game lying to the player about what scouting bought.
+anything or changes anything. The scout party's account is the heart of it, and every
+sentence it produces is a fact the player could also have read off the map; the same rule
+covers the season's other prose, the shortfall lines, the walkouts, the works, and the
+epilogue, which are all facts rendered rather than invented. A report that knew something
+the ledger does not would be the game lying to the player about what looking bought.
 
 It lives in the engine rather than the skin for the same reason every other number does: the
 frontend computes nothing (`spec.md` §9.1). A second frontend renders the same sentences, or

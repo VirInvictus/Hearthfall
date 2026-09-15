@@ -3,11 +3,15 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A 25-second job defaults to a 360-minute ceiling without this; a hung
+    # run should cost minutes, not hours.
+    timeout-minutes: 10
     steps:
       # Both on their latest moving major tag, and both node24. v4/v5 targeted node20, which
       # the runner force-upgraded while printing a deprecation annotation on every run.

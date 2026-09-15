@@ -44,7 +44,7 @@ correct.
 id = "dead.a_hearth_that_has_buried_enough"
 weight = 4
 once = true
-when = ["tally_graves > 2", "year > 2"]
+when = ["tally_graves >= 2", "year > 2"]
 title = "What This Hearth Has Cost"
 body = """
 Somebody does the count out loud, of who started here and who is still standing, and gets it
@@ -77,3 +77,25 @@ It has simply stopped being a memory and started being a thing the clan says.
 """
 [event.effect]
 morale = -1
+
+[[event]]
+id = "dead.names_on_the_post"
+weight = 5
+once = true
+when = ["tally_graves >= 3"]
+title = "Names on the Post"
+body = """
+The post by the gate has three marks on it and no names, because nobody has wanted to stand
+there long enough to cut one. The ground is getting used to the practice. That is the part
+that should worry you.
+"""
+
+  [[event.choice]]
+  text = "Cut the names, and say them out loud."
+  [event.choice.effect]
+  morale = 2
+
+  [[event.choice]]
+  text = "A post is a post. The work is for the living."
+  [event.choice.effect]
+  morale = -1

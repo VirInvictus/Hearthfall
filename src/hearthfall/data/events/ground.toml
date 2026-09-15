@@ -209,3 +209,26 @@ anything else.
 """
 [event.effect]
 morale = 2
+
+[[event]]
+id = "ground.more_hands_than_ground"
+weight = 5
+once = true
+when = ["hands_without_ground >= 2"]
+title = "More Hands Than Ground"
+body = """
+The known ground is full. There are people standing at the edge of it with nothing to do
+and a fog beyond the edge that has never been friendly. The clan is not hungry yet, but the
+shape of the next few seasons is being decided right now.
+"""
+
+  [[event.choice]]
+  text = "Push the crews out into the dark anyway."
+  [event.choice.effect]
+  food = -4
+  morale = 1
+
+  [[event.choice]]
+  text = "Hold them home. The fog is not owed anything."
+  [event.choice.effect]
+  morale = -1

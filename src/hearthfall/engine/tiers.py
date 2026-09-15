@@ -19,11 +19,17 @@ class Tier(StrEnum):
 @dataclass(slots=True)
 class Council:
     # A list of Person IDs sitting on the council
-    advisors: list[str] = field(default_factory=list)  # type: ignore
+    advisors: list[str] = field(default_factory=list[str])
 
 
 def check_emergence(state: GameState, rng: Rng) -> str | None:
-    """Check if the clan crosses a tier boundary. Returns an event_id if they do."""
+    """Check if the clan crosses a tier boundary. Returns an event_id if they do.
+
+    Unused: the live emergence path is the corpus gate on `emergence.the_ring`
+    (conditions on the snapshot, drawn by the event table), which postdates
+    this helper and disagrees with it about when the ring is earned. Kept
+    pending a removal decision rather than deleted silently.
+    """
     if state.tier == Tier.CLAN and state.population.living_households >= 3:
         # e.g., if we reach 3 households, the ring emerges
         # The ring emerges
@@ -112,8 +118,12 @@ def get_endorsements(
 
             scores.append((score, i))
 
-        # The advisor endorses their highest scoring option, if there is a clear winner
-        # and if the score is not strictly terrible. If all are 0, they might just pick the first.
+        # Each advisor endorses exactly their highest-scoring option, ties
+        # breaking toward the earlier option. There is no clear-winner guard
+        # and no floor: a one-point edge or a best score that is outright
+        # negative still earns the endorsement. That is in character, not a
+        # gap: an advisor holding a bad hand still has an opinion, and the
+        # corpus reads the names, not the margins.
         scores.sort(reverse=True, key=lambda x: x[0])
         _best_score, best_idx = scores[0]
         endorsements[best_idx].append(advisor.name)
